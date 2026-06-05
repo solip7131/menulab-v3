@@ -29,8 +29,18 @@ export async function POST(req: NextRequest) {
     const text   = await req.text()
     const params = new URLSearchParams(text)
 
-    const state    = params.get('state')      // 일부 버전: '1' = 결제완료
-    const payState = params.get('pay_state')  // 일부 버전: '2' = 결제완료
+    // 디버그: 수신 즉시 모든 파라미터를 Supabase에 기록
+    const rawDebug: Record<string, string> = {}
+    params.forEach((v, k) => { rawDebug[k] = v })
+    await supabase.from('credit_transactions').insert({
+      user_email:  'webhook_debug',
+      type:        'debug',
+      amount:      0,
+      description: JSON.stringify(rawDebug),
+    }).then(({ error }) => { if (error) console.error('debug log failed:', error.message) })
+
+    const state    = params.get('state')
+    const payState = params.get('pay_state')
     const userId   = params.get('userid')
     const price    = params.get('price')
     const var1     = params.get('var1')       // userEmail
