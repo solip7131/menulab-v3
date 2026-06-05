@@ -1,79 +1,134 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link'
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+const VIBE_LABELS: Record<string, string> = {
+  warm: '따뜻한', premium: '고급스러운', modern: '깔끔모던', natural: '내추럴우드', cafe: '감성카페',
+}
+
+const STATUS: Record<string, { label: string; color: string; next?: string; nextLabel?: string }> = {
+  pending_payment:   { label: '입금 대기',  color: '#FF9500', next: 'payment_confirmed', nextLabel: '✅ 입금 확인' },
+  payment_confirmed: { label: '입금 확인',  color: '#34C759', next: 'in_progress',       nextLabel: '🔨 작업 시작' },
+  in_progress:       { label: '작업중',    color: '#007AFF', next: 'done',              nextLabel: '✓ 완료 처리' },
+  done:              { label: '완료',      color: '#8E8E93' },
+}
+
+interface V2Meta {
+  plan_type:                'trial' | 'basic' | 'premium'
+  mood:                     'black' | 'white'
+  amount:                   number
+  vessel_choice?:           'original' | 'recommended'
+  recommended_vessel_id?:   string
+  recommended_vessel_label?: string
+  stage1_urls?:             string[]
+  briefing?: {
+    vibes:               string[]
+    vessel_pref:         'recommend' | 'reference'
+    reference_photo_urls: string[]
+    free_request:        string
+  }
+  kakao_channel_sent: boolean
+}
+
 interface Order {
-  id: string
-  created_at: string
-  order_type: string
-  cut_count: string
-  menu_names: string
-  angle: string
-  background: string
-  vessel_info: string
-  customer_name: string
+  id:             string
+  created_at:     string
+  status:         string
+  order_type:     string
+  cut_count:      string
+  customer_name:  string
   customer_phone: string
   customer_email: string
-  notes: string
-  photo_urls: string[]
-  ai_photo_urls: string[]
-  status: string
+  photo_urls:     string[]
+  ai_photo_urls:  string[]
+  v2_meta:        V2Meta | null
+  source:         string
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending: { label: '접수됨', color: '#FF9500' },
-  ai_done: { label: 'AI완료', color: '#34C759' },
-  in_progress: { label: '작업중', color: '#007AFF' },
-  done: { label: '완료', color: '#8E8E93' },
-}
-
-export default function AdminPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [selected, setSelected] = useState<Order | null>(null)
-  const [filter, setFilter] = useState('all')
-  const [loading, setLoading] = useState(true)
+export default function V2AdminPage() {
+  const [orders, setOrders]         = useState<Order[]>([])
+  const [selected, setSelected]     = useState<Order | null>(null)
+  const [filter, setFilter]         = useState('all')
+  const [loading, setLoading]       = useState(true)
+  const [updating, setUpdating]     = useState(false)
   const [aiProcessing, setAiProcessing] = useState(false)
-  const [password, setPassword] = useState('')
-  const [authed, setAuthed] = useState(false)
-  const [authError, setAuthError] = useState('')
+
+  // ── AI 2-stage state ──
+  const [stage1Results, setStage1Results]   = useState<string[]>([])
+  const [stage2Results, setStage2Results]   = useState<string[]>([])
+  const [stage1Loading, setStage1Loading]   = useState(false)
+  const [stage2Loading, setStage2Loading]   = useState(false)
+  const [regenLoading, setRegenLoading]     = useState<{ stage: 1|2; index: number } | null>(null)
+  const [regenPrompts, setRegenPrompts]     = useState<Record<string, string>>({})
+  const [exportLoading, setExportLoading]   = useState(false)
+  const [exportDone, setExportDone]         = useState(false)
+  const [manualFiles, setManualFiles]       = useState<File[]>([])
+  const manualInputRef                      = useRef<HTMLInputElement>(null)
+
+  const [password, setPassword]     = useState('')
+  const [authed, setAuthed]         = useState(false)
+  const [authError, setAuthError]   = useState('')
   const [authLoading, setAuthLoading] = useState(false)
-  const [showTest, setShowTest] = useState(false)
-  const [testFiles, setTestFiles] = useState<File[]>([])
-  const [testAngle, setTestAngle] = useState('side')
-  const [testBg, setTestBg] = useState('bright')
-  const [testMenu, setTestMenu] = useState('테스트메뉴')
-  const [testVessel, setTestVessel] = useState('')
-  const [testLoading, setTestLoading] = useState(false)
-  const [testUploadStatus, setTestUploadStatus] = useState('')
-  const [testResults, setTestResults] = useState<string[]>([])
+  const [isMobile, setIsMobile]     = useState(false)
 
   useEffect(() => {
-    if (authed) fetchOrders()
-  }, [authed])
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // ── AI 테스트 패널 ──
+  const [testMode, setTestMode]               = useState(false)
+  const [testPhotos, setTestPhotos]           = useState<File[]>([])
+  const [testAngle, setTestAngle]             = useState<'aerial' | 'side'>('aerial')
+  const [testBg, setTestBg]                   = useState<'black' | 'white'>('black')
+  const [testVesselId, setTestVesselId]       = useState('original')
+  const [testPrompt, setTestPrompt]           = useState('')
+  const [testStage1Urls, setTestStage1Urls]   = useState<string[]>([])
+  const [testStage2Urls, setTestStage2Urls]   = useState<string[]>([])
+  const [testOriginalUrls, setTestOriginalUrls] = useState<string[]>([])
+  const [testStage1Loading, setTestStage1Loading] = useState(false)
+  const [testStage2Loading, setTestStage2Loading] = useState(false)
+  const testInputRef = useRef<HTMLInputElement>(null)
+
+  const TEST_VESSELS = [
+    { id: 'original',        label: '원본 그대로' },
+    { id: 'white-plate',     label: '흰색 접시' },
+    { id: 'black-plate',     label: '검정 접시' },
+    { id: 'ttukbaegi',       label: '뚝배기' },
+    { id: 'noodle-bowl',     label: '면기' },
+    { id: 'naengmyeon-bowl', label: '냉면기' },
+    { id: 'hotpot',          label: '전골냄비' },
+    { id: 'pasta-bowl',      label: '파스타 볼' },
+    { id: 'wood-board',      label: '우드 도마' },
+  ]
+
+  useEffect(() => { if (authed) fetchOrders() }, [authed])
+
+  useEffect(() => {
+    if (!selected) return
+    setStage1Results(selected.v2_meta?.stage1_urls || [])
+    setStage2Results(selected.ai_photo_urls || [])
+    setExportDone(!!(selected.ai_photo_urls?.length))
+    setRegenPrompts({})
+    setManualFiles([])
+  }, [selected?.id])
 
   const handleLogin = async () => {
-    setAuthLoading(true)
-    setAuthError('')
+    setAuthLoading(true); setAuthError('')
     try {
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      })
-      if (res.ok) {
-        setAuthed(true)
-      } else {
-        setAuthError('비밀번호가 틀렸어요')
-      }
-    } catch {
-      setAuthError('서버 오류가 발생했어요')
-    }
+      const res = await fetch('/api/admin/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
+      if (res.ok) setAuthed(true)
+      else setAuthError('비밀번호가 틀렸어요')
+    } catch { setAuthError('서버 오류') }
     setAuthLoading(false)
   }
 
@@ -82,101 +137,200 @@ export default function AdminPage() {
     const { data } = await getSupabase()
       .from('orders')
       .select('*')
+      .not('v2_meta', 'is', null)
       .order('created_at', { ascending: false })
     setOrders(data || [])
     setLoading(false)
   }
 
-  const runAI = async (orderId: string) => {
-    setAiProcessing(true)
-    try {
-      const res = await fetch('/api/ai-process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId })
-      })
-      const data = await res.json()
-      if (data.success) {
-        await fetchOrders()
-        alert('AI 처리 완료! ✨')
-      } else {
-        alert('AI 처리 실패: ' + data.error)
-      }
-    } catch (e) {
-      alert('AI 처리 중 오류가 발생했어요')
-    }
-    setAiProcessing(false)
-  }
-
-  const runTestOrder = async () => {
-    if (testFiles.length === 0) return alert('사진을 선택해주세요')
-    setTestLoading(true)
-    setTestResults([])
-    try {
-      // 1. 사진 업로드
-      const uploadedUrls: string[] = []
-      for (let i = 0; i < testFiles.length; i++) {
-        setTestUploadStatus(`사진 업로드 중... (${i + 1}/${testFiles.length})`)
-        const fd = new FormData()
-        fd.append('photo', testFiles[i])
-        const res = await fetch('/api/upload', { method: 'POST', body: fd })
-        const data = await res.json()
-        if (!data.url) throw new Error('업로드 실패: ' + (data.error || ''))
-        uploadedUrls.push(data.url)
-      }
-
-      // 2. 테스트 주문 생성 및 AI 실행
-      setTestUploadStatus('AI 처리 중...')
-      const { data: order, error } = await getSupabase().from('orders').insert({
-        order_type: 'sample',
-        status: 'paid',
-        cut_count: String(uploadedUrls.length),
-        menu_names: testMenu,
-        angle: testAngle,
-        background: testBg,
-        vessel_info: testVessel,
-        photo_urls: uploadedUrls,
-        customer_name: '테스트',
-        customer_email: 'test@menulab.dev',
-        customer_phone: '010-0000-0000',
-      }).select().single()
-      if (error || !order) throw new Error(error?.message || '주문 생성 실패')
-
-      const aiRes = await fetch('/api/ai-process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.id }),
-      })
-      const aiData = await aiRes.json()
-      if (aiData.success) {
-        setTestResults(aiData.aiPhotoUrls || [])
-        await fetchOrders()
-      } else {
-        alert('AI 실패: ' + aiData.error)
-      }
-    } catch (e: any) {
-      alert('오류: ' + e.message)
-    }
-    setTestUploadStatus('')
-    setTestLoading(false)
-  }
-
   const updateStatus = async (id: string, status: string) => {
+    setUpdating(true)
     await getSupabase().from('orders').update({ status }).eq('id', id)
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : null)
+    setUpdating(false)
+  }
+
+  const sendNotification = async (id: string, type: string) => {
+    try {
+      const res = await fetch('/api/v2/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: id, type }),
+      })
+      const data = await res.json()
+      if (data.success) alert('✅ 알림톡이 발송됐어요!')
+      else alert('알림톡 발송 실패: ' + (data.error || '알 수 없는 오류'))
+    } catch {
+      alert('알림톡 발송 중 오류가 발생했어요')
+    }
+  }
+
+  const markKakaoSent = async (id: string) => {
+    const newMeta = { ...(selected?.v2_meta || {}), kakao_channel_sent: true }
+    await getSupabase().from('orders').update({ v2_meta: newMeta }).eq('id', id)
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, v2_meta: newMeta as V2Meta } : o))
+    if (selected?.id === id) setSelected(prev => prev ? { ...prev, v2_meta: newMeta as V2Meta } : null)
+  }
+
+  const runAI = async (orderId: string) => {
+    setAiProcessing(true)
+    try {
+      const res  = await fetch('/api/ai-process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId }) })
+      const data = await res.json()
+      if (data.success) { await fetchOrders(); alert('AI 처리 완료! ✨') }
+      else alert('AI 처리 실패: ' + data.error)
+    } catch { alert('AI 처리 중 오류') }
+    setAiProcessing(false)
+  }
+
+  const runStage1 = async () => {
+    if (!selected) return
+    setStage1Loading(true)
+    try {
+      const res = await fetch('/api/v2/ai-stage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: selected.id, stage: 1 }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setStage1Results(data.urls)
+        setSelected(prev => prev ? { ...prev, v2_meta: prev.v2_meta ? { ...prev.v2_meta, stage1_urls: data.urls } : prev.v2_meta } : null)
+      } else alert('1단계 실패: ' + (data.error || ''))
+    } catch { alert('1단계 처리 중 오류') }
+    setStage1Loading(false)
+  }
+
+  const runStage2 = async () => {
+    if (!selected || !stage1Results.length) return
+    setStage2Loading(true)
+    try {
+      const res = await fetch('/api/v2/ai-stage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: selected.id, stage: 2, stage1Urls: stage1Results }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setStage2Results(data.urls)
+        setSelected(prev => prev ? { ...prev, ai_photo_urls: data.urls, status: 'ai_done' } : null)
+        setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ai_photo_urls: data.urls, status: 'ai_done' } : o))
+      } else alert('2단계 실패: ' + (data.error || ''))
+    } catch { alert('2단계 처리 중 오류') }
+    setStage2Loading(false)
+  }
+
+  const regenPhoto = async (stage: 1|2, index: number) => {
+    if (!selected) return
+    setRegenLoading({ stage, index })
+    const key = `${stage}-${index}`
+    try {
+      const body: Record<string, unknown> = { orderId: selected.id, stage, photoIndex: index }
+      const cp = regenPrompts[key]
+      if (cp) body.customPrompt = cp
+      if (stage === 2) body.stage1Urls = stage1Results
+      const res = await fetch('/api/v2/ai-stage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (data.success && data.urls?.length) {
+        if (stage === 1) setStage1Results(data.urls)
+        else setStage2Results(data.urls)
+      } else alert('재생성 실패: ' + (data.error || ''))
+    } catch { alert('재생성 중 오류') }
+    setRegenLoading(null)
+  }
+
+  const doExport = async (useManual: boolean) => {
+    if (!selected) return
+    setExportLoading(true)
+    try {
+      let res: Response
+      if (useManual) {
+        const fd = new FormData()
+        fd.append('orderId', selected.id)
+        manualFiles.forEach(f => fd.append('files', f))
+        res = await fetch('/api/v2/export', { method: 'POST', body: fd })
+      } else {
+        const urls = stage2Results.length ? stage2Results : stage1Results
+        res = await fetch('/api/v2/export', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: selected.id, urls }),
+        })
+      }
+      const data = await res.json()
+      if (data.success) {
+        setExportDone(true)
+        setStage2Results(data.finalUrls)
+        setSelected(prev => prev ? { ...prev, ai_photo_urls: data.finalUrls } : null)
+        setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ai_photo_urls: data.finalUrls } : o))
+      } else alert('내보내기 실패: ' + (data.error || ''))
+    } catch { alert('내보내기 중 오류') }
+    setExportLoading(false)
+  }
+
+  const runTestStage1 = async () => {
+    if (!testPhotos.length) return
+    setTestStage1Loading(true)
+    setTestStage1Urls([])
+    setTestStage2Urls([])
+    setTestOriginalUrls(testPhotos.map(f => URL.createObjectURL(f)))
+    const results: string[] = []
+    for (const photo of testPhotos) {
+      try {
+        const fd = new FormData()
+        fd.append('stage', '1')
+        fd.append('photo', photo)
+        fd.append('angle', testAngle)
+        fd.append('background', testBg)
+        fd.append('customPrompt', testPrompt)
+        const res = await fetch('/api/v2/test-generate', { method: 'POST', body: fd })
+        const data = await res.json()
+        results.push(data.error ? '' : data.url)
+      } catch { results.push('') }
+      setTestStage1Urls([...results])
+    }
+    setTestStage1Loading(false)
+  }
+
+  const runTestStage2 = async () => {
+    if (!testStage1Urls.length || testVesselId === 'original') return
+    setTestStage2Loading(true)
+    setTestStage2Urls([])
+    const results: string[] = []
+    for (const s1url of testStage1Urls) {
+      if (!s1url) { results.push(''); setTestStage2Urls([...results]); continue }
+      try {
+        const fd = new FormData()
+        fd.append('stage', '2')
+        fd.append('stage1Url', s1url)
+        fd.append('vesselId', testVesselId)
+        const res = await fetch('/api/v2/test-generate', { method: 'POST', body: fd })
+        const data = await res.json()
+        results.push(data.error ? '' : data.url)
+      } catch { results.push('') }
+      setTestStage2Urls([...results])
+    }
+    setTestStage2Loading(false)
   }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+
+  const planLabel = (order: Order) => {
+    const p = order.v2_meta?.plan_type
+    if (p === 'trial')   return '체험 5,000원'
+    if (p === 'premium') return '프리미엄 14,900원'
+    const count = parseInt(order.cut_count) || 0
+    return `기본 ${count}장 · ${(count * 7900).toLocaleString()}원`
+  }
 
   if (!authed) {
     return (
       <div style={{ minHeight: '100vh', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: '#1a1a1a', borderRadius: '20px', padding: '40px', width: '320px', textAlign: 'center' }}>
-          <h2 style={{ color: '#fff', marginBottom: '24px', fontSize: '20px', fontWeight: 800 }}>🔐 관리자 로그인</h2>
+          <h2 style={{ color: '#fff', marginBottom: '8px', fontSize: '20px', fontWeight: 800 }}>🔐 v2 어드민</h2>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', marginBottom: '24px' }}>배달앱 주문 관리</p>
           <input
-            type="password"
-            value={password}
+            type="password" value={password}
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             placeholder="비밀번호 입력"
@@ -184,12 +338,14 @@ export default function AdminPage() {
           />
           {authError && <p style={{ color: '#ff4444', fontSize: '13px', marginBottom: '12px' }}>{authError}</p>}
           <button
-            onClick={handleLogin}
-            disabled={authLoading}
-            style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'var(--orange, #FF5C00)', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 700, cursor: authLoading ? 'not-allowed' : 'pointer', opacity: authLoading ? 0.7 : 1 }}
+            onClick={handleLogin} disabled={authLoading}
+            style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#C4510D', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 700, cursor: authLoading ? 'not-allowed' : 'pointer', opacity: authLoading ? 0.7 : 1 }}
           >
             {authLoading ? '확인 중...' : '입장하기'}
           </button>
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <Link href="/admin" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'none' }}>v1 어드민으로 →</Link>
+          </div>
         </div>
       </div>
     )
@@ -197,92 +353,406 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', display: 'flex' }}>
-      {/* 왼쪽 목록 */}
-      <div style={{ width: '360px', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
+
+      {/* 왼쪽 목록 — 모바일에서는 주문 선택 전에만 표시 */}
+      <div style={{ width: isMobile ? '100%' : '360px', borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', display: isMobile && selected ? 'none' : 'flex', flexDirection: 'column', flexShrink: 0, height: '100vh', position: 'sticky', top: 0 }}>
         <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h1 style={{ fontSize: '18px', fontWeight: 900 }}>📋 메뉴랩 주문 관리</h1>
-            <button onClick={() => { setShowTest(!showTest); setSelected(null); setTestResults([]) }} style={{ padding: '6px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: showTest ? '#FF5C00' : 'rgba(255,255,255,0.12)', color: '#fff' }}>
-              🧪 테스트
-            </button>
+            <h1 style={{ fontSize: '16px', fontWeight: 900 }}>📋 메뉴랩 v2 주문 관리</h1>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                onClick={() => { setTestMode(v => !v); setSelected(null) }}
+                style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testMode ? '#C4510D' : 'rgba(255,255,255,0.12)', color: '#fff' }}
+              >
+                🧪 AI 테스트
+              </button>
+              <button onClick={fetchOrders} style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.12)', color: '#fff' }}>
+                새로고침
+              </button>
+            </div>
           </div>
+
+          {/* 통계 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+            {[
+              { label: '입금 대기',  count: orders.filter(o => o.status === 'pending_payment').length,   color: '#FF9500' },
+              { label: '입금 확인',  count: orders.filter(o => o.status === 'payment_confirmed').length,  color: '#34C759' },
+              { label: '작업중',    count: orders.filter(o => o.status === 'in_progress').length,         color: '#007AFF' },
+              { label: '완료',      count: orders.filter(o => o.status === 'done').length,                color: '#8E8E93' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{s.label}</span>
+                <span style={{ fontWeight: 800, fontSize: '16px', color: s.color }}>{s.count}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* 필터 */}
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {['all', 'pending', 'ai_done', 'in_progress', 'done'].map(f => (
-              <button key={f} onClick={() => setFilter(f)} style={{ padding: '4px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', background: filter === f ? '#FF5C00' : 'rgba(255,255,255,0.08)', color: '#fff' }}>
-                {f === 'all' ? '전체' : STATUS_LABELS[f]?.label}
+            {[['all', '전체'], ...Object.entries(STATUS).map(([k, v]) => [k, v.label])].map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                style={{ padding: '4px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', background: filter === key ? '#C4510D' : 'rgba(255,255,255,0.08)', color: '#fff' }}
+              >
+                {label}
               </button>
             ))}
           </div>
         </div>
+
+        {/* 목록 */}
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {loading ? (
             <p style={{ padding: '20px', color: 'rgba(255,255,255,0.4)' }}>로딩 중...</p>
           ) : filtered.length === 0 ? (
             <p style={{ padding: '20px', color: 'rgba(255,255,255,0.4)' }}>주문이 없어요</p>
-          ) : filtered.map(order => (
-            <div key={order.id} onClick={() => setSelected(order)} style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: selected?.id === order.id ? 'rgba(255,92,0,0.1)' : 'transparent', borderLeft: selected?.id === order.id ? '3px solid #FF5C00' : '3px solid transparent' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, fontSize: '14px' }}>{order.customer_name}</span>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '100px', background: STATUS_LABELS[order.status]?.color + '22', color: STATUS_LABELS[order.status]?.color }}>{STATUS_LABELS[order.status]?.label}</span>
+          ) : filtered.map(order => {
+            const st    = STATUS[order.status]
+            const meta  = order.v2_meta
+            return (
+              <div
+                key={order.id}
+                onClick={() => setSelected(order)}
+                style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: selected?.id === order.id ? 'rgba(196,81,13,0.12)' : 'transparent', borderLeft: `3px solid ${selected?.id === order.id ? '#C4510D' : 'transparent'}` }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '14px' }}>{order.customer_name}</span>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '100px', background: (st?.color || '#888') + '22', color: st?.color || '#888' }}>
+                    {st?.label || order.status}
+                  </span>
+                </div>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '2px' }}>
+                  {planLabel(order)} · {order.photo_urls?.length || 0}장
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px' }}>
+                    {new Date(order.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  {meta?.kakao_channel_sent && (
+                    <span style={{ fontSize: '10px', color: '#FEE500', fontWeight: 700 }}>카톡 전달 ✓</span>
+                  )}
+                </div>
               </div>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '2px' }}>
-                {order.order_type === 'sample' ? '첫주문 체험' : `본주문 ${order.cut_count}컷`} · {order.photo_urls?.length || 0}장
-              </p>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px' }}>
-                {new Date(order.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
-      {/* 오른쪽 상세 */}
-      {selected ? (
+      {/* 오른쪽 — 테스트 패널 or 상세 */}
+      {testMode ? (
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          <div style={{ maxWidth: '900px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div>
-                <h2 style={{ fontSize: '22px', fontWeight: 900 }}>{selected.customer_name}</h2>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>{selected.customer_phone} {selected.customer_email && `· ${selected.customer_email}`}</p>
+          <div style={{ maxWidth: '860px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px' }}>🧪 AI 이미지 테스트</h2>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '28px' }}>실제 주문과 동일한 프롬프트로 테스트합니다. 커스텀 프롬프트를 비우면 선택한 옵션 기반 기본 프롬프트가 적용돼요.</p>
+
+            {/* ── 설정 영역 ── */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+
+              {/* 사진 업로드 */}
+              <div
+                onClick={() => testInputRef.current?.click()}
+                style={{ border: `2px dashed ${testPhotos.length ? 'rgba(196,81,13,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '16px 20px', cursor: 'pointer', marginBottom: testPhotos.length ? '10px' : '16px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}
+              >
+                <p style={{ fontSize: '20px' }}>📷</p>
+                <p style={{ fontWeight: 700, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                  {testPhotos.length ? `${testPhotos.length}장 선택됨 — 클릭해서 추가/변경` : '테스트할 사진 업로드 (여러 장 가능)'}
+                </p>
+                <input ref={testInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { if (e.target.files?.length) { setTestPhotos(Array.from(e.target.files)); setTestStage1Urls([]); setTestStage2Urls([]) } e.target.value = '' }} />
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['pending', 'ai_done', 'in_progress', 'done'].map(s => (
-                  <button key={s} onClick={() => updateStatus(selected.id, s)} style={{ padding: '8px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: selected.status === s ? STATUS_LABELS[s]?.color : 'rgba(255,255,255,0.08)', color: '#fff' }}>
-                    {STATUS_LABELS[s]?.label}
-                  </button>
-                ))}
-                <button
-                  onClick={() => runAI(selected.id)}
-                  disabled={aiProcessing}
-                  style={{ padding: '8px 18px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: aiProcessing ? 'not-allowed' : 'pointer', background: aiProcessing ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #FFD600, #FF8C00)', color: '#000' }}
-                >
-                  {aiProcessing ? '✨ AI 처리 중...' : '✨ AI 처리 시작'}
-                </button>
+              {testPhotos.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  {testPhotos.map((f, i) => (
+                    <div key={i} style={{ position: 'relative' }}>
+                      <img src={URL.createObjectURL(f)} alt="" style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                      <button onClick={e => { e.stopPropagation(); setTestPhotos(prev => prev.filter((_, j) => j !== i)); setTestStage1Urls([]); setTestStage2Urls([]) }} style={{ position: 'absolute', top: '-4px', right: '-4px', width: '18px', height: '18px', borderRadius: '50%', background: '#ff3b30', border: 'none', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 구도 + 배경 */}
+              <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <div>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {([['aerial', '항공뷰'], ['side', '측면뷰']] as const).map(([v, l]) => (
+                      <button key={v} onClick={() => setTestAngle(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>배경</p>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {([['black', '🌑 어두운'], ['white', '☀️ 밝은']] as const).map(([v, l]) => (
+                      <button key={v} onClick={() => setTestBg(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testBg === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 커스텀 프롬프트 */}
+              <div>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>커스텀 프롬프트 <span style={{ fontWeight: 400, opacity: 0.7 }}>(비워두면 위 옵션 기반 기본 프롬프트)</span></p>
+                <textarea
+                  value={testPrompt}
+                  onChange={e => setTestPrompt(e.target.value)}
+                  placeholder="비워두면 선택한 구도 + 배경으로 실제 주문과 동일한 프롬프트가 적용됩니다."
+                  rows={3}
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none', resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
               </div>
             </div>
 
-            {/* 주문 정보 */}
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {[
-                { label: '주문 유형', value: selected.order_type === 'sample' ? '첫주문 체험' : `본주문 ${selected.cut_count}컷` },
-                { label: '메뉴명', value: selected.menu_names },
-                { label: '구도', value: selected.angle === 'aerial' ? '항공뷰' : '측면뷰' },
-                { label: '배경', value: selected.background === 'bright' ? '밝고 깔끔' : selected.background === 'dark' ? '어둡고 고급' : '브랜드 컬러' },
-                { label: '용기 정보', value: selected.vessel_info || '-' },
-                { label: '요청사항', value: selected.notes || '-' },
-              ].map(row => (
-                <div key={row.label}>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '4px' }}>{row.label}</p>
-                  <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{row.value}</p>
+            {/* ── 1단계 ── */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: testStage1Urls.length ? '14px' : 0 }}>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>① 1단계 — 음식 업그레이드</p>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>원본 사진 → 각도 / 배경 기준으로 재촬영</p>
                 </div>
-              ))}
+                <button
+                  onClick={runTestStage1}
+                  disabled={testStage1Loading || !testPhotos.length}
+                  style={{ padding: '10px 22px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: (testStage1Loading || !testPhotos.length) ? 'not-allowed' : 'pointer', background: (testStage1Loading || !testPhotos.length) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #FFD600, #FF8C00)', color: (testStage1Loading || !testPhotos.length) ? 'rgba(255,255,255,0.3)' : '#000', flexShrink: 0 }}
+                >
+                  {testStage1Loading ? `처리 중... (${testStage1Urls.length}/${testPhotos.length})` : testStage1Urls.length ? '↺ 재실행' : '▶ 실행'}
+                </button>
+              </div>
+              {testStage1Urls.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {testPhotos.map((_, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '5px' }}>원본 {testPhotos.length > 1 ? i + 1 : ''}</p>
+                        <img src={testOriginalUrls[i]} alt="원본" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '5px' }}>1단계 결과 {testPhotos.length > 1 ? i + 1 : ''}</p>
+                        {testStage1Urls[i] ? (
+                          <a href={testStage1Urls[i]} download={`stage1_${i + 1}.jpg`} style={{ display: 'block' }}>
+                            <img src={testStage1Urls[i]} alt="1단계" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #FF8C00' }} />
+                          </a>
+                        ) : (
+                          <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{testStage1Loading ? '처리 중...' : '실패'}</p>
+                          </div>
+                        )}
+                        {testStage1Urls[i] && <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', textAlign: 'center' }}>클릭하면 다운로드</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* ── 2단계 ── */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', opacity: testStage1Urls.length ? 1 : 0.4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>② 2단계 — 그릇 교체</p>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>1단계 결과 → 선택한 그릇으로 교체</p>
+                </div>
+                <button
+                  onClick={runTestStage2}
+                  disabled={testStage2Loading || !testStage1Urls.length || testVesselId === 'original'}
+                  style={{ padding: '10px 22px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: (testStage2Loading || !testStage1Urls.length || testVesselId === 'original') ? 'not-allowed' : 'pointer', background: (testStage2Loading || !testStage1Urls.length || testVesselId === 'original') ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #5856D6, #007AFF)', color: (testStage2Loading || !testStage1Urls.length || testVesselId === 'original') ? 'rgba(255,255,255,0.3)' : '#fff', flexShrink: 0 }}
+                >
+                  {testStage2Loading ? `처리 중... (${testStage2Urls.length}/${testStage1Urls.length})` : testStage2Urls.length ? '↺ 재실행' : '▶ 실행'}
+                </button>
+              </div>
+
+              {/* 그릇 선택 */}
+              <div style={{ marginBottom: testStage2Urls.length ? '14px' : 0 }}>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>그릇 선택</p>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {TEST_VESSELS.filter(v => v.id !== 'original').map(v => (
+                    <button key={v.id} onClick={() => setTestVesselId(v.id)} style={{ padding: '6px 13px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testVesselId === v.id ? '#5856D6' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {testStage2Urls.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {testStage1Urls.map((s1url, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '5px' }}>1단계 {testStage1Urls.length > 1 ? i + 1 : ''}</p>
+                        <img src={s1url} alt="1단계" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: '#34C759', marginBottom: '5px' }}>2단계 결과 {testStage1Urls.length > 1 ? i + 1 : ''} ✨</p>
+                        {testStage2Urls[i] ? (
+                          <a href={testStage2Urls[i]} download={`stage2_${i + 1}.jpg`} style={{ display: 'block' }}>
+                            <img src={testStage2Urls[i]} alt="2단계" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #34C759' }} />
+                          </a>
+                        ) : (
+                          <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{testStage2Loading ? '처리 중...' : '실패'}</p>
+                          </div>
+                        )}
+                        {testStage2Urls[i] && <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', textAlign: 'center' }}>클릭하면 다운로드</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : selected ? (
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '24px', width: isMobile ? '100%' : 'auto' }}>
+          <div style={{ maxWidth: '900px' }}>
+            {isMobile && (
+              <button
+                onClick={() => setSelected(null)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', borderRadius: '100px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', marginBottom: '16px' }}
+              >
+                ← 목록으로
+              </button>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '22px', fontWeight: 900 }}>{selected.customer_name}</h2>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>
+                  {selected.customer_phone || '-'}
+                  {selected.customer_email && ` · ${selected.customer_email}`}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+
+                {/* 단계 진행 버튼 */}
+                {STATUS[selected.status]?.next && (
+                  <button
+                    onClick={() => updateStatus(selected.id, STATUS[selected.status].next!)}
+                    disabled={updating}
+                    style={{ padding: '10px 20px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: updating ? 'not-allowed' : 'pointer', background: selected.status === 'pending_payment' ? '#34C759' : selected.status === 'payment_confirmed' ? '#007AFF' : '#C4510D', color: '#fff', opacity: updating ? 0.6 : 1 }}
+                  >
+                    {STATUS[selected.status].nextLabel}
+                  </button>
+                )}
+
+                {/* 수동 상태 전환 */}
+                {Object.entries(STATUS).map(([s, info]) => (
+                  <button
+                    key={s}
+                    onClick={() => updateStatus(selected.id, s)}
+                    style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: selected.status === s ? info.color : 'rgba(255,255,255,0.08)', color: '#fff', opacity: selected.status === s ? 1 : 0.6 }}
+                  >
+                    {info.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 입금 대기 강조 박스 */}
+            {selected.status === 'pending_payment' && (
+              <div style={{ background: 'rgba(255,149,0,0.1)', border: '1px solid rgba(255,149,0,0.3)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <p style={{ color: '#FF9500', fontWeight: 800, fontSize: '15px', marginBottom: '4px' }}>⏳ 입금 대기 중</p>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
+                    입금 금액: <b style={{ color: '#fff' }}>{selected.v2_meta?.amount?.toLocaleString() || '-'}원</b>
+                  </p>
+                </div>
+                <button
+                  onClick={() => updateStatus(selected.id, 'payment_confirmed')}
+                  disabled={updating}
+                  style={{ padding: '12px 24px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: updating ? 'not-allowed' : 'pointer', background: '#34C759', color: '#fff' }}
+                >
+                  ✅ 입금 확인 처리
+                </button>
+              </div>
+            )}
+
+            {/* 입금 확인 알림톡 발송 */}
+            {selected.status === 'payment_confirmed' && (
+              <div style={{ background: 'rgba(52,199,89,0.08)', border: '1px solid rgba(52,199,89,0.25)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <p style={{ color: '#34C759', fontWeight: 800, fontSize: '15px', marginBottom: '4px' }}>✅ 입금 확인됨</p>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>고객에게 입금 확인 알림톡을 발송하세요</p>
+                </div>
+                <button
+                  onClick={() => sendNotification(selected.id, 'payment_confirmed')}
+                  style={{ padding: '12px 24px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: 'pointer', background: '#007AFF', color: '#fff' }}
+                >
+                  💬 알림톡 발송
+                </button>
+              </div>
+            )}
+
+            {/* 주문 정보 */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginBottom: '14px' }}>주문 정보</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                {[
+                  { label: '플랜',   value: planLabel(selected) },
+                  { label: '분위기', value: selected.v2_meta?.mood === 'black' ? '어두운 (Black)' : '밝은 (White)' },
+                  { label: '사진 수', value: `${selected.photo_urls?.length || 0}장` },
+                  { label: '입금 금액', value: `${selected.v2_meta?.amount?.toLocaleString() || '-'}원` },
+                  ...(selected.v2_meta?.plan_type !== 'premium' ? [
+                    { label: '그릇 선택', value: selected.v2_meta?.vessel_choice === 'original' ? '원본 그대로' : `추천: ${selected.v2_meta?.recommended_vessel_label || '-'}` },
+                  ] : []),
+                ].map(row => (
+                  <div key={row.label}>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '4px' }}>{row.label}</p>
+                    <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 프리미엄 브리핑 */}
+            {selected.v2_meta?.plan_type === 'premium' && selected.v2_meta.briefing && (
+              <div style={{ background: 'rgba(196,81,13,0.08)', border: '1px solid rgba(196,81,13,0.2)', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--orange, #C4510D)', marginBottom: '14px' }}>📋 프리미엄 브리핑</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '6px' }}>원하는 느낌</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {(selected.v2_meta.briefing.vibes || []).map(v => (
+                        <span key={v} style={{ padding: '4px 12px', borderRadius: '100px', background: 'rgba(196,81,13,0.2)', color: '#C4510D', fontSize: '12px', fontWeight: 700 }}>
+                          {VIBE_LABELS[v] || v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '4px' }}>그릇 희망</p>
+                    <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>
+                      {selected.v2_meta.briefing.vessel_pref === 'recommend' ? '기본 그릇 추천' : '레퍼런스 이미지 참고'}
+                    </p>
+                  </div>
+                  {selected.v2_meta.briefing.free_request && (
+                    <div>
+                      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '4px' }}>자유 요청</p>
+                      <p style={{ color: '#fff', fontSize: '14px', lineHeight: 1.6, background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '12px 14px' }}>{selected.v2_meta.briefing.free_request}</p>
+                    </div>
+                  )}
+                  {/* 레퍼런스 이미지 */}
+                  {(selected.v2_meta.briefing.reference_photo_urls?.length > 0) && (
+                    <div>
+                      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '8px' }}>레퍼런스 이미지</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px' }}>
+                        {selected.v2_meta.briefing.reference_photo_urls.map((url, i) => (
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                            <img src={url} alt={`ref ${i + 1}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '1px solid rgba(255,255,255,0.1)' }} />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* 원본 사진 */}
             {selected.photo_urls?.length > 0 && (
               <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '12px', color: 'rgba(255,255,255,0.7)' }}>📷 원본 사진 ({selected.photo_urls.length}장)</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: 'rgba(255,255,255,0.7)' }}>
+                  📷 원본 사진 ({selected.photo_urls.length}장)
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
                   {selected.photo_urls.map((url, i) => (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                       <img src={url} alt={`원본 ${i + 1}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '10px', display: 'block' }} />
@@ -292,123 +762,195 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* AI 처리 사진 - 4:3 비율 */}
-            {selected.ai_photo_urls?.length > 0 && (
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '12px', color: '#34C759' }}>✨ AI 처리 결과 ({selected.ai_photo_urls.length}장)</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-                  {selected.ai_photo_urls.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                      <img src={url} alt={`AI 결과 ${i + 1}`} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block', border: '2px solid #34C759' }} />
-                    </a>
-                  ))}
+            {/* ── AI 생성 (2단계) ── */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>AI 생성</h3>
+
+              {/* 1단계: 음식 업그레이드 */}
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: stage1Results.length ? '16px' : 0 }}>
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>① 음식 업그레이드</p>
+                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>원본 사진 → 각도/배경 기준 업그레이드 (그릇 유지)</p>
+                  </div>
+                  <button
+                    onClick={runStage1}
+                    disabled={stage1Loading}
+                    style={{ padding: '10px 20px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: stage1Loading ? 'not-allowed' : 'pointer', background: stage1Loading ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #FFD600, #FF8C00)', color: stage1Loading ? 'rgba(255,255,255,0.3)' : '#000', flexShrink: 0 }}
+                  >
+                    {stage1Loading ? '처리 중...' : stage1Results.length ? '↺ 재실행' : '▶ 실행'}
+                  </button>
                 </div>
-              </div>
-            )}
 
-            {selected.status === 'pending' && (
-              <div style={{ background: 'rgba(255,149,0,0.1)', border: '1px solid rgba(255,149,0,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-                <p style={{ color: '#FF9500', fontSize: '14px' }}>위의 <b>✨ AI 처리 시작</b> 버튼을 눌러 AI 처리를 시작하세요!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : showTest ? (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          <div style={{ maxWidth: '600px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '24px' }}>🧪 테스트 주문</h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-              <div>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '6px' }}>사진 업로드 ({testFiles.length}장 선택됨)</p>
-                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '24px', borderRadius: '10px', border: '1.5px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.03)', cursor: 'pointer' }}>
-                  <span style={{ fontSize: '28px' }}>📷</span>
-                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>클릭해서 사진 선택 (여러 장 가능)</span>
-                  {testFiles.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                      {testFiles.map((f, i) => (
-                        <span key={i} style={{ background: 'rgba(255,92,0,0.2)', color: '#FF5C00', padding: '3px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: 600 }}>{f.name}</span>
-                      ))}
+                {stage1Results.map((url, i) => (
+                  <div key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '12px', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '5px' }}>원본 {i+1}</p>
+                        <img src={selected.photo_urls?.[i]} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '5px' }}>1단계 결과</p>
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '1.5px solid #FF8C00' }} />
+                        </a>
+                      </div>
                     </div>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={e => setTestFiles(Array.from(e.target.files || []))}
-                  />
-                </label>
-              </div>
-
-              <div>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '6px' }}>메뉴명</p>
-                <input value={testMenu} onChange={e => setTestMenu(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }} />
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '6px' }}>구도</p>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[{ v: 'aerial', l: '항공뷰' }, { v: 'side', l: '측면뷰' }].map(({ v, l }) => (
-                      <button key={v} onClick={() => setTestAngle(v)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: testAngle === v ? '#FF5C00' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: 700, fontSize: '13px' }}>{l}</button>
-                    ))}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        placeholder="추가 지시사항 (선택)"
+                        value={regenPrompts[`1-${i}`] || ''}
+                        onChange={e => setRegenPrompts(p => ({ ...p, [`1-${i}`]: e.target.value }))}
+                        style={{ flex: 1, padding: '7px 11px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none' }}
+                      />
+                      <button
+                        onClick={() => regenPhoto(1, i)}
+                        disabled={regenLoading?.stage === 1 && regenLoading?.index === i}
+                        style={{ padding: '7px 13px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'rgba(255,149,0,0.18)', color: '#FF9500', flexShrink: 0, whiteSpace: 'nowrap' }}
+                      >
+                        {regenLoading?.stage === 1 && regenLoading?.index === i ? '...' : '↺ 재생성'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '6px' }}>배경</p>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[{ v: 'bright', l: '밝고 깔끔' }, { v: 'dark', l: '어둡고 고급' }].map(({ v, l }) => (
-                      <button key={v} onClick={() => setTestBg(v)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: testBg === v ? '#FF5C00' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: 700, fontSize: '12px' }}>{l}</button>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
 
-              <div>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '6px' }}>그릇 옵션</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {[
-                    { v: '', l: '원본 그릇 그대로' },
-                    { v: 'white ceramic or porcelain — keep the exact same shape as the original vessel', l: '흰색 도자기' },
-                    { v: 'matte black ceramic — keep the exact same shape as the original vessel', l: '검정 세라믹' },
-                    { v: 'traditional Korean earthenware ttukbaegi (dark brown clay stone pot)', l: '뚝배기' },
-                    { v: 'black Korean jeongol hot pot (wide shallow black metal pot)', l: '검정색 전골 냄비' },
-                    { v: 'silver stainless steel — keep the exact same shape as the original vessel', l: '은색 스테인리스' },
-                  ].map(({ v, l }) => (
-                    <button key={l} onClick={() => setTestVessel(v)} style={{ padding: '8px 14px', borderRadius: '100px', border: 'none', cursor: 'pointer', background: testVessel === v ? '#FF5C00' : 'rgba(255,255,255,0.08)', color: '#fff', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>{l}</button>
+              {/* 2단계: 그릇 합성 */}
+              {selected.v2_meta?.recommended_vessel_id && (
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', marginBottom: '12px', opacity: stage1Results.length ? 1 : 0.4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: stage2Results.length ? '16px' : 0 }}>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>② 그릇 합성</p>
+                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>1단계 결과 → {selected.v2_meta.recommended_vessel_label || selected.v2_meta.recommended_vessel_id} 적용</p>
+                    </div>
+                    <button
+                      onClick={runStage2}
+                      disabled={stage2Loading || !stage1Results.length}
+                      style={{ padding: '10px 20px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: (stage2Loading || !stage1Results.length) ? 'not-allowed' : 'pointer', background: (stage2Loading || !stage1Results.length) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #5856D6, #007AFF)', color: (stage2Loading || !stage1Results.length) ? 'rgba(255,255,255,0.3)' : '#fff', flexShrink: 0 }}
+                    >
+                      {stage2Loading ? '처리 중...' : stage2Results.length ? '↺ 재실행' : '▶ 실행'}
+                    </button>
+                  </div>
+
+                  {stage2Results.map((url, i) => (
+                    <div key={i} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '12px', marginBottom: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                        <div>
+                          <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '5px' }}>1단계</p>
+                          <img src={stage1Results[i]} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                        </div>
+                        <div>
+                          <p style={{ fontSize: '11px', color: '#34C759', marginBottom: '5px' }}>최종 결과 ✨</p>
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            <img src={url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '1.5px solid #34C759' }} />
+                          </a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="추가 지시사항 (선택)"
+                          value={regenPrompts[`2-${i}`] || ''}
+                          onChange={e => setRegenPrompts(p => ({ ...p, [`2-${i}`]: e.target.value }))}
+                          style={{ flex: 1, padding: '7px 11px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none' }}
+                        />
+                        <button
+                          onClick={() => regenPhoto(2, i)}
+                          disabled={regenLoading?.stage === 2 && regenLoading?.index === i}
+                          style={{ padding: '7px 13px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'rgba(52,199,89,0.15)', color: '#34C759', flexShrink: 0, whiteSpace: 'nowrap' }}
+                        >
+                          {regenLoading?.stage === 2 && regenLoading?.index === i ? '...' : '↺ 재생성'}
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
+              )}
+
+              {/* 내보내기 */}
+              {(stage1Results.length > 0 || stage2Results.length > 0) && (
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', marginBottom: '12px' }}>
+                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>📤 내보내기</p>
+                  <button
+                    onClick={() => doExport(false)}
+                    disabled={exportLoading}
+                    style={{ padding: '11px 22px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: exportLoading ? 'not-allowed' : 'pointer', background: exportLoading ? 'rgba(255,255,255,0.08)' : '#34C759', color: exportLoading ? 'rgba(255,255,255,0.3)' : '#000', marginBottom: '14px' }}
+                  >
+                    {exportLoading ? '처리 중...' : 'AI 결과물 그대로 내보내기'}
+                  </button>
+
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '14px' }}>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginBottom: '8px' }}>또는 직접 업로드</p>
+                    <div
+                      onClick={() => manualInputRef.current?.click()}
+                      style={{ border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '10px', padding: '14px', textAlign: 'center', cursor: 'pointer', marginBottom: '10px' }}
+                    >
+                      <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
+                        {manualFiles.length ? `${manualFiles.length}장 선택됨` : '클릭하여 이미지 업로드 (여러 장)'}
+                      </p>
+                      <input
+                        ref={manualInputRef}
+                        type="file" accept="image/*" multiple style={{ display: 'none' }}
+                        onChange={e => { if (e.target.files) setManualFiles(Array.from(e.target.files)); e.target.value = '' }}
+                      />
+                    </div>
+                    {manualFiles.length > 0 && (
+                      <button
+                        onClick={() => doExport(true)}
+                        disabled={exportLoading}
+                        style={{ padding: '11px 22px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: exportLoading ? 'not-allowed' : 'pointer', background: exportLoading ? 'rgba(255,255,255,0.08)' : '#007AFF', color: '#fff' }}
+                      >
+                        {exportLoading ? '업로드 중...' : '업로드 후 내보내기'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 완성 알림톡 */}
+              {exportDone && (
+                <div style={{ background: 'rgba(52,199,89,0.08)', border: '1px solid rgba(52,199,89,0.22)', borderRadius: '14px', padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                  <div>
+                    <p style={{ color: '#34C759', fontWeight: 800, fontSize: '14px', marginBottom: '3px' }}>✅ 내보내기 완료</p>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>고객에게 완성 알림톡을 발송하세요</p>
+                  </div>
+                  <button
+                    onClick={() => sendNotification(selected.id, 'ai_done')}
+                    style={{ padding: '10px 20px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: 'pointer', background: '#34C759', color: '#000', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  >
+                    💬 완성 알림톡 보내기
+                  </button>
+                </div>
+              )}
             </div>
 
-            <button
-              onClick={runTestOrder}
-              disabled={testLoading}
-              style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', cursor: testLoading ? 'not-allowed' : 'pointer', background: testLoading ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #FFD600, #FF8C00)', color: '#000', fontSize: '16px', fontWeight: 800, marginBottom: '24px' }}
-            >
-              {testLoading ? (testUploadStatus || '✨ AI 처리 중...') : '✨ AI 실행'}
-            </button>
-
-            {testResults.length > 0 && (
+            {/* 카카오톡 채널 전달 */}
+            <div style={{ background: 'rgba(254,229,0,0.06)', border: '1px solid rgba(254,229,0,0.15)', borderRadius: '14px', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '12px', color: '#34C759' }}>✨ 결과 ({testResults.length}장)</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
-                  {testResults.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                      <img src={url} alt={`결과 ${i + 1}`} style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '10px', display: 'block', border: '2px solid #34C759' }} />
-                    </a>
-                  ))}
-                </div>
+                <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px', color: '#FEE500' }}>💬 카카오톡 채널 전달</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
+                  {selected.v2_meta?.kakao_channel_sent ? '✓ 전달 완료됨' : '결과물 전달 후 아래 버튼으로 처리하세요'}
+                </p>
               </div>
-            )}
+              {!selected.v2_meta?.kakao_channel_sent ? (
+                <button
+                  onClick={() => markKakaoSent(selected.id)}
+                  style={{ padding: '10px 20px', borderRadius: '100px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', background: '#FEE500', color: '#000' }}
+                >
+                  카카오톡 전달 완료 체크
+                </button>
+              ) : (
+                <span style={{ fontSize: '14px', color: '#FEE500', fontWeight: 700 }}>✅ 완료</span>
+              )}
+            </div>
           </div>
         </div>
-      ) : (
+      ) : !isMobile ? (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '16px' }}>왼쪽에서 주문을 선택하거나 🧪 테스트를 눌러보세요</p>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '16px' }}>왼쪽에서 주문을 선택하세요</p>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
