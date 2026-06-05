@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendAlimtalk } from '../../../../lib/solapi'
@@ -14,102 +16,125 @@ const GEM_PACKAGES: Record<string, { gems: number; won: number; label: string }>
   gem300: { gems: 300, won: 99000, label: '300젬 패키지' },
 }
 
+// 가격으로 젬 수량 역산 (var2 없는 경우 fallback)
+const PRICE_TO_GEMS: Record<number, number> = {
+  5900:  10,
+  24900: 50,
+  44900: 100,
+  99000: 300,
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // 페이앱 웹훅 파라미터 (x-www-form-urlencoded)
-    const text = await req.text()
+    const text   = await req.text()
     const params = new URLSearchParams(text)
 
-    const state     = params.get('state')      // '1' = 결제 완료
-    const userId    = params.get('userid')
-    const price     = params.get('price')
-    const var1      = params.get('var1')       // userEmail
-    const var2      = params.get('var2')       // packageId
-    const var3      = params.get('var3')       // orderId
-    const payseq    = params.get('payseq')     // 페이앱 결제 일련번호
+    const state    = params.get('state')      // 일부 버전: '1' = 결제완료
+    const payState = params.get('pay_state')  // 일부 버전: '2' = 결제완료
+    const userId   = params.get('userid')
+    const price    = params.get('price')
+    const var1     = params.get('var1')       // userEmail
+    const var2     = params.get('var2')       // packageId
+    const var3     = params.get('var3')       // orderId
+    const payseq   = params.get('payseq')     // 결제 일련번호
 
-    // 결제 완료 상태만 처리
-    if (state !== '1') {
+    // 결제 완료 상태 체크 (state=1 또는 pay_state=2)
+    const isPaid = state === '1' || payState === '2'
+    if (!isPaid) {
+      console.log('payapp webhook: not paid', { state, payState })
       return new NextResponse('ok', { status: 200 })
     }
 
     const userEmail = var1
     const packageId = var2
-    const orderId   = var3
+    const orderId   = var3 ?? payseq ?? `payapp_${Date.now()}`
 
-    if (!userEmail || !packageId) {
-      console.error('payapp webhook missing params:', { userEmail, packageId, orderId })
+    if (!userEmail) {
+      console.error('payapp webhook: missing userEmail')
       return new NextResponse('ok', { status: 200 })
     }
 
-    // 페이앱 API 키 검증
-    const expectedUserId = process.env.PAYAPP_USER_ID
-    if (userId !== expectedUserId) {
-      console.error('payapp webhook invalid userid:', userId)
+    // userid 검증
+    if (userId !== process.env.PAYAPP_USER_ID) {
+      console.error('payapp webhook: invalid userid', userId)
       return new NextResponse('ok', { status: 200 })
     }
 
-    const pkg = GEM_PACKAGES[packageId]
-    if (!pkg) {
-      console.error('payapp webhook unknown packageId:', packageId)
+    // 젬 수량 결정: packageId 우선, 없으면 가격으로 fallback
+    let gems = 0
+    let pkgLabel = ''
+    if (packageId && GEM_PACKAGES[packageId]) {
+      gems     = GEM_PACKAGES[packageId].gems
+      pkgLabel = GEM_PACKAGES[packageId].label
+    } else if (price) {
+      gems     = PRICE_TO_GEMS[Number(price)] ?? 0
+      pkgLabel = `${gems}젬 패키지`
+    }
+
+    if (gems <= 0) {
+      console.error('payapp webhook: cannot determine gems', { packageId, price })
       return new NextResponse('ok', { status: 200 })
     }
 
-    // 중복 처리 방지: orderId로 이미 처리된 거래인지 확인
+    // 중복 처리 방지
+    const txKey = `payapp:${orderId}`
     const { data: existingTx } = await supabase
       .from('credit_transactions')
       .select('id')
-      .eq('description', `payapp:${orderId}`)
-      .single()
+      .eq('description', txKey)
+      .maybeSingle()
 
     if (existingTx) {
+      console.log('payapp webhook: duplicate orderId', orderId)
       return new NextResponse('ok', { status: 200 })
     }
 
-    // 현재 잔액 조회
+    // 잔액 조회 및 업데이트
     const { data: existing } = await supabase
       .from('user_credits')
       .select('balance')
       .eq('user_email', userEmail)
-      .single()
+      .maybeSingle()
 
     const currentBalance = existing?.balance ?? 0
-    const newBalance     = currentBalance + pkg.gems
+    const newBalance     = currentBalance + gems
 
-    // 잔액 업데이트
     const { error: upsertErr } = await supabase
       .from('user_credits')
       .upsert(
         { user_email: userEmail, balance: newBalance, updated_at: new Date().toISOString() },
         { onConflict: 'user_email' },
       )
-
     if (upsertErr) throw upsertErr
 
-    // 거래 내역 기록
     await supabase.from('credit_transactions').insert({
       user_email:  userEmail,
       type:        'charge',
-      amount:      pkg.gems,
-      won:         pkg.won,
-      description: `payapp:${orderId}`,
+      amount:      gems,
+      won:         Number(price) || 0,
+      description: txKey,
     })
 
-    // 솔라피 알림톡 발송 (선택: 전화번호가 var4에 있을 경우)
-    const phone = params.get('recvphone') ?? params.get('var4')
-    if (phone && phone.length >= 10) {
-      try {
-        await sendAlimtalk(
-          phone,
-          process.env.SOLAPI_TEMPLATE_CHARGE ?? '',
-          {
-            '#{이름}':   userEmail.split('@')[0],
-            '#{젬수량}': String(pkg.gems),
-            '#{잔액}':   String(newBalance),
-          },
-        )
-      } catch (e) {
-        console.warn('alimtalk send failed:', e)
+    console.log(`payapp webhook: credited ${gems} gems to ${userEmail}, new balance ${newBalance}`)
+
+    // 완료 알림톡 (var4 또는 recvphone에서 전화번호)
+    const phone = params.get('var4') ?? params.get('recvphone')
+    if (phone && phone.replace(/\D/g, '').length >= 10) {
+      const templateId = process.env.SOLAPI_TEMPLATE_CHARGE
+      if (templateId) {
+        try {
+          await sendAlimtalk(
+            phone,
+            templateId,
+            {
+              '#{이름}':   userEmail.split('@')[0],
+              '#{젬수량}': String(gems),
+              '#{잔액}':   String(newBalance),
+            },
+          )
+        } catch (e) {
+          console.warn('alimtalk (charge) failed:', e)
+        }
       }
     }
 
