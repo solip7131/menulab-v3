@@ -339,6 +339,7 @@ function MyPageContent() {
   const [showCollectionInfo,  setShowCollectionInfo]   = useState(false)
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
   const upsellShownRef = useRef(false)
+  const [selectedService,     setSelectedService]      = useState<'retouch' | null>(null)
 
   // BasicPlanModal initial options (for "다시 만들기" / regenerate)
   const [modalInitOpts, setModalInitOpts] = useState<{
@@ -732,8 +733,12 @@ function MyPageContent() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', color: '#888' }}>{displayName}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '13px', color: '#888', fontWeight: 600 }}>{displayName} 님</span>
+          <button
+            onClick={() => setShowChargeModal(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--black)' }}
+          >💎 {gemBalance}젬</button>
           <button onClick={signOut} style={{ padding: '7px 14px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', color: '#555' }}>로그아웃</button>
         </div>
       </div>
@@ -779,7 +784,7 @@ function MyPageContent() {
                 <button
                   key={svc.id}
                   onClick={() => {
-                    if (svc.id === 'retouch') { setModalInitOpts({}); setShowBasicModal(true) }
+                    if (svc.id === 'retouch') setSelectedService('retouch')
                     else if (svc.id === 'collection') setShowCollectionInfo(true)
                   }}
                   style={{
@@ -843,7 +848,67 @@ function MyPageContent() {
 
         {/* ── Content ── */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <style>{`@keyframes marquee-rtl { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
 
+          {selectedService === 'retouch' ? (
+            /* ── 미니 랜딩: 메뉴 리터치 ── */
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '32px 24px 20px', flex: 1 }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--orange)', letterSpacing: '2px', marginBottom: '8px' }}>BASIC PLAN</p>
+                <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px' }}>배달앱 메뉴 제작</h2>
+                <p style={{ color: '#888', fontSize: '14px', marginBottom: '28px' }}>다양한 배경과 플랫폼별 사이즈를 만들어요</p>
+
+                {/* Before / After */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '28px' }}>
+                  {[{ src: '/noodle-before.jpg', label: 'Before', bg: 'rgba(0,0,0,0.6)' }, { src: '/noodle-after.jpg', label: 'After ✨', bg: 'rgba(196,81,13,0.85)' }].map(({ src, label, bg }) => (
+                    <div key={label} style={{ borderRadius: '14px', overflow: 'hidden', position: 'relative' }}>
+                      <img src={src} alt={label} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+                      <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: bg, color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px' }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 대량 섹션 */}
+                <div style={{ background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.12)', borderRadius: '16px', padding: '20px', marginBottom: '28px' }}>
+                  <p style={{ fontWeight: 800, fontSize: '16px', color: 'var(--black)', marginBottom: '4px' }}>메뉴가 많으신가요?</p>
+                  <p style={{ color: '#888', fontSize: '13px', lineHeight: 1.6, marginBottom: '14px' }}>한 번에 통일된 배경으로 · 최대 10장</p>
+                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '12px', background: '#e8e4df', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <p style={{ color: '#bbb', fontSize: '13px', fontWeight: 600 }}>🎬 GIF 예시</p>
+                  </div>
+                </div>
+
+                {/* 배달앱 로고 마퀴 */}
+                <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '10px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
+                <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 12%, black 88%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 12%, black 88%, transparent)', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', gap: '10px', animation: 'marquee-rtl 14s linear infinite', width: 'max-content' }}>
+                    {[
+                      { name: '배달의민족', bg: '#3ABF8B' },
+                      { name: '쿠팡이츠',   bg: '#C00000' },
+                      { name: '요기요',     bg: '#FA0050' },
+                      { name: '땡겨요',     bg: '#FF6B00' },
+                      { name: '먹깨비',     bg: '#1A1A1A' },
+                      { name: '배달의민족', bg: '#3ABF8B' },
+                      { name: '쿠팡이츠',   bg: '#C00000' },
+                      { name: '요기요',     bg: '#FA0050' },
+                      { name: '땡겨요',     bg: '#FF6B00' },
+                      { name: '먹깨비',     bg: '#1A1A1A' },
+                    ].map((logo, i) => (
+                      <span key={i} style={{ padding: '8px 16px', borderRadius: '100px', background: logo.bg, color: '#fff', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>{logo.name}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 하단 고정 CTA */}
+              <div style={{ padding: '12px 24px 24px', background: '#fff', borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                <button
+                  onClick={() => { setSelectedService(null); setModalInitOpts({}); setShowBasicModal(true) }}
+                  style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
+                >만들러 가기 →</button>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Category tabs */}
           <div style={{
             display: 'flex', gap: '6px',
@@ -931,6 +996,8 @@ function MyPageContent() {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -983,6 +1050,30 @@ function MyPageContent() {
             if (pendingDownloadId) handleDownload(pendingDownloadId)
           }}
         />
+      )}
+
+      {/* 업셀 팝업 */}
+      {showUpsellModal && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setShowUpsellModal(false) }}
+          style={{ position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', padding: '16px' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '400px', padding: '28px 24px 24px', boxShadow: '0 24px 80px rgba(0,0,0,0.3)', marginBottom: '16px' }}>
+            <p style={{ fontSize: '32px', marginBottom: '12px' }}>💎</p>
+            <h3 style={{ fontWeight: 900, fontSize: '20px', color: 'var(--black)', letterSpacing: '-0.3px', marginBottom: '8px' }}>구독하면 매월 젬이 충전돼요!</h3>
+            <p style={{ color: '#888', fontSize: '14px', lineHeight: 1.7, marginBottom: '24px' }}>구독 플랜을 이용하면 매월 젬이 자동으로 충전돼요.<br />사진이 많을수록 구독이 훨씬 유리해요.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => { setShowUpsellModal(false); setShowChargeModal(true) }}
+                style={{ padding: '14px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 800, fontSize: '15px', border: 'none', cursor: 'pointer' }}
+              >젬 충전하기</button>
+              <button
+                onClick={() => setShowUpsellModal(false)}
+                style={{ padding: '13px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', color: '#888', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
+              >닫기</button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
