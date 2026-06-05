@@ -68,12 +68,16 @@ export async function GET(req: NextRequest) {
   const res     = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
   const rawText = await res.text()
 
-  const lines = rawText.split(/\r?\n/).filter(Boolean)
-  if (lines[0] !== '0') {
-    return NextResponse.json({ error: `페이앱 오류: ${lines[1] ?? rawText}`, raw: rawText }, { status: 400 })
+  // cmd=payrequest 응답: "state=1&errno=00000&payurl=https://...&..."
+  const result = new URLSearchParams(rawText)
+  if (result.get('errno') !== '00000') {
+    return NextResponse.json({ error: `페이앱 오류: ${result.get('errorMessage') ?? rawText}`, raw: rawText }, { status: 400 })
   }
 
-  const payUrl = lines[1]
+  const payUrl = result.get('payurl')
+  if (!payUrl) {
+    return NextResponse.json({ error: '페이앱 응답에 payurl 없음', raw: rawText }, { status: 500 })
+  }
 
   // SMS로 결제링크 발송 (에러 상세 포함)
   let smsSent   = false

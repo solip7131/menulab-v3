@@ -64,14 +64,17 @@ export async function POST(req: NextRequest) {
     const res  = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
     const text = await res.text()
 
-    // 페이앱 응답: "0\r\n{결제URL}\r\n..."
-    const lines = text.split(/\r?\n/).filter(Boolean)
-    if (lines[0] !== '0') {
+    // cmd=payrequest 응답: "state=1&errno=00000&payurl=https://...&..."
+    const result = new URLSearchParams(text)
+    if (result.get('errno') !== '00000') {
       console.error('Payapp error:', text)
-      return NextResponse.json({ error: `페이앱 오류: ${lines[1] ?? text}` }, { status: 400 })
+      return NextResponse.json({ error: `페이앱 오류: ${result.get('errorMessage') ?? text}` }, { status: 400 })
     }
 
-    const payUrl = lines[1]
+    const payUrl = result.get('payurl')
+    if (!payUrl) {
+      return NextResponse.json({ error: '페이앱 응답에 payurl 없음', raw: text }, { status: 500 })
+    }
 
     // 고객 휴대폰 있으면 결제 요청 알림톡 발송
     if (recvphone && recvphone.replace(/\D/g, '').length >= 10) {
