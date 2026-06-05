@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { sendAlimtalk } from '../../../../lib/solapi'
+import { sendSms } from '../../../../lib/solapi'
 
 // 사용법:
 // GET /api/payapp/test?secret=ADMIN_PW&phone=01012345678&package=gem10
@@ -69,34 +69,25 @@ export async function GET(req: NextRequest) {
 
   const payUrl = lines[1]
 
-  // 알림톡 발송 (템플릿 있으면)
-  let alimtalkSent = false
-  const templateId = process.env.SOLAPI_TEMPLATE_PAY_REQUEST
-  if (templateId) {
-    try {
-      await sendAlimtalk(
-        phone,
-        templateId,
-        { '#{상품명}': pkg.label, '#{금액}': pkg.won.toLocaleString() },
-        [{ buttonType: 'WL', buttonName: '결제하러 가기', linkMo: payUrl, linkPc: payUrl }],
-      )
-      alimtalkSent = true
-    } catch (e) {
-      console.warn('test alimtalk failed:', e)
-    }
+  // SMS로 결제링크 발송
+  let smsSent = false
+  try {
+    const smsText = `[메뉴랩] ${pkg.label} 결제 요청\n금액: ${pkg.won.toLocaleString()}원\n\n결제하러 가기:\n${payUrl}`
+    await sendSms(phone, smsText)
+    smsSent = true
+  } catch (e) {
+    console.warn('test SMS failed:', e)
   }
 
   return NextResponse.json({
-    ok:          true,
-    url:         payUrl,
+    ok:      true,
+    url:     payUrl,
     orderId,
-    package:     pkgKey,
-    gems:        pkg.gems,
-    won:         pkg.won,
+    package: pkgKey,
+    gems:    pkg.gems,
+    won:     pkg.won,
     phone,
-    alimtalkSent,
-    note:        alimtalkSent
-      ? '알림톡 발송 완료'
-      : 'SOLAPI_TEMPLATE_PAY_REQUEST 없음 — 링크만 생성됨',
+    smsSent,
+    note:    smsSent ? 'SMS 발송 완료' : 'SMS 발송 실패 — 링크만 생성됨',
   })
 }

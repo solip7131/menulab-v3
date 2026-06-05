@@ -73,6 +73,42 @@ export async function sendAlimtalk(
   }
 }
 
+export async function sendSms(phone: string, text: string): Promise<void> {
+  const apiKey    = process.env.SOLAPI_API_KEY
+  const apiSecret = process.env.SOLAPI_API_SECRET
+  const sender    = process.env.SOLAPI_SENDER
+
+  if (!apiKey || !apiSecret || !sender) {
+    console.warn('[Solapi] env vars not configured — skipping SMS')
+    return
+  }
+
+  const to = cleanPhone(phone)
+  if (!to || to.length < 10) {
+    console.warn('[Solapi] invalid phone:', phone)
+    return
+  }
+
+  // 90바이트 초과 시 LMS, 이하 SMS
+  const type = Buffer.byteLength(text, 'utf8') > 90 ? 'LMS' : 'SMS'
+
+  const res = await fetch(SOLAPI_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization:  makeAuth(apiKey, apiSecret),
+    },
+    body: JSON.stringify({
+      message: { to, from: cleanPhone(sender), type, text },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Solapi SMS ${res.status}: ${body}`)
+  }
+}
+
 // ── 알림 유형별 헬퍼 ──
 
 const SITE_URL = () => process.env.NEXT_PUBLIC_SITE_URL || 'https://menulab-solip7131s-projects.vercel.app'
