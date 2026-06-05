@@ -919,27 +919,20 @@ function MyPageContent() {
                   <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
                     <div style={{ display: 'flex', gap: '8px', animation: 'marquee-rtl 12s linear infinite', width: 'max-content' }}>
                       {[
-                        { name: '배달의민족', bg: '#3ABF8B', logoSrc: 'https://static.baemin.com/resources/img/logo.png' },
-                        { name: '쿠팡이츠',   bg: '#C00000', logoSrc: null },
-                        { name: '요기요',     bg: '#FA0050', logoSrc: null },
-                        { name: '땡겨요',     bg: '#FF6B00', logoSrc: null },
-                        { name: '먹깨비',     bg: '#1A1A1A', logoSrc: null },
-                        { name: '배달의민족', bg: '#3ABF8B', logoSrc: 'https://static.baemin.com/resources/img/logo.png' },
-                        { name: '쿠팡이츠',   bg: '#C00000', logoSrc: null },
-                        { name: '요기요',     bg: '#FA0050', logoSrc: null },
-                        { name: '땡겨요',     bg: '#FF6B00', logoSrc: null },
-                        { name: '먹깨비',     bg: '#1A1A1A', logoSrc: null },
+                        { name: '배달의민족', src: '/logos/baemin.png'     },
+                        { name: '쿠팡이츠',   src: '/logos/coupangeats.png'},
+                        { name: '요기요',     src: '/logos/yogiyo.svg'     },
+                        { name: '땡겨요',     src: '/logos/ddanggyeo.svg'  },
+                        { name: '먹깨비',     src: '/logos/mukggaebi.svg'  },
+                        { name: '배달의민족', src: '/logos/baemin.png'     },
+                        { name: '쿠팡이츠',   src: '/logos/coupangeats.png'},
+                        { name: '요기요',     src: '/logos/yogiyo.svg'     },
+                        { name: '땡겨요',     src: '/logos/ddanggyeo.svg'  },
+                        { name: '먹깨비',     src: '/logos/mukggaebi.svg'  },
                       ].map((logo, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '100px', background: logo.bg, flexShrink: 0 }}>
-                          {logo.logoSrc && (
-                            <img
-                              src={logo.logoSrc}
-                              alt=""
-                              style={{ height: '14px', width: 'auto', filter: 'brightness(0) invert(1)' }}
-                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-                            />
-                          )}
-                          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap' }}>{logo.name}</span>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px 6px 8px', borderRadius: '100px', background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', flexShrink: 0 }}>
+                          <img src={logo.src} alt="" style={{ height: '22px', width: '22px', objectFit: 'contain', borderRadius: '5px' }} />
+                          <span style={{ color: '#222', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap' }}>{logo.name}</span>
                         </div>
                       ))}
                     </div>
