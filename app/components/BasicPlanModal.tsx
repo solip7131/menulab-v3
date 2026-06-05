@@ -43,8 +43,8 @@ const DELIVERY_PLATFORMS: Platform[] = [
 const BG_PRESETS: BgPreset[] = [
   { id: 'lightgray', label: '라이트그레이',         category: 'solid',    src: '/backgrounds/lightgray.jpg' },
   { id: 'ivory',     label: '실키 페브릭 아이보리', category: 'solid',    src: '/backgrounds/ivory.jpg'     },
-  { id: 'concrete',  label: '콘크리트',             category: 'concrete', src: '/backgrounds/concrete.png'  },
-  { id: 'marble',    label: '마블',                 category: 'tile',     src: '/backgrounds/marble.png'    },
+  { id: 'concrete',  label: '콘크리트',             category: 'concrete', src: '/backgrounds/concrete.jpg'  },
+  { id: 'marble',    label: '마블',                 category: 'tile',     src: '/backgrounds/marble.jpg'    },
 ]
 
 const SAMPLE_SRCS = [
@@ -100,16 +100,42 @@ async function fileToPhoto(file: File): Promise<FoodPhoto> {
   })
 }
 
-async function urlToBase64(src: string): Promise<{ base64: string; mime: string }> {
+async function urlToBase64(src: string, maxPx = 1280): Promise<{ base64: string; mime: string }> {
   const res = await fetch(src)
   const blob = await res.blob()
   return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-      resolve({ base64: dataUrl.split(',')[1], mime: blob.type || 'image/jpeg' })
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(blob)
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      let w = img.naturalWidth, h = img.naturalHeight
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx }
+        else { w = Math.round(w * maxPx / h); h = maxPx }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      canvas.toBlob((b) => {
+        if (!b) { resolve({ base64: '', mime: 'image/jpeg' }); return }
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string
+          resolve({ base64: dataUrl.split(',')[1], mime: 'image/jpeg' })
+        }
+        reader.readAsDataURL(b)
+      }, 'image/jpeg', 0.85)
     }
-    reader.readAsDataURL(blob)
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        resolve({ base64: dataUrl.split(',')[1], mime: blob.type || 'image/jpeg' })
+      }
+      reader.readAsDataURL(blob)
+    }
+    img.src = objectUrl
   })
 }
 
