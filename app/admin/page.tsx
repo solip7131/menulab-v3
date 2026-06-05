@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
+const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
@@ -79,7 +79,7 @@ export default function AdminPage() {
 
   const fetchOrders = async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
@@ -127,7 +127,7 @@ export default function AdminPage() {
 
       // 2. 테스트 주문 생성 및 AI 실행
       setTestUploadStatus('AI 처리 중...')
-      const { data: order, error } = await supabase.from('orders').insert({
+      const { data: order, error } = await getSupabase().from('orders').insert({
         order_type: 'sample',
         status: 'paid',
         cut_count: String(uploadedUrls.length),
@@ -162,7 +162,7 @@ export default function AdminPage() {
   }
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('orders').update({ status }).eq('id', id)
+    await getSupabase().from('orders').update({ status }).eq('id', id)
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : null)
   }

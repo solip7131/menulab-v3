@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 
-const supabase = createClient(
+const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
@@ -134,7 +134,7 @@ export default function V2AdminPage() {
 
   const fetchOrders = async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from('orders')
       .select('*')
       .not('v2_meta', 'is', null)
@@ -145,7 +145,7 @@ export default function V2AdminPage() {
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(true)
-    await supabase.from('orders').update({ status }).eq('id', id)
+    await getSupabase().from('orders').update({ status }).eq('id', id)
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : null)
     setUpdating(false)
@@ -168,7 +168,7 @@ export default function V2AdminPage() {
 
   const markKakaoSent = async (id: string) => {
     const newMeta = { ...(selected?.v2_meta || {}), kakao_channel_sent: true }
-    await supabase.from('orders').update({ v2_meta: newMeta }).eq('id', id)
+    await getSupabase().from('orders').update({ v2_meta: newMeta }).eq('id', id)
     setOrders(prev => prev.map(o => o.id === id ? { ...o, v2_meta: newMeta as V2Meta } : o))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, v2_meta: newMeta as V2Meta } : null)
   }
