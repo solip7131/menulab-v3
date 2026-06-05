@@ -1,0 +1,19 @@
+{
+  "confidenceThreshold": 0.70,
+  "categories": [
+    { "id": "noodle_soup",  "label": "면·국물(국수/우동)",            "vessel": "noodle_bowl",     "defaultColor": "white"   },
+    { "id": "cold_noodle",  "label": "냉면·비빔면",                  "vessel": "naengmyeon_bowl", "defaultColor": "silver"  },
+    { "id": "jjigae",       "label": "찌개·국밥·탕",                 "vessel": "ttukbaegi",       "defaultColor": "default" },
+    { "id": "jeongol",      "label": "전골·찜·볶음탕",               "vessel": "jeongol_pot",     "defaultColor": "black"   },
+    { "id": "dakgalbi",     "label": "철판·냄비볶음(닭갈비/막창)",   "vessel": "foil_pot",        "defaultColor": "silver"  },
+    { "id": "pasta",        "label": "파스타·리조또",                "vessel": "pasta_bowl",      "defaultColor": "white"   },
+    { "id": "steak",        "label": "스테이크·메인 플레이팅",       "vessel": "flat_plate",      "defaultColor": "white"   },
+    { "id": "pizza",        "label": "피자",                         "vessel": "wood_board",      "defaultColor": "natural" },
+    { "id": "side_dish",    "label": "단품·반찬·사이드",             "vessel": "plate",           "defaultColor": "white"   },
+    { "id": "set_meal",     "label": "정식·상차림(복합)",            "vessel": null,              "defaultColor": null      }
+  ],
+  "fallback": {
+    "vessel": "plate",
+    "defaultColor": "white"
+  }
+}

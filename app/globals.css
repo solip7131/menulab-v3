@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --orange: #C4510D;
+  --orange-light: #D4621E;
+  --black: #0D0D0D;
+  --cream: #FAF7F2;
+  --gray: #888888;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--cream);
+  color: var(--black);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-up {
+  animation: fadeUp 0.7s ease forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes progressBar {
+  from { width: 0%; }
+  to { width: 95%; }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0);     }
+  50%       { transform: translateY(-20px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 0; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+html, body { overflow-x: hidden; }
+html { overscroll-behavior-y: none; }
+
+/* hero-bg 클래스 미사용 (섹션 background-image로 대체) */
+
+/* Hero slider: 모바일 4:3 비율 고정, 데스크탑 남은 높이 채움 */
+.hero-compare {
+  aspect-ratio: 4/3;
+  height: auto;
+}
+
+@media (min-width: 769px) {
+  .hero-body {
+    flex: 1 !important;
+    overflow: hidden !important;
+    height: 100% !important;
+  }
+  .hero-slider {
+    flex: 1 !important;
+    min-height: 0 !important;
+    max-height: 510px !important;
+  }
+  .hero-compare {
+    aspect-ratio: unset !important;
+    height: 100% !important;
+  }
+}
+
+/* ── Mobile ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* NAV: 소개 + 로그인만 노출 */
+  .nav-links {
+    gap: 16px !important;
+  }
+  .nav-links > *:nth-child(2),
+  .nav-links > *:nth-child(3) {
+    display: none !important;
+  }
+  .nav-links > *:last-child {
+    background: var(--orange);
+    color: #fff !important;
+    padding: 9px 20px !important;
+    border-radius: 100px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+  }
+
+  /* 스크롤 스냅: 히어로 → 포트폴리오 */
+  html {
+    scroll-snap-type: y proximity;
+  }
+
+  /* HERO — 헤더 아래부터 시작, 픽셀 고정으로 address bar 영향 없음 */
+  .hero-sec {
+    height: 580px !important;
+    margin-top: 60px !important;
+    padding-top: 2vh !important;
+    padding-bottom: 6vh !important;
+    justify-content: center !important;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .sec-portfolio {
+    scroll-snap-align: start;
+  }
+  .hero-body {
+    padding: 0 20px !important;
+    gap: 10px !important;
+  }
+
+  /* 서브텍스트 → 반투명 흰색 */
+  .hero-badge {
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+  }
+
+  /* 헤드라인 */
+  .hero-headline {
+    font-size: clamp(28px, 8.5vw, 40px) !important;
+    letter-spacing: -1px !important;
+  }
+
+  /* 슬라이더 */
+  .hero-slider {
+    margin-top: 4px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3) !important;
+  }
+
+  /* CTA 고정 버튼 → pill 스타일 */
+  .cta-float {
+    left: 0 !important;
+    right: 0 !important;
+    width: fit-content !important;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+    animation: float 2.2s ease-in-out infinite !important;
+    justify-content: center !important;
+    padding: 18px 36px !important;
+    font-size: 18px !important;
+    border-radius: 100px !important;
+    letter-spacing: -0.3px !important;
+  }
+
+  /* 섹션 패딩 축소 */
+  .sec-portfolio { padding: 56px 20px !important; }
+  .sec-pricing   { padding: 64px 16px !important; }
+  .sec-faq       { padding: 64px 20px !important; }
+  .sec-cta       { padding: 80px 20px !important; }
+  .main-footer   { padding: 32px 20px !important; }
+
+  /* CTA 체험하기 버튼 모바일 */
+  .cta-main-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 20px 24px !important;
+    font-size: 17px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 가격 카드 그리드: 모바일 1열 */
+  .sec-pricing [style*='minmax(220px'],
+  .sec-pricing [style*='repeat(3, 1fr)'] {
+    grid-template-columns: 1fr !important;
+  }
+}

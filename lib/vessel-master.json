@@ -1,0 +1,123 @@
+{
+  "vessels": [
+    {
+      "id": "noodle_bowl",
+      "label": "면기",
+      "colors": [
+        {
+          "colorId": "white",
+          "colorLabel": "흰색",
+          "aiPrompt": "white ceramic Korean noodle bowl — wide deep bowl with gently flared rim, white porcelain, traditional Korean style. Reconstruct vessel shape as a standard Korean noodle bowl."
+        },
+        {
+          "colorId": "black",
+          "colorLabel": "검정",
+          "aiPrompt": "matte black ceramic Korean noodle bowl — wide deep bowl with gently flared rim, matte black ceramic, traditional Korean style. Reconstruct vessel shape as a standard Korean noodle bowl."
+        }
+      ]
+    },
+    {
+      "id": "ttukbaegi",
+      "label": "뚝배기",
+      "colors": [
+        {
+          "colorId": "default",
+          "colorLabel": "",
+          "aiPrompt": "traditional Korean earthenware ttukbaegi — dark brown clay pot, rough porous surface, slightly tapered sides, no lid. Reconstruct vessel shape as a standard Korean ttukbaegi stone pot."
+        }
+      ]
+    },
+    {
+      "id": "jeongol_pot",
+      "label": "전골냄비",
+      "colors": [
+        {
+          "colorId": "black",
+          "colorLabel": "",
+          "aiPrompt": "Korean jeongol hot pot — EXACT FIXED DESIGN (do not deviate): perfectly round wide shallow pan, matte black anodized aluminum. Body shape: gently curved bottom that widens toward the top (paella-pan silhouette), sides slope slightly outward, topped with a subtly outward-rolled rounded rim. Two identical arched loop handles — one on the left (9 o'clock) and one on the right (3 o'clock) — attached low on the outer side wall, curving upward in a smooth arch, same matte black metal as the body. No lid, no long handle, no spout. FOOD FILL RULE (mandatory): food and broth must fill the pot to at least 90% of its inner depth — virtually no empty space visible inside the pot."
+        }
+      ]
+    },
+    {
+      "id": "naengmyeon_bowl",
+      "label": "냉면기",
+      "colors": [
+        {
+          "colorId": "silver",
+          "colorLabel": "은색",
+          "aiPrompt": "silver stainless steel Korean naengmyeon bowl — wide shallow bowl with prominently flared outward rim, polished silver stainless steel finish. Reconstruct vessel shape as a traditional Korean cold noodle bowl."
+        },
+        {
+          "colorId": "gold",
+          "colorLabel": "금색",
+          "aiPrompt": "gold-toned stainless steel Korean naengmyeon bowl — wide shallow bowl with prominently flared outward rim, brushed brass/gold-tone finish. Reconstruct vessel shape as a traditional Korean cold noodle bowl."
+        }
+      ]
+    },
+    {
+      "id": "plate",
+      "label": "접시",
+      "colors": [
+        {
+          "colorId": "white",
+          "colorLabel": "흰색",
+          "aiPrompt": "White ceramic dinner plate — round, shallow, clean white porcelain. CRITICAL SIZING RULE: The plate must be only slightly larger than the food portion itself. The food should cover 90–95% of the plate inner surface. The white rim visible around the food must be razor-thin — no wider than a finger's width. Think of the plate as a barely-visible base under the food, not a large empty canvas with food placed in the center. If you can see large areas of white plate around the food → the plate is too big → WRONG."
+        },
+        {
+          "colorId": "black",
+          "colorLabel": "검정",
+          "aiPrompt": "Matte black ceramic dinner plate — round, shallow, matte black finish, no gloss. CRITICAL SIZING RULE: The plate must be only slightly larger than the food portion itself. The food should cover 90–95% of the plate inner surface. The black rim visible around the food must be razor-thin — no wider than a finger's width. Think of the plate as a barely-visible base under the food, not a large empty canvas with food placed in the center. If you can see large areas of black plate around the food → the plate is too big → WRONG."
+        }
+      ]
+    },
+    {
+      "id": "pasta_bowl",
+      "label": "파스타 림볼",
+      "colors": [
+        {
+          "colorId": "white",
+          "colorLabel": "",
+          "aiPrompt": "white ceramic pasta rim bowl — shallow concave center with wide flat elevated rim, white porcelain, Italian fine dining style. Reconstruct vessel shape as a rimmed pasta bowl."
+        }
+      ]
+    },
+    {
+      "id": "flat_plate",
+      "label": "평접시",
+      "colors": [
+        {
+          "colorId": "white",
+          "colorLabel": "화이트",
+          "aiPrompt": "white fine dining flat plate — very flat wide round plate with minimal thin rim, elegant white porcelain, fine dining restaurant style. Reconstruct vessel shape as a wide flat fine dining plate."
+        },
+        {
+          "colorId": "black",
+          "colorLabel": "무광 블랙",
+          "aiPrompt": "matte black fine dining flat plate — very flat wide round plate with minimal thin rim, matte black ceramic, modern fine dining style. Reconstruct vessel shape as a wide flat fine dining plate."
+        }
+      ]
+    },
+    {
+      "id": "wood_board",
+      "label": "우드도마",
+      "colors": [
+        {
+          "colorId": "natural",
+          "colorLabel": "",
+          "aiPrompt": "natural wood serving board — rectangular flat wooden board, warm oak or walnut grain, used as serving platter. Reconstruct as a flat wood board placed on the table surface."
+        }
+      ]
+    },
+    {
+      "id": "foil_pot",
+      "label": "은박 스텐 냄비",
+      "colors": [
+        {
+          "colorId": "silver",
+          "colorLabel": "",
+          "aiPrompt": "round stainless steel pot with silver aluminum foil lining — circular shallow stainless steel pan sitting directly on the table, interior fully lined with silver aluminum foil, Korean dakgalbi/BBQ style. No stand, no burner, no flame shown."
+        }
+      ]
+    }
+  ]
+}
