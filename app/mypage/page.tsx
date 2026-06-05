@@ -915,24 +915,25 @@ function MyPageContent() {
                   </div>
 
                   {/* 배달앱 로고 마퀴 */}
-                  <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '10px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
-                  <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
-                    <div style={{ display: 'flex', gap: '8px', animation: 'marquee-rtl 12s linear infinite', width: 'max-content' }}>
+                  <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '12px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
+                  <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
+                    <div style={{ display: 'flex', gap: '16px', animation: 'marquee-rtl 14s linear infinite', width: 'max-content', alignItems: 'flex-start' }}>
                       {[
-                        { name: '배달의민족', src: '/logos/baemin.png'     },
-                        { name: '쿠팡이츠',   src: '/logos/coupangeats.png'},
-                        { name: '요기요',     src: '/logos/yogiyo.svg'     },
-                        { name: '땡겨요',     src: '/logos/ddanggyeo.svg'  },
-                        { name: '먹깨비',     src: '/logos/mukggaebi.svg'  },
-                        { name: '배달의민족', src: '/logos/baemin.png'     },
-                        { name: '쿠팡이츠',   src: '/logos/coupangeats.png'},
-                        { name: '요기요',     src: '/logos/yogiyo.svg'     },
-                        { name: '땡겨요',     src: '/logos/ddanggyeo.svg'  },
-                        { name: '먹깨비',     src: '/logos/mukggaebi.svg'  },
+                        { name: '배달의민족', size: '1280×960', src: '/logos/baemin.png'      },
+                        { name: '쿠팡이츠',   size: '1080×660', src: '/logos/coupangeats.svg' },
+                        { name: '요기요',     size: '1080×640', src: '/logos/yogiyo.png'      },
+                        { name: '땡겨요',     size: '1080×660', src: '/logos/ddanggyeo.svg'   },
+                        { name: '먹깨비',     size: '800×533',  src: '/logos/mukggaebi.webp'  },
+                        { name: '배달의민족', size: '1280×960', src: '/logos/baemin.png'      },
+                        { name: '쿠팡이츠',   size: '1080×660', src: '/logos/coupangeats.svg' },
+                        { name: '요기요',     size: '1080×640', src: '/logos/yogiyo.png'      },
+                        { name: '땡겨요',     size: '1080×660', src: '/logos/ddanggyeo.svg'   },
+                        { name: '먹깨비',     size: '800×533',  src: '/logos/mukggaebi.webp'  },
                       ].map((logo, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px 6px 8px', borderRadius: '100px', background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', flexShrink: 0 }}>
-                          <img src={logo.src} alt="" style={{ height: '22px', width: '22px', objectFit: 'contain', borderRadius: '5px' }} />
-                          <span style={{ color: '#222', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap' }}>{logo.name}</span>
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0, width: '68px' }}>
+                          <img src={logo.src} alt={logo.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '12px' }} />
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#222', textAlign: 'center', whiteSpace: 'nowrap' }}>{logo.name}</span>
+                          <span style={{ fontSize: '10px', color: '#aaa', textAlign: 'center', whiteSpace: 'nowrap' }}>{logo.size}</span>
                         </div>
                       ))}
                     </div>
