@@ -58,18 +58,45 @@ const BG_CAT_TABS: BgCatTab[] = ['전체', '단색', '타일', '패브릭', '우
 
 async function fileToPhoto(file: File): Promise<FoodPhoto> {
   return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-      resolve({
-        id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        base64: dataUrl.split(',')[1],
-        mime: file.type,
-        preview: dataUrl,
-        isSample: false,
-      })
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const MAX = 1280
+      let w = img.naturalWidth, h = img.naturalHeight
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+        else { w = Math.round(w * MAX / h); h = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve({ id: `photo-${Date.now()}`, base64: '', mime: 'image/jpeg', preview: '', isSample: false }); return }
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string
+          resolve({
+            id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            base64: dataUrl.split(',')[1],
+            mime: 'image/jpeg',
+            preview: dataUrl,
+            isSample: false,
+          })
+        }
+        reader.readAsDataURL(blob)
+      }, 'image/jpeg', 0.85)
     }
-    reader.readAsDataURL(file)
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        resolve({ id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, base64: dataUrl.split(',')[1], mime: file.type, preview: dataUrl, isSample: false })
+      }
+      reader.readAsDataURL(file)
+    }
+    img.src = objectUrl
   })
 }
 

@@ -340,6 +340,7 @@ function MyPageContent() {
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
   const upsellShownRef = useRef(false)
   const [selectedService,     setSelectedService]      = useState<'retouch' | null>(null)
+  const [miniSlideIndex,      setMiniSlideIndex]       = useState(0)
 
   // BasicPlanModal initial options (for "다시 만들기" / regenerate)
   const [modalInitOpts, setModalInitOpts] = useState<{
@@ -488,6 +489,13 @@ function MyPageContent() {
     }
   }, [isGenerating]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Mini landing slideshow auto-advance
+  useEffect(() => {
+    if (selectedService !== 'retouch') return
+    const t = setInterval(() => setMiniSlideIndex(i => (i + 1) % 2), 2500)
+    return () => clearInterval(t)
+  }, [selectedService])
+
   // Shared generation runner — works whether navigating from /v2 or opening modal on this page
   const runGeneration = useCallback((requests: Record<string, unknown>[], token: string) => {
     // Total expected images = sum of platforms per request
@@ -511,7 +519,7 @@ function MyPageContent() {
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(body),
           })
-          const data = await res.json()
+          const data = await res.json().catch(() => ({ error: res.status === 413 ? '이미지가 너무 커요. 더 작은 사진을 사용해주세요.' : `서버 오류 (${res.status})` }))
           if (!res.ok) {
             failed   = true
             errorMsg = data.error || `생성 실패 (${res.status})`
@@ -852,59 +860,99 @@ function MyPageContent() {
 
           {selectedService === 'retouch' ? (
             /* ── 미니 랜딩: 메뉴 리터치 ── */
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '32px 24px 20px', flex: 1 }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--orange)', letterSpacing: '2px', marginBottom: '8px' }}>BASIC PLAN</p>
-                <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px' }}>배달앱 메뉴 제작</h2>
-                <p style={{ color: '#888', fontSize: '14px', marginBottom: '28px' }}>다양한 배경과 플랫폼별 사이즈를 만들어요</p>
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f0ece6', padding: '20px 16px 32px' }}>
+              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
 
-                {/* Before / After */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '28px' }}>
-                  {[{ src: '/noodle-before.jpg', label: 'Before', bg: 'rgba(0,0,0,0.6)' }, { src: '/noodle-after.jpg', label: 'After ✨', bg: 'rgba(196,81,13,0.85)' }].map(({ src, label, bg }) => (
-                    <div key={label} style={{ borderRadius: '14px', overflow: 'hidden', position: 'relative' }}>
-                      <img src={src} alt={label} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-                      <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: bg, color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px' }}>{label}</span>
-                    </div>
+                {/* 이미지 슬라이드 */}
+                <div style={{ position: 'relative', height: '220px', background: '#111', overflow: 'hidden' }}>
+                  {[
+                    { src: '/noodle-before.jpg', label: 'Before' },
+                    { src: '/noodle-after.jpg',  label: 'After ✨' },
+                  ].map(({ src, label }, i) => (
+                    <img
+                      key={src}
+                      src={src}
+                      alt={label}
+                      style={{
+                        position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                        opacity: miniSlideIndex === i ? 1 : 0,
+                        transition: 'opacity 0.7s ease',
+                      }}
+                    />
                   ))}
-                </div>
-
-                {/* 대량 섹션 */}
-                <div style={{ background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.12)', borderRadius: '16px', padding: '20px', marginBottom: '28px' }}>
-                  <p style={{ fontWeight: 800, fontSize: '16px', color: 'var(--black)', marginBottom: '4px' }}>메뉴가 많으신가요?</p>
-                  <p style={{ color: '#888', fontSize: '13px', lineHeight: 1.6, marginBottom: '14px' }}>한 번에 통일된 배경으로 · 최대 10장</p>
-                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '12px', background: '#e8e4df', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <p style={{ color: '#bbb', fontSize: '13px', fontWeight: 600 }}>🎬 GIF 예시</p>
-                  </div>
-                </div>
-
-                {/* 배달앱 로고 마퀴 */}
-                <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '10px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
-                <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 12%, black 88%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 12%, black 88%, transparent)', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', gap: '10px', animation: 'marquee-rtl 14s linear infinite', width: 'max-content' }}>
-                    {[
-                      { name: '배달의민족', bg: '#3ABF8B' },
-                      { name: '쿠팡이츠',   bg: '#C00000' },
-                      { name: '요기요',     bg: '#FA0050' },
-                      { name: '땡겨요',     bg: '#FF6B00' },
-                      { name: '먹깨비',     bg: '#1A1A1A' },
-                      { name: '배달의민족', bg: '#3ABF8B' },
-                      { name: '쿠팡이츠',   bg: '#C00000' },
-                      { name: '요기요',     bg: '#FA0050' },
-                      { name: '땡겨요',     bg: '#FF6B00' },
-                      { name: '먹깨비',     bg: '#1A1A1A' },
-                    ].map((logo, i) => (
-                      <span key={i} style={{ padding: '8px 16px', borderRadius: '100px', background: logo.bg, color: '#fff', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>{logo.name}</span>
+                  <span style={{
+                    position: 'absolute', top: '12px', left: '12px',
+                    background: miniSlideIndex === 0 ? 'rgba(0,0,0,0.6)' : 'rgba(196,81,13,0.9)',
+                    color: '#fff', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
+                    transition: 'background 0.3s',
+                  }}>
+                    {miniSlideIndex === 0 ? 'Before' : 'After ✨'}
+                  </span>
+                  <div style={{ position: 'absolute', bottom: '10px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                    {[0, 1].map(i => (
+                      <div key={i} onClick={() => setMiniSlideIndex(i)} style={{
+                        width: miniSlideIndex === i ? '18px' : '6px', height: '6px', borderRadius: '3px', cursor: 'pointer',
+                        background: miniSlideIndex === i ? '#fff' : 'rgba(255,255,255,0.5)',
+                        transition: 'all 0.3s',
+                      }} />
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* 하단 고정 CTA */}
-              <div style={{ padding: '12px 24px 24px', background: '#fff', borderTop: '1px solid rgba(0,0,0,0.07)' }}>
-                <button
-                  onClick={() => { setSelectedService(null); setModalInitOpts({}); setShowBasicModal(true) }}
-                  style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
-                >만들러 가기 →</button>
+                {/* 텍스트 콘텐츠 */}
+                <div style={{ padding: '24px 22px 20px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--orange)', letterSpacing: '2px', marginBottom: '8px' }}>BASIC PLAN</p>
+                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>배달앱 메뉴 사진<br/>AI로 제작해요</h2>
+                  <p style={{ color: '#888', fontSize: '13px', marginBottom: '24px', lineHeight: 1.6 }}>다양한 배경으로 · 플랫폼별 맞춤 사이즈</p>
+
+                  {/* 대량 섹션 */}
+                  <div style={{ background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.1)', borderRadius: '14px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '28px', flexShrink: 0 }}>📦</span>
+                    <div>
+                      <p style={{ fontWeight: 800, fontSize: '14px', color: 'var(--black)', marginBottom: '2px' }}>메뉴가 많으신가요?</p>
+                      <p style={{ color: '#888', fontSize: '12px', lineHeight: 1.5 }}>한 번에 통일된 배경으로 · 최대 10장</p>
+                    </div>
+                  </div>
+
+                  {/* 배달앱 로고 마퀴 */}
+                  <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '10px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
+                  <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
+                    <div style={{ display: 'flex', gap: '8px', animation: 'marquee-rtl 12s linear infinite', width: 'max-content' }}>
+                      {[
+                        { name: '배달의민족', bg: '#3ABF8B', logoSrc: 'https://static.baemin.com/resources/img/logo.png' },
+                        { name: '쿠팡이츠',   bg: '#C00000', logoSrc: null },
+                        { name: '요기요',     bg: '#FA0050', logoSrc: null },
+                        { name: '땡겨요',     bg: '#FF6B00', logoSrc: null },
+                        { name: '먹깨비',     bg: '#1A1A1A', logoSrc: null },
+                        { name: '배달의민족', bg: '#3ABF8B', logoSrc: 'https://static.baemin.com/resources/img/logo.png' },
+                        { name: '쿠팡이츠',   bg: '#C00000', logoSrc: null },
+                        { name: '요기요',     bg: '#FA0050', logoSrc: null },
+                        { name: '땡겨요',     bg: '#FF6B00', logoSrc: null },
+                        { name: '먹깨비',     bg: '#1A1A1A', logoSrc: null },
+                      ].map((logo, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '100px', background: logo.bg, flexShrink: 0 }}>
+                          {logo.logoSrc && (
+                            <img
+                              src={logo.logoSrc}
+                              alt=""
+                              style={{ height: '14px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                            />
+                          )}
+                          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap' }}>{logo.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div style={{ padding: '4px 22px 22px' }}>
+                  <button
+                    onClick={() => { setSelectedService(null); setModalInitOpts({}); setShowBasicModal(true) }}
+                    style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
+                  >만들러 가기 →</button>
+                </div>
               </div>
             </div>
           ) : (
