@@ -48,30 +48,29 @@ export async function POST(req: NextRequest) {
     const orderId = `${email.replace(/[^a-zA-Z0-9]/g, '_')}_${pkgId || 'custom'}_${Date.now()}`
 
     const params = new URLSearchParams({
-      cmd:         'paymentRequest',
-      userid:      userId,
+      cmd:       'payrequest',
+      userid:    userId,
       key,
       goodname,
-      price:       String(price),
-      recvphone:   recvphone ?? '',
-      feedbackurl: `${BASE_URL}/api/payapp/webhook`,
-      var1:        email,
-      var2:        pkgId,
-      var3:        orderId,
-      var4:        recvphone ?? '',
+      price:     String(price),
+      recvphone: recvphone ?? '',
+      var1:      email,
+      var2:      pkgId,
+      var3:      orderId,
+      var4:      recvphone ?? '',
     })
 
     const res  = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
     const text = await res.text()
 
-    // cmd=paymentRequest 응답: "0\r\n{payurl}\r\n..."
-    const lines = text.split(/\r?\n/).filter(Boolean)
-    if (lines[0] !== '0') {
+    // cmd=payrequest 응답: "state=1&errno=00000&payurl=https://...&..."
+    const result = new URLSearchParams(text)
+    if (result.get('errno') !== '00000') {
       console.error('Payapp error:', text)
-      return NextResponse.json({ error: `페이앱 오류: ${lines[1] ?? text}` }, { status: 400 })
+      return NextResponse.json({ error: `페이앱 오류: ${result.get('errorMessage') ?? text}` }, { status: 400 })
     }
 
-    const payUrl = lines[1]
+    const payUrl = result.get('payurl')
     if (!payUrl) {
       return NextResponse.json({ error: '페이앱 응답에 payurl 없음', raw: text }, { status: 500 })
     }
