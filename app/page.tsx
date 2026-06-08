@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import BasicPlanModal from './components/BasicPlanModal'
 import CoinChargeModal from './components/CoinChargeModal'
+import PhoneVerificationModal from './components/PhoneVerificationModal'
 
 const PLANS = [
   {
@@ -200,6 +201,8 @@ export default function V2HomePage() {
   const [showChargeModal, setShowChargeModal] = useState(false)
   const [basicModal, setBasicModal]   = useState(false)
   const [loginModal, setLoginModal]   = useState(false)
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false)
+  const [hasPhone,        setHasPhone]        = useState(true)
   const [loginReturnTo, setLoginReturnTo] = useState('/mypage')
   const [bannerVisible, setBannerVisible] = useState(true)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
@@ -254,6 +257,17 @@ export default function V2HomePage() {
         setBasicModal(true)
       }
     } catch {}
+
+    // Check phone registration after login
+    if (loggedIn && token) {
+      fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(d => {
+          setHasPhone(!!d.hasPhone)
+          if (!d.hasPhone) setShowPhoneVerify(true)
+        })
+        .catch(() => {})
+    }
   }, [])
 
   // Fetch gem balance when token is available
@@ -267,6 +281,7 @@ export default function V2HomePage() {
 
   const handleOpenBasic = () => {
     if (isLoggedIn) {
+      if (!hasPhone) { setShowPhoneVerify(true); return }
       setBasicModal(true)
     } else {
       setLoginReturnTo('/mypage')
@@ -276,6 +291,7 @@ export default function V2HomePage() {
 
   const handleChargeClick = () => {
     if (isLoggedIn) {
+      if (!hasPhone) { setShowPhoneVerify(true); return }
       setShowChargeModal(true)
     } else {
       setLoginReturnTo('/v2')
@@ -287,6 +303,13 @@ export default function V2HomePage() {
 
   return (
     <div style={{ background: 'var(--cream)', minHeight: '100vh' }}>
+      {showPhoneVerify && userToken && (
+        <PhoneVerificationModal
+          token={userToken}
+          onVerified={() => { setHasPhone(true); setShowPhoneVerify(false) }}
+          onSkip={() => setShowPhoneVerify(false)}
+        />
+      )}
       {basicModal && <BasicPlanModal onClose={() => setBasicModal(false)} />}
       {showChargeModal && userEmail && (
         <CoinChargeModal
@@ -387,7 +410,7 @@ export default function V2HomePage() {
           <a    href="#cases"      style={{ fontSize: '16px', color: 'var(--black)', textDecoration: 'none', fontWeight: 500 }}>제작사례</a>
           <a    href="#pricing"    style={{ fontSize: '16px', color: 'var(--black)', textDecoration: 'none', fontWeight: 500 }}>가격</a>
           {isLoggedIn ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="nav-user-area" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '14px', color: '#555', fontWeight: 500 }}>{userName || userEmail?.split('@')[0]} 님</span>
               <button
                 onClick={() => setShowChargeModal(true)}
@@ -400,6 +423,7 @@ export default function V2HomePage() {
           ) : (
             <button
               onClick={() => { setLoginReturnTo('/mypage'); setLoginModal(true) }}
+              className="nav-login-btn"
               style={{ fontSize: '15px', color: 'var(--orange)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >로그인</button>
           )}
