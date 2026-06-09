@@ -109,6 +109,14 @@ const CASES = [
   },
 ]
 
+const PLATFORMS = [
+  { name: '배달의민족', src: '/logos/baemin.png',      size: '1280×960' },
+  { name: '쿠팡이츠',   src: '/logos/coupangeats.svg', size: '1080×660' },
+  { name: '요기요',     src: '/logos/yogiyo.png',      size: '1080×640' },
+  { name: '땡겨요',     src: '/logos/ddanggyeo.svg',   size: '1080×660' },
+  { name: '먹깨비',     src: '/logos/mukggaebi.webp',  size: '800×533'  },
+]
+
 const FAQ = [
   { q: '메뉴사진을 잘 찍는 방법이 있나요?', a: '핵심은 세 가지예요. ① 밝은 곳에서 흔들리지 않게 ② 음식이 화면 가득 차게 가까이서 찍기 ③ 스마트폰을 가로로 돌려서 촬영 — AI 결과물이 가로(3:2) 비율로 생성되기 때문에 가로 사진일수록 훨씬 자연스럽게 나와요. 완벽하지 않아도 메뉴랩에서 맛있어 보이게 리터치해드려요.' },
   { q: '스마트폰으로 찍어도 괜찮나요?', a: '물론이죠! 요즘 스마트폰 카메라 성능이 좋아서 충분해요. 단, 스마트폰을 가로로 돌려서 촬영해주세요 — AI 결과물은 가로(3:2) 비율로 생성되기 때문에 가로 사진을 업로드하시면 최상의 결과를 얻을 수 있어요. 어두운 곳에서 플래시 켜고 촬영한 사진은 활용이 어렵습니다. 배달앱·플레이스 리뷰 사진을 업로드하셔도 됩니다!' },
@@ -710,58 +718,75 @@ export default function V2HomePage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section style={{ padding: '80px 5vw', background: '#fff', position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: '780px', margin: '0 auto' }}>
-          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--orange)', letterSpacing: '2px', marginBottom: '12px' }}>HOW IT WORKS</p>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: '40px' }}>어떻게 시작할까요?</h2>
+      <section style={{ background: '#f0eeeb', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
 
-          {/* 베이직 플랜 */}
-          <div style={{ background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.15)', borderRadius: '20px', padding: '28px 28px 24px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-              <span style={{ background: 'var(--orange)', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.5px' }}>베이직 플랜</span>
-              <span style={{ fontSize: '14px', color: '#888', fontWeight: 500 }}>즉시 결과 확인 · AI 자동 생성</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0' }}>
-              {[
-                { emoji: '📷', label: '음식사진 업로드' },
-                { emoji: '🖼️', label: '배경 선택 4종' },
-                { emoji: '✨', label: 'AI 생성' },
-                { emoji: '⬇', label: '다운로드' },
-              ].map((item, i, arr) => (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-                  {i < arr.length - 1 && (
-                    <div style={{ position: 'absolute', top: '20px', left: '60%', right: '-10%', height: '2px', background: 'rgba(196,81,13,0.25)' }} />
-                  )}
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fff', border: '1.5px solid rgba(196,81,13,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '10px', zIndex: 1 }}>{item.emoji}</div>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--black)', textAlign: 'center', lineHeight: 1.4 }}>{item.label}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={handleOpenBasic}
-              style={{ marginTop: '24px', width: '100%', padding: '13px', borderRadius: '12px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '15px', border: 'none', cursor: 'pointer' }}
-            >
-              지금 바로 시작하기 →
-            </button>
+          {/* 헤드라인 2열 */}
+          <div style={{ paddingTop: '80px', paddingBottom: '40px', borderBottom: '0.5px solid rgba(0,0,0,0.1)' }}>
+            <p style={{ fontSize: '65px', fontWeight: 800, letterSpacing: '-0.03em', color: '#111', lineHeight: 1 }}>process</p>
           </div>
 
-          {/* 일반 주문 플랜 */}
-          <p style={{ fontSize: '13px', fontWeight: 700, color: '#aaa', letterSpacing: '1px', marginBottom: '24px' }}>프리미엄 · 모음컷 주문 방식</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-            {[
-              { step: '01', title: '사진 + 옵션 선택', desc: '원본 사진을 업로드하고 분위기(밝음/어둠)와 제작 방식을 고르세요.' },
-              { step: '02', title: '계좌이체 입금', desc: '접수 완료 후 안내된 계좌로 입금하시면 작업이 시작됩니다.' },
-              { step: '03', title: '3일 이내 제작 완료', desc: '수작업으로 정성스럽게 만들어드립니다.' },
-              { step: '04', title: '카카오톡으로 전달', desc: '완성된 결과물을 카카오톡 채널 + 마이페이지로 전달해드립니다.' },
-            ].map((item, i, arr) => (
-              <div key={i} style={{ display: 'flex', gap: '20px', paddingBottom: i < arr.length - 1 ? '32px' : '0', position: 'relative' }}>
-                {i < arr.length - 1 && (
-                  <div style={{ position: 'absolute', left: '19px', top: '40px', bottom: 0, width: '2px', background: 'rgba(0,0,0,0.07)' }} />
-                )}
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--black)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '13px', flexShrink: 0, zIndex: 1 }}>{item.step}</div>
-                <div style={{ paddingTop: '8px' }}>
-                  <h3 style={{ fontWeight: 800, fontSize: '17px', marginBottom: '6px' }}>{item.title}</h3>
-                  <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6 }}>{item.desc}</p>
+          <div>
+            {/* Step 1 */}
+            <div className="process-row reveal-up">
+              <div>
+                <p style={{ fontSize: '64px', fontWeight: 200, color: '#111', letterSpacing: '-0.04em', lineHeight: 1 }}>01</p>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginTop: '8px' }}>사진 업로드</h3>
+              </div>
+              <div>
+                <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7 }}>
+                  스마트폰으로 찍은 사진 그대로 올리세요.<br />
+                  밝은 조명에서 음식 전체가 담긴 사진이면 충분해요.<br />
+                  별도 장비나 편집 실력은 필요 없어요.
+                </p>
+                <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '12px' }}>✔ 자연광 OK&nbsp;&nbsp;&nbsp;✔ 스마트폰 OK&nbsp;&nbsp;&nbsp;✔ 무편집 OK</p>
+              </div>
+            </div>
+            {/* Step 2 */}
+            <div className="process-row reveal-up" data-delay="1">
+              <div>
+                <p style={{ fontSize: '64px', fontWeight: 200, color: '#111', letterSpacing: '-0.04em', lineHeight: 1 }}>02</p>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginTop: '8px' }}>옵션 선택</h3>
+              </div>
+              <div>
+                <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7 }}>
+                  배경, 플랫폼, 구도를 선택하세요.<br />
+                  배달의민족, 쿠팡이츠, 네이버 플레이스 —<br />
+                  어디에 올릴지 맞춰서 만들어드려요.
+                </p>
+                <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '12px' }}>✔ 배달의민족&nbsp;&nbsp;&nbsp;✔ 쿠팡이츠&nbsp;&nbsp;&nbsp;✔ 네이버 플레이스</p>
+              </div>
+            </div>
+            {/* Step 3 */}
+            <div className="process-row reveal-up" data-delay="2">
+              <div>
+                <p style={{ fontSize: '64px', fontWeight: 200, color: '#111', letterSpacing: '-0.04em', lineHeight: 1 }}>03</p>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginTop: '8px' }}>AI 생성 완료</h3>
+              </div>
+              <div>
+                <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7 }}>
+                  30초 만에 전문 메뉴 사진이 완성됩니다.<br />
+                  스튜디오 촬영 없이, 편집 실력 없이도<br />
+                  누구나 프로급 결과물을 받을 수 있어요.
+                </p>
+                <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '12px' }}>✔ 30초 완성&nbsp;&nbsp;&nbsp;✔ 고해상도 출력&nbsp;&nbsp;&nbsp;✔ 즉시 다운로드</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        {/* Platform marquee */}
+        <div style={{ textAlign: 'center', paddingTop: '8px', paddingBottom: '16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 400, color: '#999', letterSpacing: '0.12em' }}>지원 플랫폼</p>
+        </div>
+        <div style={{ overflow: 'hidden', padding: '0 0 80px' }}>
+          <div className="pl-marquee-band">
+            {[...PLATFORMS, ...PLATFORMS, ...PLATFORMS, ...PLATFORMS].map((p, i) => (
+              <div key={i} style={{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '280px', flexShrink: 0, gap: '0px' }}>
+                <img src={p.src} alt={p.name} style={{ width: '120px', height: '60px', objectFit: 'contain', flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '16px', color: '#111', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.name}</div>
+                  <div style={{ fontSize: '13px', color: 'rgba(0,0,0,0.4)', fontWeight: 400, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.size}</div>
                 </div>
               </div>
             ))}

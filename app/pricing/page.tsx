@@ -263,8 +263,8 @@ export default function PricingPage() {
         <section id="pricing" className="sec-pricing" style={{ padding: '100px 5vw', background: 'var(--cream)', position: 'relative', zIndex: 1 }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--orange)', letterSpacing: '2px', marginBottom: '12px' }}>PRICING</p>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, letterSpacing: '-1px', color: 'var(--black)', lineHeight: 1.2, marginBottom: '12px' }}>필요한 컷만,<br />합리적으로</h2>
-            <p style={{ color: '#888', fontSize: '15px', marginBottom: '28px' }}>정기 구독제 · 구독 즉시 젬 지급 · 언제든 해지 가능</p>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, letterSpacing: '-1px', color: 'var(--black)', lineHeight: 1.2, marginBottom: '12px' }}>스튜디오 촬영 비용의 5%</h2>
+            <p style={{ color: '#888', fontSize: '15px', marginBottom: '28px' }}>배달앱 메뉴 사진을 직접 만드세요</p>
 
             {/* Countdown Timer */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>

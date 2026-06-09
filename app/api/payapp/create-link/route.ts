@@ -48,16 +48,17 @@ export async function POST(req: NextRequest) {
     const orderId = `${email.replace(/[^a-zA-Z0-9]/g, '_')}_${pkgId || 'custom'}_${Date.now()}`
 
     const params = new URLSearchParams({
-      cmd:       'payrequest',
-      userid:    userId,
+      cmd:         'payrequest',
+      userid:      userId,
       key,
       goodname,
-      price:     String(price),
-      recvphone: recvphone ?? '',
-      var1:      email,
-      var2:      pkgId,
-      var3:      orderId,
-      var4:      recvphone ?? '',
+      price:       String(price),
+      recvphone:   recvphone ?? '',
+      feedbackurl: `${BASE_URL}/api/payapp/webhook`,
+      var1:        email,
+      var2:        pkgId,
+      var3:        orderId,
+      var4:        recvphone ?? '',
     })
 
     const res  = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })

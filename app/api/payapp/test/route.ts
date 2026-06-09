@@ -52,16 +52,17 @@ export async function GET(req: NextRequest) {
   const orderId      = `test_${pkgKey}_${Date.now()}`
 
   const params = new URLSearchParams({
-    cmd:       'payrequest',
-    userid:    userId,
+    cmd:         'payrequest',
+    userid:      userId,
     key,
-    goodname:  pkg.label,
-    price:     String(pkg.won),
-    recvphone: cleanedPhone,
-    var1:      email,
-    var2:      pkgKey,
-    var3:      orderId,
-    var4:      cleanedPhone,
+    goodname:    pkg.label,
+    price:       String(pkg.won),
+    recvphone:   cleanedPhone,
+    feedbackurl: `${BASE_URL}/api/payapp/webhook`,
+    var1:        email,
+    var2:        pkgKey,
+    var3:        orderId,
+    var4:        cleanedPhone,
   })
 
   const res     = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })

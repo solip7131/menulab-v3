@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     params.forEach((v, k) => { rawDebug[k] = v })
     await supabase.from('credit_transactions').insert({
       user_email:  'webhook_debug',
-      type:        'debug',
+      type:        'charge',
       amount:      0,
       description: JSON.stringify(rawDebug),
     }).then(({ error }) => { if (error) console.error('debug log failed:', error.message) })
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const payseq   = params.get('payseq')     // 결제 일련번호
 
     // 결제 완료 상태 체크 (state=1 또는 pay_state=2)
-    const isPaid = state === '1' || payState === '2'
+    const isPaid = state === '1' || payState === '2' || payState === '4' || payState === '8'
     if (!isPaid) {
       console.log('payapp webhook: not paid', { state, payState })
       return new NextResponse('ok', { status: 200 })

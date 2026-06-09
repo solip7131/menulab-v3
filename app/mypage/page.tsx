@@ -338,6 +338,7 @@ function MyPageContent() {
   const [pendingDownloadId,   setPendingDownloadId]    = useState<string | null>(null)
   const [showCollectionInfo,  setShowCollectionInfo]   = useState(false)
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
+  const [showGuideModal,      setShowGuideModal]       = useState(false)
   const upsellShownRef = useRef(false)
   const [selectedService,     setSelectedService]      = useState<'retouch' | null>(null)
   const [miniSlideIndex,      setMiniSlideIndex]       = useState(0)
@@ -740,7 +741,13 @@ function MyPageContent() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
+          <button
+            onClick={() => setShowGuideModal(true)}
+            style={{ fontSize: '12px', fontWeight: 700, color: '#555', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '100px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >사진 업로드 가이드</button>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px', color: '#888', fontWeight: 600 }}>{displayName} 님</span>
           <button
@@ -1095,6 +1102,61 @@ function MyPageContent() {
       )}
 
       {/* 업셀 팝업 */}
+      {showGuideModal && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setShowGuideModal(false) }}
+          style={{ position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', padding: '16px' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '400px', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.3)' }}>
+            {/* 헤더 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px 0' }}>
+              <p style={{ fontWeight: 800, fontSize: '16px', color: '#222' }}>사진 업로드 가이드</p>
+              <button onClick={() => setShowGuideModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#888', lineHeight: 1 }}>×</button>
+            </div>
+            {/* 내용 */}
+            <div style={{ padding: '16px 22px 8px' }}>
+              <p style={{ fontWeight: 800, fontSize: '17px', marginBottom: '16px', color: '#222', lineHeight: 1.4 }}>
+                메뉴사진의 에이스가 될 원본 사진 촬영방법입니다
+              </p>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                {['/예시1.png', '/예시2.png'].map((src, i) => (
+                  <div key={i} style={{ flex: 1, aspectRatio: '1/1', borderRadius: '10px', overflow: 'hidden', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={src} alt={`예시${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: '#f5f5f5', borderRadius: '16px', padding: '16px', marginBottom: '14px' }}>
+                <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '12px', color: '#2e7d32', display: 'flex', alignItems: 'center', gap: '6px' }}><span>✔</span><span>좋아요</span></p>
+                {['자연광 또는 밝은 조명에서 찍은 사진', '음식을 담은 그릇 전체가 보이는 사진', '흔들리지 않고 선명하게 찍힌 사진', '토핑과 재료 구분이 잘 되는 사진'].map((text, i, arr) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? '8px' : 0 }}>
+                    <span style={{ fontSize: '13px', color: '#111', lineHeight: '20px', flexShrink: 0 }}>•</span>
+                    <span style={{ fontSize: '13px', color: '#333', lineHeight: '20px' }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: '#f5f5f5', borderRadius: '16px', padding: '16px', marginBottom: '14px' }}>
+                <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '12px', color: '#c62828', display: 'flex', alignItems: 'center', gap: '6px' }}><span>✘</span><span>안돼요</span></p>
+                {['어두운 곳에서 플래시 촬영한 사진', '음식이나 접시가 테두리에서 잘린 사진', '화질이 지나치게 낮은 사진', 'AI로 이미 제작한 사진'].map((text, i, arr) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? '8px' : 0 }}>
+                    <span style={{ fontSize: '13px', color: '#111', lineHeight: '20px', flexShrink: 0 }}>•</span>
+                    <span style={{ fontSize: '13px', color: '#333', lineHeight: '20px' }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: '12px', color: '#7a5c00', lineHeight: 1.6, textAlign: 'center', marginBottom: '16px' }}>
+                가이드에 맞지 않는 사진을 업로드할 경우<br />결과가 부자연스럽거나 배달앱 검수에서 반려될 수 있어요.
+              </p>
+            </div>
+            <div style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid rgba(0,0,0,0.07)', padding: '12px 22px 16px' }}>
+              <button
+                onClick={() => setShowGuideModal(false)}
+                style={{ width: '100%', padding: '15px', borderRadius: '12px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer' }}
+              >확인했어요</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showUpsellModal && (
         <div
           onClick={e => { if (e.target === e.currentTarget) setShowUpsellModal(false) }}
