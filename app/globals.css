@@ -297,6 +297,15 @@ html { overscroll-behavior-y: none; }
   .services-section,
   .sec-faq,
   .sec-cta { padding: 40px 0 !important; }
+  .pl-marquee-item {
+    flex-direction: column !important;
+    width: 160px !important;
+    gap: 6px !important;
+  }
+  .pl-marquee-item img {
+    width: 80px !important;
+    height: 40px !important;
+  }
 }
 
 /* ── Portfolio grid ────────────────────────────────────── */

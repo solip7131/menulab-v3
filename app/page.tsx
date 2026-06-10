@@ -559,7 +559,7 @@ export default function HomePage() {
         <div style={{ overflow: 'hidden', padding: '0 0 40px' }}>
           <div className="pl-marquee-band">
             {[...PLATFORMS, ...PLATFORMS, ...PLATFORMS, ...PLATFORMS].map((p, i) => (
-              <div key={i} style={{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '280px', flexShrink: 0, gap: '0px' }}>
+              <div key={i} className="pl-marquee-item" style={{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '280px', flexShrink: 0, gap: '0px' }}>
                 <img src={p.src} alt={p.name} style={{ width: '120px', height: '60px', objectFit: 'contain', flexShrink: 0 }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ fontSize: '16px', color: '#111', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.name}</div>
