@@ -669,7 +669,7 @@ function MyPageContent() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)', padding: '24px' }}>
         <div style={{ width: '100%', maxWidth: '360px', animation: 'fadeUp 0.4s ease' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '40px', width: 'auto' }} /></Link>
+            <Link href="/"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '40px', width: 'auto' }} /></Link>
           </div>
           <div style={{ background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', background: '#111' }}>
@@ -743,7 +743,7 @@ function MyPageContent() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         {/* 로고 */}
-        <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
+        <Link href="/"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
 
         {/* 데스크탑 우측 */}
         {!isMobile && (
