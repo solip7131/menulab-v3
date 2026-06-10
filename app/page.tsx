@@ -485,15 +485,15 @@ export default function HomePage() {
             <div ref={statsRef} className="stats-grid">
               {STATS.map((stat, i) => (
                 <div key={i} className={`stat-item${statsVisible ? ' triggered' : ''}`}>
-                  <div className="stat-icon" style={{ width: '173px', height: '173px', marginBottom: '4px' }}>
-                    <img src={stat.icon} alt="" style={{ width: '173px', height: '173px', objectFit: 'contain', display: 'block' }} />
+                  <div className="stat-icon" style={{ width: '156px', height: '156px', marginBottom: '4px' }}>
+                    <img src={stat.icon} alt="" style={{ width: '156px', height: '156px', objectFit: 'contain', display: 'block' }} />
                   </div>
                   <div className="stat-num" style={{ fontSize: '80px', fontWeight: 300, letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap' }}>
                     <StatCounter to={stat.to} suffix={stat.suffix} />
                   </div>
                   <div className="stat-label" style={{ marginTop: '20px' }}>
                     <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', marginBottom: '6px', whiteSpace: 'nowrap' }}>{stat.label}</div>
-                    <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', lineHeight: 1.65, whiteSpace: 'nowrap' }}>{stat.desc}</div>
+                    <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', lineHeight: 1.35, whiteSpace: 'nowrap' }}>{stat.desc}</div>
                   </div>
                 </div>
               ))}
