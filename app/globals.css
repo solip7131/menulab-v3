@@ -338,6 +338,9 @@ html { overscroll-behavior-y: none; }
   .main-footer   { padding: 28px 20px !important; }
 }
 
+.hero-headline-desktop { display: block; }
+.hero-headline-mobile  { display: none; }
+
 /* Hero slider: 모바일 4:3 비율 고정, 데스크탑 남은 높이 채움 */
 .hero-compare {
   aspect-ratio: 16/9;
@@ -409,6 +412,8 @@ html { overscroll-behavior-y: none; }
     font-size: clamp(28px, 8.5vw, 40px) !important;
     letter-spacing: -1px !important;
   }
+  .hero-headline-desktop { display: none !important; }
+  .hero-headline-mobile  { display: block !important; }
 
   /* 슬라이더 */
   .hero-slider {

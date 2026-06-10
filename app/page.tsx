@@ -423,8 +423,13 @@ export default function HomePage() {
         <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '22vh', paddingBottom: '6vh', marginTop: 68 }}>
           <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '860px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px' }}>
             <div style={{ width: 'fit-content', maxWidth: '100%' }}>
-              <h1 className="hero-headline" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontSize: 'clamp(32px, 5.2vw, 64px)', fontWeight: 700, lineHeight: 1.45, letterSpacing: '-1.5px', color: '#111', whiteSpace: 'nowrap', margin: 0 }}>
+              {/* 데스크탑 헤드라인 */}
+              <h1 className="hero-headline hero-headline-desktop" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontSize: 'clamp(32px, 5.2vw, 64px)', fontWeight: 700, lineHeight: 1.45, letterSpacing: '-1.5px', color: '#111', whiteSpace: 'nowrap', margin: 0 }}>
                 스마트폰 사진을 <span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로
+              </h1>
+              {/* 모바일 헤드라인 */}
+              <h1 className="hero-headline hero-headline-mobile" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontWeight: 700, lineHeight: 1.45, letterSpacing: '-1.5px', color: '#111', margin: 0 }}>
+                스마트 사진을<br /><span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로
               </h1>
               <p style={{ animation: 'fadeDown 0.7s ease 0.15s forwards', opacity: 0, textAlign: 'right', fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 400, color: '#111', marginTop: '10px', letterSpacing: '-0.3px' }}>내 매장이 돋보이는 이유, 메뉴랩</p>
             </div>
