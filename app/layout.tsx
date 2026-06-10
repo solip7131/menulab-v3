@@ -16,6 +16,7 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         <link rel="preload" href="/hero-bg.jpg" as="image" fetchPriority="high" />
+        <link rel="stylesheet" href="https://use.typekit.net/ouk6aqt.css" />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
