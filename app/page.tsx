@@ -460,12 +460,12 @@ export default function HomePage() {
 
         {/* ── Gem gift banner ── */}
         <div style={{ padding: 'clamp(120px,18vh,240px) 0 clamp(120px,18vh,240px)', overflow: 'hidden', background: '#fff' }}>
-          <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+          <div className="gem-banner-inner" style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
             <p className="try-now-text" style={{ position: 'absolute', bottom: '0', left: 'calc(clamp(24px,6vw,120px) + 160px)', fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, whiteSpace: 'nowrap' }}>Try now!</p>
-            <div style={{ flex: '0 0 auto', transform: 'translateX(-50%)', marginLeft: '0' }}>
+            <div className="gem-banner-image" style={{ flex: '0 0 auto', transform: 'translateX(-50%)', marginLeft: '0' }}>
               <img src="/gem.png" alt="" className="gem-img" style={{ width: 'clamp(420px, 46vw, 714px)', height: 'auto', display: 'block' }} />
             </div>
-            <div style={{ textAlign: 'right', maxWidth: '520px', flexShrink: 0 }}>
+            <div className="gem-banner-text" style={{ textAlign: 'right', maxWidth: '520px', flexShrink: 0 }}>
               <p style={{ fontSize: 'clamp(13px, 1.6vw, 22px)', fontWeight: 400, letterSpacing: '-0.02em', color: '#111', lineHeight: 1.2, margin: '0 0 0.5em' }}>
                 외식업 프랜차이즈 브랜딩 전문가의 안목을 녹여낸 메뉴랩에서,
               </p>

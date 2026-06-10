@@ -424,6 +424,38 @@ html { overscroll-behavior-y: none; }
   .try-now-text {
     font-size: 32px !important;
     white-space: nowrap !important;
+    position: static !important;
+    display: block !important;
+    text-align: center !important;
+    margin-bottom: 8px !important;
+  }
+
+  .gem-banner-inner {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 24px !important;
+  }
+
+  .gem-banner-image {
+    transform: none !important;
+    margin: 0 !important;
+    order: 1 !important;
+  }
+
+  .gem-banner-image .gem-img {
+    width: 72vw !important;
+    max-width: 320px !important;
+  }
+
+  .gem-banner-text {
+    text-align: center !important;
+    max-width: 100% !important;
+    flex-shrink: 1 !important;
+    order: 2 !important;
+  }
+
+  .gem-banner-text p {
+    font-size: 14px !important;
   }
 
   .hero-marquee-wrap {
