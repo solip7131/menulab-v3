@@ -68,6 +68,74 @@ const STATS = [
   { to: 5000, suffix: '+ pics', label: '지금까지 만들어진 메뉴 사진', desc: '실제 사장님들이 사용한 결과물', icon: '/camera.png' },
 ]
 
+function PlatformMarquee() {
+  const bandRef = useRef<HTMLDivElement>(null)
+  const drag = useRef({ active: false, startX: 0, baseX: 0 })
+
+  const getX = () => {
+    const el = bandRef.current
+    if (!el) return 0
+    return new DOMMatrix(getComputedStyle(el).transform).m41
+  }
+
+  const onStart = (clientX: number) => {
+    const el = bandRef.current
+    if (!el) return
+    const x = getX()
+    drag.current = { active: true, startX: clientX, baseX: x }
+    el.style.animationPlayState = 'paused'
+    el.style.transform = `translateX(${x}px)`
+  }
+
+  const onMove = (clientX: number) => {
+    if (!drag.current.active || !bandRef.current) return
+    const dx = clientX - drag.current.startX
+    bandRef.current.style.transform = `translateX(${drag.current.baseX + dx}px)`
+  }
+
+  const onEnd = (clientX: number) => {
+    if (!drag.current.active || !bandRef.current) return
+    drag.current.active = false
+    const el = bandRef.current
+    const dx = clientX - drag.current.startX
+    const finalX = drag.current.baseX + dx
+    const animDist = el.scrollWidth * 0.25
+    let pos = finalX % (-animDist)
+    if (pos > 0) pos -= animDist
+    const progress = Math.abs(pos) / animDist
+    el.style.animationDelay = `${-(progress * 22)}s`
+    el.style.transform = ''
+    el.style.animationPlayState = 'running'
+  }
+
+  return (
+    <div style={{ overflow: 'hidden', padding: '0 0 40px', cursor: 'grab' }}>
+      <div
+        ref={bandRef}
+        className="pl-marquee-band"
+        onMouseDown={e => onStart(e.clientX)}
+        onMouseMove={e => onMove(e.clientX)}
+        onMouseUp={e => onEnd(e.clientX)}
+        onMouseLeave={e => { if (drag.current.active) onEnd(e.clientX) }}
+        onTouchStart={e => onStart(e.touches[0].clientX)}
+        onTouchMove={e => { e.preventDefault(); onMove(e.touches[0].clientX) }}
+        onTouchEnd={e => onEnd(e.changedTouches[0].clientX)}
+        style={{ userSelect: 'none', touchAction: 'none' }}
+      >
+        {[...PLATFORMS, ...PLATFORMS, ...PLATFORMS, ...PLATFORMS].map((p, i) => (
+          <div key={i} className="pl-marquee-item" style={{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '280px', flexShrink: 0, gap: '0px' }}>
+            <img src={p.src} alt={p.name} style={{ width: '120px', height: '60px', objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '16px', color: '#111', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.name}</div>
+              <div style={{ fontSize: '13px', color: 'rgba(0,0,0,0.4)', fontWeight: 400, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.size}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ImageCompareSlider() {
   const [pos, setPos] = useState(50)
   const containerRef  = useRef<HTMLDivElement>(null)
@@ -556,19 +624,7 @@ export default function HomePage() {
 
         </div>
         {/* Platform marquee */}
-        <div style={{ overflow: 'hidden', padding: '0 0 40px' }}>
-          <div className="pl-marquee-band">
-            {[...PLATFORMS, ...PLATFORMS, ...PLATFORMS, ...PLATFORMS].map((p, i) => (
-              <div key={i} className="pl-marquee-item" style={{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '280px', flexShrink: 0, gap: '0px' }}>
-                <img src={p.src} alt={p.name} style={{ width: '120px', height: '60px', objectFit: 'contain', flexShrink: 0 }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '16px', color: '#111', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.name}</div>
-                  <div style={{ fontSize: '13px', color: 'rgba(0,0,0,0.4)', fontWeight: 400, whiteSpace: 'nowrap', lineHeight: 1.2 }}>{p.size}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <PlatformMarquee />
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px) 48px', textAlign: 'right' }}>
           <p style={{ fontSize: '12px', fontWeight: 400, color: '#999', letterSpacing: '0.12em' }}>지원 플랫폼</p>
         </div>
