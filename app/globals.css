@@ -289,8 +289,8 @@ html { overscroll-behavior-y: none; }
   .stat-item.triggered .stat-icon  { animation-duration: 1.2s !important; }
   .stat-item.triggered .stat-num   { animation-duration: 3.2s !important; }
   .stat-item.triggered .stat-label { animation-duration: 3.8s !important; }
-  .stats-section { padding-bottom: 48px !important; }
-  .process-headline-wrap { padding-top: 48px !important; }
+  .stats-section { padding-bottom: 40px !important; }
+  .process-headline-wrap { padding-top: 40px !important; }
 }
 
 /* ── Portfolio grid ────────────────────────────────────── */
