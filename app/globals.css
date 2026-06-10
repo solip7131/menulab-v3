@@ -383,7 +383,7 @@ html { overscroll-behavior-y: none; }
 
   /* HERO — 헤더 아래부터 시작, 픽셀 고정으로 address bar 영향 없음 */
   .hero-sec {
-    height: 580px !important;
+    height: 500px !important;
     margin-top: 48px !important;
     padding-top: 2vh !important;
     padding-bottom: 6vh !important;
