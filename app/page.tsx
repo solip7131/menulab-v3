@@ -7,12 +7,12 @@ import CoinChargeModal from './components/CoinChargeModal'
 import PhoneVerificationModal from './components/PhoneVerificationModal'
 
 const PF_ITEMS = [
-  { cat: 'korean',   ko: '한식', name: '김치말이냉국수', bg: '우드 테이블',    before: 'https://i.ibb.co/qK9VJv9/image.png',                                     after: 'https://i.ibb.co/xK5Pjg2h/12.png' },
-  { cat: 'japanese', ko: '일식', name: '연어 사시미',    bg: '다크 슬레이트',  before: 'https://i.ibb.co/YFDSdrdG/before.png',                                   after: 'https://i.ibb.co/QFv2RLW0/after.png' },
-  { cat: 'snack',    ko: '분식', name: '국물 떡볶이',    bg: '스튜디오 블랙',  before: 'https://i.ibb.co/vxDm2vrx/Kakao-Talk-20260124-144350686-01.png',          after: 'https://i.ibb.co/1J0wh6dW/01.jpg' },
-  { cat: 'korean',   ko: '한식', name: '샐러드볼',       bg: '내추럴 린넨',    before: 'https://i.ibb.co/dJjyr7vC/jpg.png',                                       after: 'https://i.ibb.co/mrCMBYhD/18.png' },
-  { cat: 'snack',    ko: '분식', name: '국물 떡볶이',    bg: '배경 · 스타일 변경', before: 'https://i.ibb.co/vxDm2vrx/Kakao-Talk-20260124-144350686-01.png',     after: 'https://i.ibb.co/nNW2kjBC/03.jpg' },
-  { cat: 'korean',   ko: '한식', name: '샐러드볼',       bg: '배경 교체 2',    before: 'https://i.ibb.co/dJjyr7vC/jpg.png',                                       after: 'https://i.ibb.co/Mxpzc8TP/21.png' },
+  { cat: 'korean',   ko: '한식', name: '김치말이냉국수', bg: '우드 테이블',        after: 'https://i.ibb.co/xK5Pjg2h/12.png' },
+  { cat: 'japanese', ko: '일식', name: '연어 사시미',    bg: '다크 슬레이트',      after: 'https://i.ibb.co/QFv2RLW0/after.png' },
+  { cat: 'snack',    ko: '분식', name: '국물 떡볶이',    bg: '스튜디오 블랙',      after: 'https://i.ibb.co/1J0wh6dW/01.jpg' },
+  { cat: 'korean',   ko: '한식', name: '샐러드볼',       bg: '내추럴 린넨',        after: 'https://i.ibb.co/mrCMBYhD/18.png' },
+  { cat: 'snack',    ko: '분식', name: '국물 떡볶이',    bg: '배경 · 스타일 변경', after: 'https://i.ibb.co/nNW2kjBC/03.jpg' },
+  { cat: 'korean',   ko: '한식', name: '샐러드볼',       bg: '배경 교체 2',        after: 'https://i.ibb.co/Mxpzc8TP/21.png' },
 ]
 
 const PF_TABS = [
@@ -181,39 +181,10 @@ function StatCounter({ to, suffix }: { to: number; suffix: string }) {
   )
 }
 
-function CompareCard({ item }: { item: typeof PF_ITEMS[0] }) {
-  const [pos, setPos] = useState(50)
-  const cmpRef = useRef<HTMLDivElement>(null)
-  const dragging = useRef(false)
-
-  const setPosition = useCallback((clientX: number) => {
-    const el = cmpRef.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    const p = Math.max(2, Math.min(98, ((clientX - r.left) / r.width) * 100))
-    setPos(p)
-  }, [])
-
+function AfterCard({ item }: { item: typeof PF_ITEMS[0] }) {
   return (
     <div className="pf__card">
-      <div
-        ref={cmpRef}
-        className="cmp"
-        onPointerDown={e => { dragging.current = true; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); setPosition(e.clientX) }}
-        onPointerMove={e => { if (dragging.current) setPosition(e.clientX); else if (e.pointerType === 'mouse') setPosition(e.clientX) }}
-        onPointerUp={() => { dragging.current = false }}
-        onPointerLeave={() => { dragging.current = false }}
-      >
-        <img className="cmp__before" src={item.before} alt={`${item.name} 변경 전`} loading="lazy" />
-        <img className="cmp__after"  src={item.after}  alt={`${item.name} 변경 후`} loading="lazy" style={{ clipPath: `inset(0 0 0 ${pos}%)` }} />
-        <span className="cmp__tag cmp__tag--b">BEFORE</span>
-        <span className="cmp__tag cmp__tag--a" style={{ opacity: pos < 92 ? 1 : 0 }}>AFTER</span>
-        <div className="cmp__handle" style={{ left: `${pos}%` }}>
-          <div className="cmp__grip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 7l-4 5 4 5M15 7l4 5-4 5"/></svg>
-          </div>
-        </div>
-      </div>
+      <img src={item.after} alt={item.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div className="pf__meta">
         <b>{item.ko} · {item.name}</b>
         <span>{item.bg}</span>
@@ -635,7 +606,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '40px' }}>
             <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>our works.</h2>
-            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>가운데 손잡이를 드래그해 비포·애프터를 비교해 보세요.</p>
+            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>메뉴랩이 만든 스튜디오급 메뉴사진들</p>
           </div>
 
           <div className="pf__tabs reveal-up">
@@ -658,7 +629,7 @@ export default function HomePage() {
               </div>
             ) : (
               PF_ITEMS.filter(item => pfCategory === 'all' || item.cat === pfCategory).map((item, i) => (
-                <CompareCard key={`${item.cat}-${i}`} item={item} />
+                <AfterCard key={`${item.cat}-${i}`} item={item} />
               ))
             )}
           </div>
