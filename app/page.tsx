@@ -443,14 +443,17 @@ export default function HomePage() {
         <div className="hero-marquee-wrap" style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 0', marginTop: '80px', position: 'relative' }}>
           <div className="marquee-band">
             {[...Array(4)].flatMap((_, r) =>
-              ['for eatery', 'branding', 'digital studio', 'for franchise'].flatMap((text, i) => [
-                <span key={`t-${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', padding: '0 48px', fontSize: '30px', fontWeight: 300, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
-                  {text}
-                </span>,
-                <span key={`ic-${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', padding: '0 8px' }}>
-                  <img src={`/icons/${['camera','dish','fork','gift','light'][i % 5]}.png`} alt="" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
-                </span>,
-              ])
+              [
+                { text: 'digital studio', icon: 'camera' },
+                { text: 'for eatery',     icon: 'fork'   },
+                { text: 'for franchise',  icon: 'dish'   },
+                { text: 'branding',       icon: 'light'  },
+              ].map((item, i) => (
+                <span key={`${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0px', padding: '0 48px', fontSize: '30px', fontWeight: 300, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
+                  {item.text}
+                  <img src={`/icons/${item.icon}.png`} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                </span>
+              ))
             )}
           </div>
         </div>
