@@ -606,7 +606,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '40px' }}>
             <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>our works.</h2>
-            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>메뉴랩이 만든 스튜디오급 메뉴사진들</p>
+            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>다른 사장님들은 이렇게 만들었어요</p>
           </div>
 
           <div className="pf__tabs reveal-up">
