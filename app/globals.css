@@ -103,9 +103,9 @@ html { overscroll-behavior-y: none; }
   to   { transform: translateX(-25%); }
 }
 @keyframes marqueeScrollPause {
-  0%   { transform: translateX(0);    animation-timing-function: cubic-bezier(0.25, 0, 0.06, 1); }
+  0%   { transform: translateX(0);    animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
   42%  { transform: translateX(-25%); }
-  67%  { transform: translateX(-25%); animation-timing-function: cubic-bezier(0.06, 0, 0.28, 1); }
+  67%  { transform: translateX(-25%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
   100% { transform: translateX(-50%); }
 }
 .marquee-band {
