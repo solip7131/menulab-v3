@@ -428,10 +428,10 @@ export default function HomePage() {
                 스마트폰 사진을 <span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로
               </h1>
               {/* 모바일 헤드라인 */}
-              <h1 className="hero-headline hero-headline-mobile" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontWeight: 700, lineHeight: 1.45, letterSpacing: '-1.5px', color: '#111', margin: 0 }}>
-                스마트 사진을<br /><span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로
+              <h1 className="hero-headline hero-headline-mobile" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontWeight: 700, lineHeight: 1.2, letterSpacing: '-1.5px', color: '#111', margin: 0, textAlign: 'center' }}>
+                스마트폰 사진을<br /><span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로
               </h1>
-              <p style={{ animation: 'fadeDown 0.7s ease 0.15s forwards', opacity: 0, textAlign: 'right', fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 400, color: '#111', marginTop: '10px', letterSpacing: '-0.3px' }}>내 매장이 돋보이는 이유, 메뉴랩</p>
+              <p className="hero-subheadline" style={{ animation: 'fadeDown 0.7s ease 0.15s forwards', opacity: 0, textAlign: 'right', fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 400, color: '#111', marginTop: '10px', letterSpacing: '-0.3px' }}>내 매장이 돋보이는 이유, 메뉴랩</p>
             </div>
             <div className="hero-slider" style={{ animation: 'fadeUp 0.8s ease 0.25s forwards', opacity: 0, width: '100%', maxWidth: '506px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)', borderRadius: '20px', marginTop: '0' }}>
               <ImageCompareSlider />
@@ -440,7 +440,7 @@ export default function HomePage() {
         </section>
 
         {/* ── Marquee band ── */}
-        <div style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 0', marginTop: '80px', position: 'relative' }}>
+        <div className="hero-marquee-wrap" style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 0', marginTop: '80px', position: 'relative' }}>
           <div className="marquee-band">
             {[...Array(4)].flatMap((_, r) =>
               ['for eatery', 'branding', 'digital studio', 'for franchise'].flatMap((text, i) => [

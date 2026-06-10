@@ -415,6 +415,24 @@ html { overscroll-behavior-y: none; }
   .hero-headline-desktop { display: none !important; }
   .hero-headline-mobile  { display: block !important; }
 
+  .hero-subheadline {
+    font-size: 13px !important;
+    margin-top: 4px !important;
+    text-align: center !important;
+  }
+
+  .hero-marquee-wrap {
+    margin-top: 20px !important;
+  }
+  .hero-marquee-wrap .marquee-band span {
+    font-size: 21px !important;
+    padding: 0 34px !important;
+  }
+  .hero-marquee-wrap .marquee-band img {
+    width: 31px !important;
+    height: 31px !important;
+  }
+
   /* 슬라이더 */
   .hero-slider {
     margin-top: 4px !important;
