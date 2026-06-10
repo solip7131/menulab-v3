@@ -300,7 +300,8 @@ html { overscroll-behavior-y: none; }
   .pl-marquee-item {
     flex-direction: column !important;
     align-items: center !important;
-    width: 160px !important;
+    padding: 0 12px !important;
+    width: auto !important;
     gap: 6px !important;
   }
   .pl-marquee-item > div {
