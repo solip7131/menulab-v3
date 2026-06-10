@@ -493,7 +493,7 @@ export default function HomePage() {
                   </div>
                   <div className="stat-label" style={{ marginTop: '20px' }}>
                     <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', marginBottom: '6px', whiteSpace: 'nowrap' }}>{stat.label}</div>
-                    <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', lineHeight: 1.35, whiteSpace: 'nowrap' }}>{stat.desc}</div>
+                    <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', lineHeight: 1.15, whiteSpace: 'nowrap' }}>{stat.desc}</div>
                   </div>
                 </div>
               ))}
