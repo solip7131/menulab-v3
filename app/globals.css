@@ -286,6 +286,9 @@ html { overscroll-behavior-y: none; }
   .stat-icon,
   .stat-icon img { width: 140px !important; height: 140px !important; }
   .stats-inner { margin-top: -120px !important; }
+  .stat-item.triggered .stat-icon  { animation-duration: 1.2s !important; }
+  .stat-item.triggered .stat-num   { animation-duration: 3.2s !important; }
+  .stat-item.triggered .stat-label { animation-duration: 3.8s !important; }
 }
 
 /* ── Portfolio grid ────────────────────────────────────── */
