@@ -553,6 +553,55 @@ html { overscroll-behavior-y: none; }
   .sec-pricing [style*='repeat(3, 1fr)'] {
     grid-template-columns: 1fr !important;
   }
+
+  /* 포트폴리오 카드 → 수평 스와이프 */
+  .pf-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 14px !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    margin-left: -24px !important;
+    margin-right: -24px !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    padding-bottom: 4px !important;
+  }
+  .pf-grid::-webkit-scrollbar { display: none; }
+  .pf-grid > .pf__card {
+    flex-shrink: 0 !important;
+    width: 80vw !important;
+    scroll-snap-align: start !important;
+  }
+  .pf-grid > .pf__empty {
+    flex-shrink: 0 !important;
+    min-width: 80vw !important;
+  }
+
+  /* 리뷰 카드 → 수평 스와이프 */
+  .rv-grid {
+    display: flex !important;
+    grid-template-columns: unset !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 14px !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    margin-left: -24px !important;
+    margin-right: -24px !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    padding-bottom: 4px !important;
+  }
+  .rv-grid::-webkit-scrollbar { display: none; }
+  .rv-grid > div {
+    flex-shrink: 0 !important;
+    width: 80vw !important;
+    scroll-snap-align: start !important;
+  }
 }
 
 /* ── Gem image hover float ── */
