@@ -109,7 +109,7 @@ function PlatformMarquee() {
   }
 
   return (
-    <div style={{ overflow: 'hidden', padding: '0 0 40px', cursor: 'grab', marginTop: '40px' }}>
+    <div style={{ overflow: 'hidden', padding: '40px 0 40px', cursor: 'grab', marginBottom: '-40px' }}>
       <div
         ref={bandRef}
         className="pl-marquee-band"
