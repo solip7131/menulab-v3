@@ -432,26 +432,21 @@ html { overscroll-behavior-y: none; }
 
   .gem-banner-inner {
     flex-direction: column !important;
-    align-items: center !important;
-    gap: 24px !important;
+    align-items: flex-end !important;
+    gap: 0 !important;
   }
 
   .gem-banner-image {
-    transform: none !important;
-    margin: 0 !important;
-    order: 1 !important;
-  }
-
-  .gem-banner-image .gem-img {
-    width: 72vw !important;
-    max-width: 320px !important;
+    order: 2 !important;
+    align-self: flex-start !important;
   }
 
   .gem-banner-text {
-    text-align: center !important;
+    text-align: right !important;
     max-width: 100% !important;
     flex-shrink: 1 !important;
-    order: 2 !important;
+    order: 1 !important;
+    padding-bottom: 16px !important;
   }
 
   .gem-banner-text p {
