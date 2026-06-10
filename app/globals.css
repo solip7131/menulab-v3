@@ -290,7 +290,13 @@ html { overscroll-behavior-y: none; }
   .stat-item.triggered .stat-num   { animation-duration: 3.2s !important; }
   .stat-item.triggered .stat-label { animation-duration: 3.8s !important; }
   .stats-section { padding-bottom: 40px !important; }
-  .process-headline-wrap { padding-top: 40px !important; }
+  .process-headline-wrap { padding-top: 40px !important; padding-bottom: 24px !important; }
+  .process-steps-grid { padding-top: 24px !important; padding-bottom: 40px !important; }
+  .sec-portfolio,
+  .reviews-section,
+  .services-section,
+  .sec-faq,
+  .sec-cta { padding: 40px 0 !important; }
 }
 
 /* ── Portfolio grid ────────────────────────────────────── */

@@ -512,7 +512,7 @@ export default function HomePage() {
 
         </div>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '40px', paddingTop: '60px', paddingBottom: '120px' }}>
+          <div className="process-steps-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '40px', paddingTop: '60px', paddingBottom: '120px' }}>
             {/* Step 1 */}
             <div className="process-col">
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
@@ -610,7 +610,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Reviews ── */}
-      <section style={{ padding: 'clamp(48px,6vw,80px) 0', background: 'var(--cream)', position: 'relative', zIndex: 1 }}>
+      <section className="reviews-section" style={{ padding: 'clamp(48px,6vw,80px) 0', background: 'var(--cream)', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>reviews</h2>
@@ -644,7 +644,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Services ── */}
-      <section style={{ padding: 'clamp(48px,6vw,80px) 0', background: '#fff', position: 'relative', zIndex: 1 }}>
+      <section className="services-section" style={{ padding: 'clamp(48px,6vw,80px) 0', background: '#fff', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>services</h2>
