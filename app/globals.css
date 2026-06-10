@@ -426,7 +426,7 @@ html { overscroll-behavior-y: none; }
   }
   .hero-marquee-wrap .marquee-band span {
     font-size: 21px !important;
-    padding: 0 4px !important;
+    padding: 0 16px !important;
   }
   .hero-marquee-wrap .marquee-band img {
     width: 31px !important;

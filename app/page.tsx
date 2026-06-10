@@ -449,7 +449,7 @@ export default function HomePage() {
                 { text: 'for franchise',  icon: 'dish'   },
                 { text: 'branding',       icon: 'light'  },
               ].map((item, i) => (
-                <span key={`${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0px', padding: '0 4px', fontSize: '30px', fontWeight: 300, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
+                <span key={`${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0px', padding: '0 16px', fontSize: '30px', fontWeight: 300, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
                   {item.text}
                   <img src={`/icons/${item.icon}.png`} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                 </span>
