@@ -283,6 +283,8 @@ html { overscroll-behavior-y: none; }
   .stats-grid { grid-template-columns: 1fr; }
   .stats-inner { padding-left: 24px; padding-right: 24px; }
   .stat-item { padding-bottom: 48px; }
+  .stat-icon,
+  .stat-icon img { width: 140px !important; height: 140px !important; }
 }
 
 /* ── Portfolio grid ────────────────────────────────────── */
