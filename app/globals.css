@@ -421,6 +421,11 @@ html { overscroll-behavior-y: none; }
     text-align: center !important;
   }
 
+  .try-now-text {
+    font-size: 32px !important;
+    white-space: nowrap !important;
+  }
+
   .hero-marquee-wrap {
     margin-top: 20px !important;
   }

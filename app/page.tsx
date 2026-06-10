@@ -461,7 +461,7 @@ export default function HomePage() {
         {/* ── Gem gift banner ── */}
         <div style={{ padding: 'clamp(120px,18vh,240px) 0 clamp(120px,18vh,240px)', overflow: 'hidden', background: '#fff' }}>
           <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-            <p style={{ position: 'absolute', bottom: '0', left: 'calc(clamp(24px,6vw,120px) + 160px)', fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1 }}>Try now!</p>
+            <p className="try-now-text" style={{ position: 'absolute', bottom: '0', left: 'calc(clamp(24px,6vw,120px) + 160px)', fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, whiteSpace: 'nowrap' }}>Try now!</p>
             <div style={{ flex: '0 0 auto', transform: 'translateX(-50%)', marginLeft: '0' }}>
               <img src="/gem.png" alt="" className="gem-img" style={{ width: 'clamp(420px, 46vw, 714px)', height: 'auto', display: 'block' }} />
             </div>
