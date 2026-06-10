@@ -488,7 +488,7 @@ export default function HomePage() {
                   <div className="stat-icon" style={{ width: '156px', height: '156px', marginBottom: '4px' }}>
                     <img src={stat.icon} alt="" style={{ width: '156px', height: '156px', objectFit: 'contain', display: 'block' }} />
                   </div>
-                  <div className="stat-num" style={{ fontSize: '80px', fontWeight: 300, letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap' }}>
+                  <div className="stat-num" style={{ fontSize: '80px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap' }}>
                     <StatCounter to={stat.to} suffix={stat.suffix} />
                   </div>
                   <div className="stat-label" style={{ marginTop: '20px' }}>
