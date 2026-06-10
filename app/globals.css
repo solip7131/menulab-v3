@@ -289,6 +289,11 @@ html { overscroll-behavior-y: none; }
   .stat-item.triggered .stat-icon  { animation-duration: 1.2s !important; }
   .stat-item.triggered .stat-num   { animation-duration: 3.2s !important; }
   .stat-item.triggered .stat-label { animation-duration: 3.8s !important; }
+  .process-headline-wrap p,
+  .sec-portfolio h2,
+  .reviews-section h2,
+  .services-section h2 { font-size: 33px !important; }
+
   .stats-section { padding-bottom: 35px !important; }
   .process-headline-wrap { padding-top: 35px !important; padding-bottom: 24px !important; }
   .process-steps-grid { padding-top: 24px !important; padding-bottom: 35px !important; }
