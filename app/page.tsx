@@ -444,12 +444,12 @@ export default function HomePage() {
           <div className="marquee-band">
             {[...Array(4)].flatMap((_, r) =>
               [
-                { text: 'digital studio', icon: 'camera' },
-                { text: 'for eatery',     icon: 'fork'   },
-                { text: 'for franchise',  icon: 'dish'   },
-                { text: 'branding',       icon: 'light'  },
+                { text: 'digital studio', icon: 'camera', gap: '4px' },
+                { text: 'for eatery',     icon: 'fork',   gap: '0px' },
+                { text: 'for franchise',  icon: 'dish',   gap: '4px' },
+                { text: 'branding',       icon: 'light',  gap: '4px' },
               ].map((item, i) => (
-                <span key={`${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0 20px', fontSize: '30px', fontWeight: 300, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
+                <span key={`${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: item.gap, padding: '0 20px', fontSize: '30px', fontWeight: 300, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
                   {item.text}
                   <img src={`/icons/${item.icon}.png`} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                 </span>
