@@ -302,6 +302,16 @@ html { overscroll-behavior-y: none; }
   .services-section,
   .sec-faq,
   .sec-cta { padding: 35px 0 !important; }
+
+  .pf__tabs {
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+  }
+  .pf__tabs::-webkit-scrollbar { display: none; }
   .pl-marquee-item {
     flex-direction: column !important;
     align-items: center !important;
