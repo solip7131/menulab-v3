@@ -299,8 +299,12 @@ html { overscroll-behavior-y: none; }
   .sec-cta { padding: 40px 0 !important; }
   .pl-marquee-item {
     flex-direction: column !important;
+    align-items: center !important;
     width: 160px !important;
     gap: 6px !important;
+  }
+  .pl-marquee-item > div {
+    text-align: center !important;
   }
   .pl-marquee-item img {
     width: 80px !important;
