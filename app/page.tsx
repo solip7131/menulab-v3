@@ -736,8 +736,8 @@ export default function HomePage() {
       {/* ── FAQ ── */}
       <section id="faq" className="sec-faq" style={{ padding: 'clamp(48px,6vw,80px) 0', background: 'var(--cream)', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '780px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
-          <p className="eyebrow reveal-up" style={{ marginBottom: '10px' }}>FAQ</p>
-          <h2 className="h-sec" style={{ marginBottom: '48px' }}><div className="mask" data-delay="1"><span>자주 묻는 질문</span></div></h2>
+          <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>FAQ.</h2>
+          <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '16px', marginBottom: '48px' }}>자주 묻는 질문</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {FAQ.map((item, i) => (
               <div key={i} style={{ border: `1px solid ${openFaq === i ? 'var(--orange)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '14px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
