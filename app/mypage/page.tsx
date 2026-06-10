@@ -326,7 +326,8 @@ function MyPageContent() {
   const [activeCat,   setActiveCat]   = useState<Cat>('전체 보기')
   const [menuOpenId,  setMenuOpenId]  = useState<string | null>(null)
   const [downloading, setDownloading] = useState<Set<string>>(new Set())
-  const [isMobile,    setIsMobile]    = useState(false)
+  const [isMobile,        setIsMobile]        = useState(false)
+  const [showMobileNav,   setShowMobileNav]   = useState(false)
 
   // Gem balance
   const [gemBalance,          setGemBalance]           = useState(0)
@@ -741,22 +742,76 @@ function MyPageContent() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
-          <button
-            onClick={() => setShowGuideModal(true)}
-            style={{ fontSize: '12px', fontWeight: 700, color: '#555', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '100px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >사진 업로드 가이드</button>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#888', fontWeight: 600 }}>{displayName} 님</span>
-          <button
-            onClick={() => setShowChargeModal(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--black)' }}
-          >💎 {gemBalance}젬</button>
-          <button onClick={signOut} style={{ padding: '7px 14px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', color: '#555' }}>로그아웃</button>
-        </div>
+        {/* 로고 */}
+        <Link href="/v2"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
+
+        {/* 데스크탑 우측 */}
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setShowGuideModal(true)}
+              style={{ fontSize: '12px', fontWeight: 700, color: '#555', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '100px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >사진 업로드 가이드</button>
+            <span style={{ fontSize: '13px', color: '#888', fontWeight: 600 }}>{displayName} 님</span>
+            <button
+              onClick={() => setShowChargeModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--black)' }}
+            >💎 {gemBalance}젬</button>
+            <button onClick={signOut} style={{ padding: '7px 14px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', color: '#555' }}>로그아웃</button>
+          </div>
+        )}
+
+        {/* 모바일 우측: 젬 + 햄버거 */}
+        {isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setShowChargeModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '100px', border: '1.5px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--black)' }}
+            >💎 {gemBalance}</button>
+            <button
+              onClick={() => setShowMobileNav(true)}
+              style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '5px', padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}
+              aria-label="메뉴"
+            >
+              <span style={{ display: 'block', width: '22px', height: '2px', background: '#333', borderRadius: '2px' }} />
+              <span style={{ display: 'block', width: '22px', height: '2px', background: '#333', borderRadius: '2px' }} />
+              <span style={{ display: 'block', width: '22px', height: '2px', background: '#333', borderRadius: '2px' }} />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* 모바일 사이드 메뉴 드로어 */}
+      {showMobileNav && (
+        <div
+          onClick={() => setShowMobileNav(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '240px', background: '#fff', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 32px rgba(0,0,0,0.15)' }}
+          >
+            {/* 드로어 헤더 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#888' }}>{displayName} 님</span>
+              <button onClick={() => setShowMobileNav(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#999', lineHeight: 1 }}>×</button>
+            </div>
+            {/* 메뉴 항목 */}
+            <div style={{ flex: 1, padding: '12px 12px' }}>
+              <button
+                onClick={() => { setShowGuideModal(true); setShowMobileNav(false) }}
+                style={{ width: '100%', textAlign: 'left', padding: '14px 12px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#333', cursor: 'pointer' }}
+              >📋 사진 업로드 가이드</button>
+            </div>
+            <div style={{ padding: '12px 12px 32px' }}>
+              <button
+                onClick={() => { signOut(); setShowMobileNav(false) }}
+                style={{ width: '100%', textAlign: 'left', padding: '14px 12px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#e53935', cursor: 'pointer' }}
+              >로그아웃</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main layout */}
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)', background: '#F7F4EF' }}>
