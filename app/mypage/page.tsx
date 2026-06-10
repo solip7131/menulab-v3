@@ -785,28 +785,86 @@ function MyPageContent() {
       {showMobileNav && (
         <div
           onClick={() => setShowMobileNav(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)' }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '240px', background: '#fff', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 32px rgba(0,0,0,0.15)' }}
+            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '272px', background: '#fff', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.18)', overflowY: 'auto' }}
           >
-            {/* 드로어 헤더 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#888' }}>{displayName} 님</span>
-              <button onClick={() => setShowMobileNav(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#999', lineHeight: 1 }}>×</button>
+            {/* 닫기 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '14px 16px 0' }}>
+              <button onClick={() => setShowMobileNav(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#bbb', lineHeight: 1 }}>×</button>
             </div>
-            {/* 메뉴 항목 */}
-            <div style={{ flex: 1, padding: '12px 12px' }}>
-              <button
-                onClick={() => { setShowGuideModal(true); setShowMobileNav(false) }}
-                style={{ width: '100%', textAlign: 'left', padding: '14px 12px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#333', cursor: 'pointer' }}
-              >📋 사진 업로드 가이드</button>
+
+            {/* 유저 정보 + 요금제 */}
+            <div style={{ padding: '8px 20px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              <p style={{ fontSize: '16px', fontWeight: 800, color: '#111', marginBottom: '3px' }}>{displayName} 님</p>
+              <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '16px' }}>
+                {sessionEmail?.startsWith('kakao:') ? '카카오 계정' : sessionEmail}
+              </p>
+              <div style={{ background: '#f7f4ef', borderRadius: '14px', padding: '14px 16px', marginBottom: '12px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#aaa', letterSpacing: '0.5px', marginBottom: '6px' }}>사용 중인 요금제</p>
+                <p style={{ fontSize: '14px', fontWeight: 800, color: '#333', marginBottom: '2px' }}>무료 플랜</p>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--orange)' }}>💎 {gemBalance}젬 남음</p>
+              </div>
+              <Link
+                href="/pricing"
+                onClick={() => setShowMobileNav(false)}
+                style={{ display: 'block', textAlign: 'center', padding: '11px', borderRadius: '10px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}
+              >요금제 보러가기</Link>
             </div>
-            <div style={{ padding: '12px 12px 32px' }}>
-              <button
-                onClick={() => { signOut(); setShowMobileNav(false) }}
-                style={{ width: '100%', textAlign: 'left', padding: '14px 12px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#e53935', cursor: 'pointer' }}
+
+            {/* 메인 메뉴 */}
+            <div style={{ padding: '8px 8px' }}>
+              {[
+                { label: '내가 만든 사진', action: () => { setSelectedService(null); setActiveCat('전체 보기'); setShowMobileNav(false) } },
+                { label: '추천 기능',     action: () => { setModalInitOpts({}); setShowBasicModal(true); setShowMobileNav(false) } },
+              ].map(item => (
+                <button key={item.label} onClick={item.action}
+                  style={{ width: '100%', textAlign: 'left', padding: '13px 14px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#222', cursor: 'pointer' }}
+                >{item.label}</button>
+              ))}
+            </div>
+
+            {/* 계정 메뉴 */}
+            <div style={{ padding: '0 8px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              <p style={{ fontSize: '10px', fontWeight: 700, color: '#ccc', letterSpacing: '1.5px', padding: '12px 14px 4px' }}>계정</p>
+              {[
+                { label: '요금제', href: '/pricing' },
+                { label: '내 결제 수단', href: null },
+                { label: '젬 이용 내역', href: null },
+                { label: '결제 내역', href: null },
+              ].map(item => (
+                item.href ? (
+                  <Link key={item.label} href={item.href} onClick={() => setShowMobileNav(false)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 14px', textDecoration: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#222' }}
+                  >{item.label}</Link>
+                ) : (
+                  <div key={item.label}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', borderRadius: '10px', opacity: 0.45 }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#222' }}>{item.label}</span>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', background: 'rgba(0,0,0,0.06)', padding: '2px 8px', borderRadius: '100px' }}>준비 중</span>
+                  </div>
+                )
+              ))}
+            </div>
+
+            {/* 고객지원 메뉴 */}
+            <div style={{ padding: '0 8px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              <p style={{ fontSize: '10px', fontWeight: 700, color: '#ccc', letterSpacing: '1.5px', padding: '12px 14px 4px' }}>고객지원</p>
+              <Link href="/customer" onClick={() => setShowMobileNav(false)}
+                style={{ display: 'block', padding: '13px 14px', textDecoration: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#222' }}
+              >고객센터</Link>
+              <button onClick={() => { setShowGuideModal(true); setShowMobileNav(false) }}
+                style={{ width: '100%', textAlign: 'left', padding: '13px 14px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#222', cursor: 'pointer' }}
+              >사진 업로드 가이드</button>
+            </div>
+
+            {/* 로그아웃 */}
+            <div style={{ padding: '8px 8px 40px', marginTop: 'auto', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              <button onClick={() => { signOut(); setShowMobileNav(false) }}
+                style={{ width: '100%', textAlign: 'left', padding: '13px 14px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#e53935', cursor: 'pointer' }}
               >로그아웃</button>
             </div>
           </div>
