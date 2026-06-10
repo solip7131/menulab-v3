@@ -1204,7 +1204,16 @@ function OrderPageInner() {
               <h2 style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '-0.5px' }}>사진 업로드 가이드</h2>
               <button onClick={() => setShowPhotoGuide(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#999', padding: '0 4px' }}>×</button>
             </div>
-            <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px' }}>메뉴사진의 에이스가 될 원본 사진 촬영방법입니다</p>
+            <p style={{ color: '#888', fontSize: '13px', marginBottom: '16px' }}>메뉴사진의 에이스가 될 원본 사진 촬영방법입니다</p>
+
+            {/* 상단 예시 이미지 */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              {['/예시1.png', '/예시2.png'].map((src, i) => (
+                <div key={i} style={{ flex: 1, aspectRatio: '1/1', borderRadius: '10px', overflow: 'hidden', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src={src} alt={`예시${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+                </div>
+              ))}
+            </div>
 
             {/* 좋아요 */}
             <div style={{ background: '#f2faf3', borderRadius: '16px', padding: '16px', marginBottom: '14px' }}>
