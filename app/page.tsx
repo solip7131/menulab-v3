@@ -480,7 +480,7 @@ export default function HomePage() {
         </div>
 
         {/* ── Stats ── */}
-        <section style={{ background: '#fff', paddingTop: '0', paddingBottom: '100px', position: 'relative' }}>
+        <section className="stats-section" style={{ background: '#fff', paddingTop: '0', paddingBottom: '100px', position: 'relative' }}>
           <div className="stats-inner" style={{ maxWidth: '1440px', margin: '-24px auto 0', paddingLeft: 'clamp(24px,6vw,120px)', paddingRight: 'clamp(24px,6vw,120px)' }}>
             <div ref={statsRef} className="stats-grid">
               {STATS.map((stat, i) => (
@@ -502,11 +502,11 @@ export default function HomePage() {
         </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ background: '#f0eeeb', position: 'relative', zIndex: 1 }}>
+      <section className="process-section" style={{ background: '#f0eeeb', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
 
           {/* 헤드라인 2열 */}
-          <div style={{ paddingTop: '80px', paddingBottom: '40px' }}>
+          <div className="process-headline-wrap" style={{ paddingTop: '80px', paddingBottom: '40px' }}>
             <p style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1 }}>process</p>
           </div>
 
