@@ -798,9 +798,16 @@ function MyPageContent() {
 
             {/* 유저 정보 + 요금제 */}
             <div style={{ padding: '8px 20px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-              <p style={{ fontSize: '16px', fontWeight: 800, color: '#111', marginBottom: '3px' }}>{displayName} 님</p>
+              <Link
+                href="/mypage/profile"
+                onClick={() => setShowMobileNav(false)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', textDecoration: 'none', marginBottom: '3px' }}
+              >
+                <p style={{ fontSize: '16px', fontWeight: 800, color: '#111', margin: 0 }}>{displayName} 님</p>
+                <span style={{ fontSize: '18px', color: '#ccc' }}>›</span>
+              </Link>
               <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '16px' }}>
-                {sessionEmail?.startsWith('kakao:') ? '카카오 계정' : sessionEmail}
+                {sessionEmail ?? ''}
               </p>
               <div style={{ background: '#f7f4ef', borderRadius: '14px', padding: '14px 16px', marginBottom: '12px' }}>
                 <p style={{ fontSize: '11px', fontWeight: 700, color: '#aaa', letterSpacing: '0.5px', marginBottom: '6px' }}>사용 중인 요금제</p>
@@ -816,14 +823,10 @@ function MyPageContent() {
 
             {/* 메인 메뉴 */}
             <div style={{ padding: '8px 8px' }}>
-              {[
-                { label: '내가 만든 사진', action: () => { setSelectedService(null); setActiveCat('전체 보기'); setShowMobileNav(false) } },
-                { label: '추천 기능',     action: () => { setModalInitOpts({}); setShowBasicModal(true); setShowMobileNav(false) } },
-              ].map(item => (
-                <button key={item.label} onClick={item.action}
-                  style={{ width: '100%', textAlign: 'left', padding: '13px 14px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#222', cursor: 'pointer' }}
-                >{item.label}</button>
-              ))}
+              <button
+                onClick={() => { setSelectedService(null); setActiveCat('전체 보기'); setShowMobileNav(false) }}
+                style={{ width: '100%', textAlign: 'left', padding: '13px 14px', background: 'none', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, color: '#222', cursor: 'pointer' }}
+              >내가 만든 사진</button>
             </div>
 
             {/* 계정 메뉴 */}
