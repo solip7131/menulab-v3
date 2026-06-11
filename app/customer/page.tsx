@@ -75,7 +75,7 @@ export default function CustomerPage() {
               무엇을 도와드릴까요?
             </h1>
             <p style={{ fontSize: 'clamp(15px,1.8vw,17px)', color: '#888', lineHeight: 1.7 }}>
-              평일 10:00 ~ 18:00 운영 · 이메일 <a href="mailto:solip7131@gmail.com" style={{ color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}>solip7131@gmail.com</a>
+              평일 10:00 ~ 18:00 운영
             </p>
           </div>
         </section>
@@ -148,9 +148,14 @@ export default function CustomerPage() {
                 <div style={{ fontSize: '32px', marginBottom: '14px' }}>💬</div>
                 <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--black)', marginBottom: '8px' }}>카카오톡 채널</h3>
                 <p style={{ fontSize: '13px', color: '#888', marginBottom: '16px', lineHeight: 1.6 }}>평일 10:00 ~ 18:00 운영<br />제작 결과물도 카카오톡으로 전달돼요</p>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#FEE500', color: '#000', padding: '11px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 800 }}>
-                  @메뉴랩 채널 추가
-                </div>
+                <a
+                  href="http://pf.kakao.com/_xnxnxmxn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#FEE500', color: '#000', padding: '11px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 800, textDecoration: 'none' }}
+                >
+                  카카오톡 문의하기
+                </a>
               </div>
             </div>
           </div>
