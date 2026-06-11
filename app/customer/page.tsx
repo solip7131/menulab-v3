@@ -75,7 +75,7 @@ export default function CustomerPage() {
               무엇을 도와드릴까요?
             </h1>
             <p style={{ fontSize: 'clamp(15px,1.8vw,17px)', color: '#888', lineHeight: 1.7 }}>
-              평일 10:00 ~ 18:00 운영
+              운영시간 평일 10:00 ~ 18:00
             </p>
           </div>
         </section>
