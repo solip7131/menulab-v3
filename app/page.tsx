@@ -490,7 +490,7 @@ export default function HomePage() {
         </div>
 
         {/* ── Stats ── */}
-        <section className="stats-section" style={{ background: '#fff', paddingTop: '80px', paddingBottom: '100px', position: 'relative' }}>
+        <section className="stats-section" style={{ background: '#fff', paddingTop: '140px', paddingBottom: '100px', position: 'relative' }}>
           <div className="stats-inner" style={{ maxWidth: '1440px', margin: '-24px auto 0', paddingLeft: 'clamp(24px,6vw,120px)', paddingRight: 'clamp(24px,6vw,120px)' }}>
             <div ref={statsRef} className="stats-grid">
               {STATS.map((stat, i) => (
