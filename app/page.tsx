@@ -481,19 +481,11 @@ export default function HomePage() {
         {/* ── Marquee band ── */}
         <div className="hero-marquee-wrap" style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 0', marginTop: '80px', position: 'relative' }}>
           <div className="marquee-band">
-            {[...Array(4)].flatMap((_, r) =>
-              [
-                { text: 'digital studio', icon: 'camera', gap: '4px' },
-                { text: 'for eatery',     icon: 'fork',   gap: '0px' },
-                { text: 'for franchise',  icon: 'dish',   gap: '4px' },
-                { text: 'branding',       icon: 'light',  gap: '4px' },
-              ].map((item, i) => (
-                <span key={`${r}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: item.gap, padding: '0 20px', fontSize: '28px', fontWeight: 400, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
-                  {item.text}
-                  <img src={`/icons/${item.icon}.png`} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-                </span>
-              ))
-            )}
+            {[...Array(12)].map((_, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0 20px', fontSize: '28px', fontWeight: 400, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
+                💎 지금 간편가입하면 20젬을 선물로 드려요!
+              </span>
+            ))}
           </div>
         </div>
 
