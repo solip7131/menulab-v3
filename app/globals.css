@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Galmuri11';
+  src: url('/fonts/Galmuri11.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --orange: #C4510D;
   --orange-light: #D4621E;
@@ -224,13 +232,21 @@ html { overscroll-behavior-y: none; }
 
 /* ── Review cards ──────────────────────────────────────── */
 .rv-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 20px;
   margin-top: 20px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 8px;
 }
-@media (max-width: 768px) {
-  .rv-grid { grid-template-columns: 1fr; }
+.rv-grid::-webkit-scrollbar { display: none; }
+.rv-grid > div {
+  flex-shrink: 0;
+  width: 340px;
+  scroll-snap-align: start;
 }
 
 /* ── Stats animations ──────────────────────────────────── */
@@ -285,19 +301,21 @@ html { overscroll-behavior-y: none; }
   .stat-item { padding-bottom: 48px; }
   .stat-icon,
   .stat-icon img { width: 140px !important; height: 140px !important; }
-  .stats-inner { margin-top: -120px !important; }
+  .stats-inner { margin-top: 0 !important; }
   .stat-item.triggered .stat-icon  { animation-duration: 1.2s !important; }
   .stat-item.triggered .stat-num   { animation-duration: 3.2s !important; }
   .stat-item.triggered .stat-label { animation-duration: 3.8s !important; }
   .process-headline-wrap p,
+  .stats-headline-wrap p,
   .sec-portfolio h2,
   .reviews-section h2,
   .services-section h2,
-  .sec-faq h2 { font-size: 33px !important; }
+  .sec-faq h2 { font-size: 18px !important; }
 
   .stats-section { padding-bottom: 35px !important; }
-  .process-headline-wrap { padding-top: 35px !important; padding-bottom: 24px !important; }
-  .process-steps-grid { padding-top: 24px !important; padding-bottom: 35px !important; }
+  .process-headline-wrap,
+  .stats-headline-wrap { padding-top: 35px !important; padding-bottom: 24px !important; }
+  .process-steps-grid { grid-template-columns: 1fr !important; padding-top: 0 !important; padding-bottom: 35px !important; gap: 12px !important; }
   .sec-portfolio,
   .reviews-section,
   .services-section,
@@ -572,27 +590,16 @@ html { overscroll-behavior-y: none; }
     min-width: 80vw !important;
   }
 
-  /* 리뷰 카드 → 수평 스와이프 */
+  /* 리뷰 카드 → 모바일 수평 스와이프 */
   .rv-grid {
-    display: flex !important;
-    grid-template-columns: unset !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    gap: 14px !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
     margin-left: -24px !important;
     margin-right: -24px !important;
     padding-left: 24px !important;
     padding-right: 24px !important;
-    padding-bottom: 4px !important;
+    gap: 14px !important;
   }
-  .rv-grid::-webkit-scrollbar { display: none; }
   .rv-grid > div {
-    flex-shrink: 0 !important;
     width: 80vw !important;
-    scroll-snap-align: start !important;
   }
 }
 

@@ -63,9 +63,9 @@ const PLATFORMS = [
 ]
 
 const STATS = [
-  { to: 30, suffix: '초', label: 'AI 메뉴 사진 완성', desc: '업로드부터 완성까지 단 30초', icon: '/clock.png' },
-  { to: 5, suffix: '%', label: '스튜디오 촬영 비용의 5%', desc: '같은 퀄리티, 다른 가격', icon: '/percent.png' },
-  { to: 5000, suffix: '+ 장', label: '지금까지 만들어진 메뉴 사진', desc: '실제 사장님들이 사용한 결과물', icon: '/camera.png' },
+  { to: 30, suffix: '초', label: 'AI 메뉴 사진 완성', desc: '업로드부터 완성까지 단 30초', icon: '/시계.png' },
+  { to: 5, suffix: '%', label: '스튜디오 촬영 비용의 5%', desc: '같은 퀄리티, 다른 가격', icon: '/퍼센트.png' },
+  { to: 5000, suffix: '+ 장', label: '지금까지 만들어진 메뉴 사진', desc: '실제 사장님들이 사용한 결과물', icon: '/캠.png' },
 ]
 
 function PlatformMarquee() {
@@ -168,6 +168,36 @@ function ImageCompareSlider() {
       </div>
       <div style={{ position: 'absolute', bottom: '14px', left: '14px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', pointerEvents: 'none' }}>BEFORE</div>
       <div style={{ position: 'absolute', bottom: '14px', right: '14px', background: 'var(--orange)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', pointerEvents: 'none' }}>AFTER</div>
+    </div>
+  )
+}
+
+function FleeIcon({ src, size }: { src: string; size: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const dx = e.clientX - (rect.left + rect.width / 2)
+    const dy = e.clientY - (rect.top + rect.height / 2)
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1
+    const strength = Math.max(0, 1 - dist / 120)
+    const move = 28
+    el.style.transition = 'transform 0.12s ease-out'
+    el.style.transform = `translate(${-(dx / dist) * move * strength}px, ${-(dy / dist) * move * strength}px)`
+  }
+
+  const onLeave = () => {
+    const el = ref.current
+    if (!el) return
+    el.style.transition = 'transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    el.style.transform = 'translate(0, 0)'
+  }
+
+  return (
+    <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} style={{ width: size, height: size }}>
+      <img src={src} alt="" style={{ width: size, height: size, objectFit: 'contain', display: 'block', pointerEvents: 'none' }} />
     </div>
   )
 }
@@ -479,26 +509,32 @@ export default function HomePage() {
         </section>
 
         {/* ── Marquee band ── */}
-        <div className="hero-marquee-wrap" style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 20px', marginTop: '80px', position: 'relative' }}>
+        <div className="hero-marquee-wrap" onClick={() => { setLoginReturnTo('/mypage'); isLoggedIn ? window.location.href = '/mypage' : setLoginModal(true) }} style={{ background: '#111', overflow: 'hidden', padding: '20px 0 20px', marginTop: '80px', position: 'relative', cursor: 'pointer' }}>
           <div className="marquee-band" style={{ animation: 'marqueeScroll 18s linear infinite' }}>
             {[...Array(20)].map((_, i) => (
-              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0 32px', fontSize: '28px', fontWeight: 400, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
-                💎 지금 간편가입하면 20젬을 선물로 드려요!
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '20px', padding: '0 20px', fontWeight: 400, whiteSpace: 'nowrap', fontFamily: "'Galmuri11', sans-serif" }}>
+                <span style={{ fontSize: '22px', color: '#ffffff' }}>간편가입시 20젬 증정</span>
+                <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.5)' }}>✦</span>
               </span>
             ))}
           </div>
         </div>
 
         {/* ── Stats ── */}
-        <section className="stats-section" style={{ background: '#fff', paddingTop: '140px', paddingBottom: '100px', position: 'relative' }}>
-          <div className="stats-inner" style={{ maxWidth: '1440px', margin: '-24px auto 0', paddingLeft: 'clamp(24px,6vw,120px)', paddingRight: 'clamp(24px,6vw,120px)' }}>
+        <section className="stats-section" style={{ background: '#fff', paddingTop: '80px', paddingBottom: '100px', position: 'relative' }}>
+          <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
+            <div className="stats-headline-wrap" style={{ paddingTop: '0px', paddingBottom: '80px' }}>
+              <p style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1 }}>왜 메뉴랩일까요?</p>
+            </div>
+          </div>
+          <div className="stats-inner" style={{ maxWidth: '1440px', margin: '0 auto', paddingLeft: 'clamp(24px,6vw,120px)', paddingRight: 'clamp(24px,6vw,120px)' }}>
             <div ref={statsRef} className="stats-grid">
               {STATS.map((stat, i) => (
                 <div key={i} className={`stat-item${statsVisible ? ' triggered' : ''}`}>
                   <div className="stat-icon" style={{ width: '156px', height: '156px', marginBottom: '4px' }}>
-                    <img src={stat.icon} alt="" style={{ width: '156px', height: '156px', objectFit: 'contain', display: 'block' }} />
+                    <FleeIcon src={stat.icon} size={156} />
                   </div>
-                  <div className="stat-num" style={{ fontSize: '60px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                  <div className="stat-num" style={{ fontSize: '60px', fontWeight: 500, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap', textAlign: 'center' }}>
                     <StatCounter to={stat.to} suffix={stat.suffix} />
                   </div>
                   <div className="stat-label" style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -517,58 +553,54 @@ export default function HomePage() {
 
           {/* 헤드라인 2열 */}
           <div className="process-headline-wrap" style={{ paddingTop: '80px', paddingBottom: '40px' }}>
-            <p style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1 }}>process</p>
+            <p style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1 }}>이용방법</p>
           </div>
 
         </div>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
-          <div className="process-steps-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '40px', paddingTop: '60px', paddingBottom: '120px' }}>
+          <div className="process-steps-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', paddingBottom: '80px' }}>
             {/* Step 1 */}
-            <div className="process-col">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                <p style={{ fontSize: '64px', fontWeight: 200, color: '#111', letterSpacing: '-0.04em', lineHeight: 1 }}>01</p>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111' }}>사진 업로드</h3>
-              </div>
-              <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+              <p style={{ fontSize: '48px', fontWeight: 400, color: '#ddd', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '20px' }}>01</p>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>사진 업로드</h3>
+              <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, flex: 1 }}>
                 스마트폰으로 찍은 사진 그대로 올리세요.<br />
                 밝은 조명에서 음식 전체가 담긴 사진이면 충분해요.<br />
                 별도 장비나 편집 실력은 필요 없어요.
               </p>
-              <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '12px' }}>✔ 자연광 OK&nbsp;&nbsp;&nbsp;✔ 스마트폰 OK&nbsp;&nbsp;&nbsp;✔ 무편집 OK</p>
+              <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '20px' }}>✔ 자연광 OK&nbsp;&nbsp;&nbsp;✔ 스마트폰 OK&nbsp;&nbsp;&nbsp;✔ 무편집 OK</p>
             </div>
             {/* Step 2 */}
-            <div className="process-col" data-delay="1">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                <p style={{ fontSize: '64px', fontWeight: 200, color: '#111', letterSpacing: '-0.04em', lineHeight: 1 }}>02</p>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111' }}>옵션 선택</h3>
-              </div>
-              <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+              <p style={{ fontSize: '48px', fontWeight: 400, color: '#ddd', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '20px' }}>02</p>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>옵션 선택</h3>
+              <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, flex: 1 }}>
                 배경, 플랫폼, 구도를 선택하세요.<br />
-                배달의민족, 쿠팡이츠, 네이버 플레이스 —<br />
+                배달의민족, 쿠팡이츠, 네이버 플레이스<br />
                 어디에 올릴지 맞춰서 만들어드려요.
               </p>
-              <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '12px' }}>✔ 배달의민족&nbsp;&nbsp;&nbsp;✔ 쿠팡이츠&nbsp;&nbsp;&nbsp;✔ 네이버 플레이스</p>
+              <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '20px' }}>✔ 배달의민족&nbsp;&nbsp;&nbsp;✔ 쿠팡이츠&nbsp;&nbsp;&nbsp;✔ 네이버 플레이스</p>
             </div>
             {/* Step 3 */}
-            <div className="process-col" data-delay="2">
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                <p style={{ fontSize: '64px', fontWeight: 200, color: '#111', letterSpacing: '-0.04em', lineHeight: 1 }}>03</p>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111' }}>AI 생성 완료</h3>
-              </div>
-              <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+              <p style={{ fontSize: '48px', fontWeight: 400, color: '#ddd', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '20px' }}>03</p>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>AI 생성 완료</h3>
+              <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, flex: 1 }}>
                 30초 만에 전문 메뉴 사진이 완성됩니다.<br />
                 스튜디오 촬영 없이, 편집 실력 없이도<br />
                 누구나 프로급 결과물을 받을 수 있어요.
               </p>
-              <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '12px' }}>✔ 30초 완성&nbsp;&nbsp;&nbsp;✔ 고해상도 출력&nbsp;&nbsp;&nbsp;✔ 즉시 다운로드</p>
+              <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '20px' }}>✔ 30초 완성&nbsp;&nbsp;&nbsp;✔ 고해상도 출력&nbsp;&nbsp;&nbsp;✔ 즉시 다운로드</p>
             </div>
           </div>
 
         </div>
         {/* Platform marquee */}
-        <PlatformMarquee />
-        <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px) 48px', textAlign: 'right' }}>
-          <p style={{ fontSize: '12px', fontWeight: 400, color: '#999', letterSpacing: '0.12em' }}>지원 플랫폼</p>
+        <div style={{ marginTop: '-40px' }}>
+          <PlatformMarquee />
+          <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px) 48px', textAlign: 'right' }}>
+            <p style={{ fontSize: '12px', fontWeight: 400, color: '#999', letterSpacing: '0.12em' }}>지원 플랫폼</p>
+          </div>
         </div>
       </section>
 
@@ -576,8 +608,8 @@ export default function HomePage() {
       <section id="cases" className="sec-portfolio" style={{ padding: 'clamp(48px,6vw,80px) 0', background: '#fff', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '40px' }}>
-            <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>our works.</h2>
-            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '24px' }}>다른 사장님들은 이렇게 만들었어요</p>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>다른 사장님들은 이렇게 만들었어요</h2>
+            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '16px' }}>가이드에 맞는 사진을 업로드하면 최상의 결과물이 나와요!</p>
           </div>
 
           <div className="pf__tabs reveal-up">
@@ -611,8 +643,7 @@ export default function HomePage() {
       <section className="reviews-section" style={{ padding: 'clamp(48px,6vw,80px) 0', background: 'var(--cream)', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>reviews</h2>
-            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '16px' }}>사장님들의 실제 후기</p>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>사장님들의 실제 후기</h2>
           </div>
           <div className="rv-grid">
             {REVIEWS.map((r, i) => (
@@ -623,7 +654,7 @@ export default function HomePage() {
                 display: 'flex', flexDirection: 'column', gap: '14px',
                 marginTop: '0',
               }}>
-                <img src="/stars.png" alt="별점 5점" style={{ height: '84px', width: 'auto', maxWidth: '160px', objectFit: 'contain' }} />
+                <div style={{ fontSize: '18px', color: '#FFB800', letterSpacing: '2px' }}>★★★★★</div>
                 <h3 className="h-3">{r.title}</h3>
                 <p style={{ fontSize: '15px', color: '#666', lineHeight: 1.7, flex: 1, whiteSpace: 'pre-line', marginTop: '8px' }}>{r.body}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
@@ -645,8 +676,7 @@ export default function HomePage() {
       <section className="services-section" style={{ padding: 'clamp(48px,6vw,80px) 0', background: '#fff', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div style={{ textAlign: 'left', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>services</h2>
-            <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '16px' }}>메뉴랩 서비스</p>
+            <h2 style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>메뉴랩 서비스</h2>
           </div>
           <div className="sv-grid">
             {SERVICES.map((s, i) => (
@@ -659,13 +689,13 @@ export default function HomePage() {
                   borderRadius: '20px', padding: '28px 24px 24px',
                   border: '1.5px solid rgba(0,0,0,0.07)', cursor: 'pointer',
                   background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
-                  display: 'flex', flexDirection: 'column', gap: '12px',
+                  display: 'flex', flexDirection: 'column',
                 }}
               >
-                <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', borderRadius: '100px', padding: '5px 14px', fontSize: '13px', fontWeight: 700, alignSelf: 'flex-start' }}>{s.gem}</div>
-                <h3 className="h-3">{s.name}</h3>
-                <p className="lead" style={{ flex: 1 }}>{s.desc}</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', borderRadius: '100px', padding: '5px 14px', fontSize: '13px', fontWeight: 700, alignSelf: 'flex-start', marginBottom: '16px' }}>{s.gem}</div>
+                <h3 className="h-3" style={{ margin: '0 0 10px 0' }}>{s.name}</h3>
+                <p className="lead" style={{ flex: 1, margin: 0 }}>{s.desc}</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', color: 'var(--orange)' }}><path d="M6 18L18 6M9 6h9v9"/></svg>
                 </div>
               </div>
@@ -678,7 +708,7 @@ export default function HomePage() {
       {/* ── FAQ ── */}
       <section id="faq" className="sec-faq" style={{ padding: 'clamp(48px,6vw,80px) 0', background: 'var(--cream)', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '780px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
-          <h2 style={{ fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>FAQ.</h2>
+          <h2 style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>FAQ.</h2>
           <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, marginTop: '16px', marginBottom: '48px' }}>자주 묻는 질문</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {FAQ.map((item, i) => (
