@@ -63,9 +63,9 @@ const PLATFORMS = [
 ]
 
 const STATS = [
-  { to: 30, suffix: 'seconds', label: 'AI 메뉴 사진 완성', desc: '업로드부터 완성까지 단 30초', icon: '/clock.png' },
-  { to: 5, suffix: 'percent', label: '스튜디오 촬영 비용의 5%', desc: '같은 퀄리티, 다른 가격', icon: '/percent.png' },
-  { to: 5000, suffix: '+ pics', label: '지금까지 만들어진 메뉴 사진', desc: '실제 사장님들이 사용한 결과물', icon: '/camera.png' },
+  { to: 30, suffix: '초', label: 'AI 메뉴 사진 완성', desc: '업로드부터 완성까지 단 30초', icon: '/clock.png' },
+  { to: 5, suffix: '%', label: '스튜디오 촬영 비용의 5%', desc: '같은 퀄리티, 다른 가격', icon: '/percent.png' },
+  { to: 5000, suffix: '+ 장', label: '지금까지 만들어진 메뉴 사진', desc: '실제 사장님들이 사용한 결과물', icon: '/camera.png' },
 ]
 
 function PlatformMarquee() {
@@ -489,27 +489,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ── Gem gift banner ── */}
-        <div style={{ padding: 'clamp(120px,18vh,240px) 0 clamp(120px,18vh,240px)', overflow: 'hidden', background: '#fff' }}>
-          <div className="gem-banner-inner" style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-            <p className="try-now-text" style={{ position: 'absolute', bottom: '0', left: 'calc(clamp(24px,6vw,120px) + 160px)', fontSize: '65px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, whiteSpace: 'nowrap' }}>Try now!</p>
-            <div className="gem-banner-image" style={{ flex: '0 0 auto', transform: 'translateX(-50%)', marginLeft: '0' }}>
-              <img src="/gem.png" alt="" className="gem-img" style={{ width: 'clamp(420px, 46vw, 714px)', height: 'auto', display: 'block' }} />
-            </div>
-            <div className="gem-banner-text" style={{ textAlign: 'right', maxWidth: '520px', flexShrink: 0 }}>
-              <p style={{ fontSize: 'clamp(13px, 1.6vw, 22px)', fontWeight: 400, letterSpacing: '-0.02em', color: '#111', lineHeight: 1.2, margin: '0 0 0.5em' }}>
-                외식업 프랜차이즈 브랜딩 전문가의 안목을 녹여낸 메뉴랩에서,
-              </p>
-              <p style={{ fontSize: 'clamp(13px, 1.6vw, 22px)', fontWeight: 400, letterSpacing: '-0.02em', color: '#111', lineHeight: 1.2, margin: '0 0 0.5em' }}>
-                사장님의 음식 사진을 [환골탈태]시켜보세요.
-              </p>
-              <p style={{ fontSize: 'clamp(13px, 1.6vw, 22px)', fontWeight: 400, letterSpacing: '-0.02em', color: '#111', lineHeight: 1.2, margin: 0 }}>
-                참, 지금 메뉴랩에 가입하면 20젬을 선물로 드려요!
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* ── Stats ── */}
         <section className="stats-section" style={{ background: '#fff', paddingTop: '0', paddingBottom: '100px', position: 'relative' }}>
           <div className="stats-inner" style={{ maxWidth: '1440px', margin: '-24px auto 0', paddingLeft: 'clamp(24px,6vw,120px)', paddingRight: 'clamp(24px,6vw,120px)' }}>
@@ -519,10 +498,10 @@ export default function HomePage() {
                   <div className="stat-icon" style={{ width: '156px', height: '156px', marginBottom: '4px' }}>
                     <img src={stat.icon} alt="" style={{ width: '156px', height: '156px', objectFit: 'contain', display: 'block' }} />
                   </div>
-                  <div className="stat-num" style={{ fontSize: '60px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap' }}>
+                  <div className="stat-num" style={{ fontSize: '60px', fontWeight: 400, fontFamily: "'Athena', sans-serif", letterSpacing: '-0.03em', lineHeight: 1, color: '#111', whiteSpace: 'nowrap', textAlign: 'center' }}>
                     <StatCounter to={stat.to} suffix={stat.suffix} />
                   </div>
-                  <div className="stat-label" style={{ marginTop: '20px' }}>
+                  <div className="stat-label" style={{ marginTop: '20px', textAlign: 'center' }}>
                     <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', marginBottom: '6px', whiteSpace: 'nowrap' }}>{stat.label}</div>
                     <div style={{ fontSize: '15px', fontWeight: 400, color: '#111', lineHeight: 1.15, whiteSpace: 'nowrap' }}>{stat.desc}</div>
                   </div>
