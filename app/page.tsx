@@ -479,10 +479,10 @@ export default function HomePage() {
         </section>
 
         {/* ── Marquee band ── */}
-        <div className="hero-marquee-wrap" style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 0', marginTop: '80px', position: 'relative' }}>
-          <div className="marquee-band">
-            {[...Array(12)].map((_, i) => (
-              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0 20px', fontSize: '28px', fontWeight: 400, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
+        <div className="hero-marquee-wrap" style={{ background: '#fff', overflow: 'hidden', padding: '20px 0 20px', marginTop: '80px', position: 'relative' }}>
+          <div className="marquee-band" style={{ animation: 'marqueeScroll 18s linear infinite' }}>
+            {[...Array(20)].map((_, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0 32px', fontSize: '28px', fontWeight: 400, color: 'rgba(0,0,0,0.7)', whiteSpace: 'nowrap', letterSpacing: '0' }}>
                 💎 지금 간편가입하면 20젬을 선물로 드려요!
               </span>
             ))}
