@@ -490,7 +490,7 @@ export default function V2HomePage() {
 
       <section className="hero-sec" style={{ position: 'relative', width: '100vw', height: `calc(100vh - ${60 + BANNER_H}px)`, minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '2vh', paddingBottom: '6vh', marginTop: 60 + BANNER_H }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.12) 100%)' }} />
-        <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '10vh 40px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <h1 className="hero-headline" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, textAlign: 'center', fontSize: 'clamp(34px, 5.8vw, 64px)', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-1.5px', color: '#fff' }}>
             <span style={{ fontSize: '0.65em', fontWeight: 700, opacity: 0.85 }}>스마트폰 사진 한 장,</span><br />
             <span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로

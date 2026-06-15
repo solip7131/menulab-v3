@@ -560,7 +560,7 @@ export default function HomePage() {
 
         {/* ── Hero ── */}
         <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4vh', paddingBottom: '6vh', marginTop: 68 }}>
-          <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px' }}>
+          <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '10vh 40px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px' }}>
             <div style={{ width: 'fit-content', maxWidth: '100%' }}>
               {/* 데스크탑 헤드라인 */}
               <h1 className="hero-headline hero-headline-desktop" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontSize: 'clamp(32px, 5.2vw, 64px)', fontWeight: 700, lineHeight: 1.45, letterSpacing: '-1.5px', color: '#111', whiteSpace: 'nowrap', margin: 0 }}>
