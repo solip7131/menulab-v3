@@ -171,10 +171,17 @@ export async function POST(req: NextRequest) {
       ? platforms
       : [{ name: '기본', width: 1280, height: 960 }]
 
+    // ── Admin prompt override (어드민 토큰 검증 후 커스텀 프롬프트 적용) ────────
+    const adminToken = body.adminToken as string | undefined
+    const isAdmin    = adminToken && adminToken === process.env.ADMIN_PASSWORD
+    const overrideEnhance     = isAdmin ? (body.overridePromptEnhance     as string | undefined) : undefined
+    const overrideComposeBg   = isAdmin ? (body.overridePromptComposeBg   as string | undefined) : undefined
+    const overrideComposeText = isAdmin ? (body.overridePromptComposeText as string | undefined) : undefined
+
     const hasBgImage = !!(bgImageBase64 && bgImageMime)
     const bgName = backgroundName?.trim() || bgPrompt?.trim() || 'clean professional studio'
     const surfaceColor = getSurfaceColor(backgroundName, bgPrompt)
-    const promptEnhance = PROMPT_ENHANCE_TMPL.replace('{SURFACE_COLOR}', surfaceColor)
+    const promptEnhance = (overrideEnhance ?? PROMPT_ENHANCE_TMPL).replace('{SURFACE_COLOR}', surfaceColor)
 
     // ── Call 1: enhance food only (shared across all platforms) ──────────────
     console.log(`[generate] call 1/2 — food enhancement (surface: ${surfaceColor})`)
@@ -196,14 +203,14 @@ export async function POST(req: NextRequest) {
             { inlineData: { data: enhanced.data,  mimeType: enhanced.mimeType } },
             { inlineData: { data: bgImageBase64!, mimeType: bgImageMime!      } },
           ]
-          prompt = PROMPT_COMPOSE_BG_IMAGE
+          prompt = (overrideComposeBg ?? PROMPT_COMPOSE_BG_IMAGE)
             .replace('{WIDTH}',  String(plat.width))
             .replace('{HEIGHT}', String(plat.height))
         } else {
           parts = [
             { inlineData: { data: enhanced.data, mimeType: enhanced.mimeType } },
           ]
-          prompt = PROMPT_COMPOSE_TEXT_BG
+          prompt = (overrideComposeText ?? PROMPT_COMPOSE_TEXT_BG)
             .replace(/{BG_NAME}/g, bgName)
             .replace('{WIDTH}',    String(plat.width))
             .replace('{HEIGHT}',   String(plat.height))
