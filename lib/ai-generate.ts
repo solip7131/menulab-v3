@@ -192,11 +192,19 @@ export function buildPrompt(
   background: string,
   vesselInfo: string,
   wasPortrait = false,
-  extraInstructions = ''
+  extraInstructions = '',
+  preserveAngle = false
 ): string {
   const bg = background === 'white' ? 'bright' : background === 'black' ? 'dark' : background
 
-  const anglePrompt = angle === 'aerial'
+  const anglePrompt = preserveAngle
+    ? `━━━ RULE #1 — CAMERA ANGLE: PRESERVE ORIGINAL COMPOSITION ━━━
+Maintain the EXACT same camera angle, framing, and composition as the input photo.
+• Do NOT change the viewpoint, tilt, or zoom level
+• If the original is aerial (top-down), keep it aerial
+• If the original is angled (hero shot), keep the same angle
+• The dish position, size within the frame, and perspective must match the original`
+    : angle === 'aerial'
     ? `━━━ RULE #1 — CAMERA ANGLE: STRICT 90° TOP-DOWN FLAT LAY (HIGHEST PRIORITY — OVERRIDES ALL OTHER RULES) ━━━
 THIS IS THE MOST IMPORTANT RULE. Violating this rule makes the entire image unacceptable.
 
@@ -238,7 +246,11 @@ REPEAT: Camera HIGH above table → angled DOWN 45°. Hero shot. Wide ellipse di
     ? 'The background MUST be uniformly dark charcoal gray #2a2a2a — perfectly even, no gradient, no vignette, no lighter areas. Smooth seamless backdrop, no texture.'
     : 'Background: clean neutral background.'
 
-  return `${wasPortrait ? PORTRAIT_NOTE : ''}You are a professional Korean food delivery app photographer. This is a complete RESHOOTING task — not a filter, not an enhancement. Ignore the original photo's angle, zoom, lighting, and composition entirely. Rebuild the shot from scratch using ONLY the food and dish as reference.
+  const taskDesc = preserveAngle
+    ? `You are a professional Korean food photography retoucher. Your task is BACKGROUND REPLACEMENT only — keep the food, dish, lighting direction, and composition IDENTICAL to the original. Only change the background surface.`
+    : `You are a professional Korean food delivery app photographer. This is a complete RESHOOTING task — not a filter, not an enhancement. Ignore the original photo's angle, zoom, lighting, and composition entirely. Rebuild the shot from scratch using ONLY the food and dish as reference.`
+
+  return `${wasPortrait ? PORTRAIT_NOTE : ''}${taskDesc}
 
 ${anglePrompt}
 

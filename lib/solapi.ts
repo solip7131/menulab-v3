@@ -8,8 +8,8 @@ const SOLAPI_ENDPOINT = 'https://api.solapi.com/messages/v4/send'
 // SOLAPI_PFID    — 카카오채널 pfId (KA01PF...)
 // SOLAPI_TEMPLATE_ORDER    — 주문 완료 알림 templateId
 // SOLAPI_TEMPLATE_PAYMENT  — 입금 확인 알림 templateId
-// SOLAPI_TEMPLATE_AI_DONE  — AI 완료 알림 templateId
-// SOLAPI_TEMPLATE_SIGNUP   — 회원가입 완료 알림 templateId
+// SOLAPI_TEMPLATE_COMPLETE — AI 완료 알림 templateId
+// SOLAPI_TEMPLATE_WELCOME  — 회원가입 완료 알림 templateId
 
 function makeAuth(apiKey: string, apiSecret: string): string {
   const date = new Date().toISOString()
@@ -150,7 +150,7 @@ export async function notifySignup(params: {
   phone: string
   customerName: string
 }) {
-  const templateId = process.env.SOLAPI_TEMPLATE_SIGNUP
+  const templateId = process.env.SOLAPI_TEMPLATE_WELCOME
   if (!templateId) return
   const siteUrl = SITE_URL()
   await sendAlimtalk(
@@ -168,19 +168,17 @@ export async function notifySignup(params: {
 
 export async function notifyAiDone(params: {
   phone: string
-  orderId: string
-  cutCount: string | number
+  customerName?: string
+  orderId?: string
+  cutCount?: string | number
 }) {
-  const templateId = process.env.SOLAPI_TEMPLATE_AI_DONE
+  const templateId = process.env.SOLAPI_TEMPLATE_COMPLETE
   if (!templateId) return
   const siteUrl = SITE_URL()
   await sendAlimtalk(
     params.phone,
     templateId,
-    {
-      '#{주문번호}': params.orderId.slice(-8).toUpperCase(),
-      '#{컷수}':    String(params.cutCount),
-    },
+    { '#{고객명}': params.customerName ?? '' },
     [{
       buttonType: 'WL',
       buttonName: '결과물 확인하기',

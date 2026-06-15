@@ -87,7 +87,9 @@ export async function POST(req: NextRequest) {
         if (customPrompt) {
           prompt = customPrompt
         } else if (stage === 1) {
-          prompt = buildPrompt(angle, background, '', wasPortrait)
+          // angle이 비어있으면 리터치 → 원본 구도 유지, 설정돼 있으면 리메이크 → 구도 강제
+          const preserveAngle = !order.angle
+          prompt = buildPrompt(angle, background, '', wasPortrait, '', preserveAngle)
         } else {
           const rawVessel = vesselList[i] ?? vesselList[0] ?? ''
           const vesselInfo = getVesselPrompt(rawVessel)
@@ -159,13 +161,21 @@ export async function POST(req: NextRequest) {
       // AI 완료 알림톡 발송
       try {
         let phone = order.customer_phone
+        let customerName = order.customer_name ?? ''
+        console.log('[ai_done] order.customer_phone:', phone, 'order.customer_email:', order.customer_email)
         if (!phone && order.customer_email) {
-          const { data: tokenRow } = await supabaseAdmin
-            .from('kakao_tokens').select('phone').eq('kakao_email', order.customer_email).single()
+          const { data: tokenRow, error: tokenErr } = await supabaseAdmin
+            .from('kakao_tokens').select('phone, kakao_name').eq('kakao_email', order.customer_email).single()
+          console.log('[ai_done] kakao_tokens lookup:', { tokenRow, tokenErr })
           phone = tokenRow?.phone ?? null
+          if (!customerName && tokenRow?.kakao_name) customerName = tokenRow.kakao_name
         }
+        console.log('[ai_done] final phone:', phone, 'customerName:', customerName, 'templateId:', process.env.SOLAPI_TEMPLATE_COMPLETE)
         if (phone) {
-          await notifyAiDone({ phone, orderId, cutCount: order.cut_count ?? finalUrls.length })
+          await notifyAiDone({ phone, customerName })
+          console.log('[ai_done] alimtalk sent')
+        } else {
+          console.warn('[ai_done] no phone found, skipping alimtalk')
         }
       } catch (e) {
         console.warn('ai_done notify failed:', e)

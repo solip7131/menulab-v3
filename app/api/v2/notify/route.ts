@@ -50,8 +50,7 @@ export async function POST(req: NextRequest) {
     if (type === 'ai_done') {
       await notifyAiDone({
         phone,
-        orderId: order.id,
-        cutCount: order.cut_count,
+        customerName: order.customer_name ?? '',
       })
       return NextResponse.json({ success: true })
     }
