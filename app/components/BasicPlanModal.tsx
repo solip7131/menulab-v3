@@ -654,15 +654,13 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
                   메뉴사진의 에이스가 될 원본 사진 촬영방법입니다
                 </p>
 
-                {/* 예시 이미지 3장 */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} style={{ flex: 1, aspectRatio: '1/1', borderRadius: '10px', background: '#f0f0f0', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '22px' }}>📷</span>
-                      </div>
-                    ))}
-                  </div>
+                {/* 예시 이미지 */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  {['/예시1.png', '/예시2.png'].map((src, i) => (
+                    <div key={i} style={{ flex: 1, aspectRatio: '1/1', borderRadius: '10px', overflow: 'hidden', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img src={src} alt={`예시${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+                    </div>
+                  ))}
                 </div>
 
                 {/* 좋아요 */}
