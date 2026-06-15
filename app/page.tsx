@@ -339,8 +339,8 @@ function ReviewCarousel() {
       {/* 화살표 + 2개 페이지 점 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '24px' }}>
         <button
-          onClick={() => snapTo(Math.max(0, active - 1))}
-          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: active === 0 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
+          onClick={() => snapTo(Math.max(0, activePage - 1) * PAGE_SIZE)}
+          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: activePage === 0 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
         >←</button>
         {Array.from({ length: pages }, (_, p) => (
           <button
@@ -350,8 +350,8 @@ function ReviewCarousel() {
           />
         ))}
         <button
-          onClick={() => snapTo(Math.min(total - 1, active + 1))}
-          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: active === total - 1 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
+          onClick={() => snapTo(Math.min(pages - 1, activePage + 1) * PAGE_SIZE)}
+          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: activePage === pages - 1 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
         >→</button>
       </div>
     </div>
