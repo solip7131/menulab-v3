@@ -132,6 +132,21 @@ export async function POST(req: NextRequest) {
       })
 
       console.log(`payapp webhook: sub gems ${gems} → ${userEmail}, balance ${newBalance}`)
+
+      // 구독 결제 완료 알림톡
+      const subPhone = params.get('var4') ?? params.get('recvphone')
+      if (subPhone && subPhone.replace(/\D/g, '').length >= 10) {
+        const templateId = process.env.SOLAPI_TEMPLATE_CHARGE
+        if (templateId) {
+          try {
+            await sendAlimtalk(subPhone, templateId, {
+              '#{고객명}': userEmail.split('@')[0],
+              '#{젬수량}': String(gems),
+              '#{잔액}':   String(newBalance),
+            })
+          } catch (e) { console.warn('alimtalk (sub charge) failed:', e) }
+        }
+      }
       return new NextResponse('ok', { status: 200 })
     }
 
@@ -205,7 +220,7 @@ export async function POST(req: NextRequest) {
             phone,
             templateId,
             {
-              '#{이름}':   userEmail.split('@')[0],
+              '#{고객명}': userEmail.split('@')[0],
               '#{젬수량}': String(gems),
               '#{잔액}':   String(newBalance),
             },
