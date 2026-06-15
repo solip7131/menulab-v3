@@ -12,15 +12,13 @@ const PLANS = [
     monthlyPrice: 29900, yearlyMonthly: 19900, yearlyTotal: 238800, discount: 33,
     gems: 100, photos: 10, highlight: false,
     yearlyFeatures: [
-      '매월 100젬 지급 (사진 10장)',
-      '메뉴 리터치 이용 가능',
+      '1,200젬 즉시 지급 (사진 120장)',
       '배경 선택',
       '결과물 마이페이지 저장',
       '이메일 고객지원',
     ],
     monthlyFeatures: [
-      '매월 100젬 지급 (사진 10장)',
-      '메뉴 리터치 이용 가능',
+      '매월 100젬 자동 지급 (사진 10장)',
       '배경 선택',
       '결과물 마이페이지 저장',
       '이메일 고객지원',
@@ -32,16 +30,14 @@ const PLANS = [
     monthlyPrice: 49900, yearlyMonthly: 34900, yearlyTotal: 418800, discount: 30,
     gems: 200, photos: 20, highlight: true,
     yearlyFeatures: [
-      '매월 200젬 지급 (사진 20장)',
+      '2,400젬 즉시 지급 (사진 240장)',
       '베이직 전체 포함',
-      '메뉴 리메이크 이용 가능',
       '우선 처리 (빠른 납품)',
       '카카오톡 1:1 지원',
     ],
     monthlyFeatures: [
-      '매월 200젬 지급 (사진 20장)',
+      '매월 200젬 자동 지급 (사진 20장)',
       '베이직 전체 포함',
-      '메뉴 리메이크 이용 가능',
       '우선 처리 (빠른 납품)',
       '카카오톡 1:1 지원',
     ],
@@ -52,19 +48,15 @@ const PLANS = [
     monthlyPrice: 89900, yearlyMonthly: 59900, yearlyTotal: 718800, discount: 33,
     gems: 400, photos: 40, highlight: false,
     yearlyFeatures: [
-      '매월 400젬 지급 (사진 40장)',
+      '4,800젬 즉시 지급 (사진 480장)',
       '스탠다드 전체 포함',
       '메뉴 모음컷 이용 가능',
-      '수작업 보정 포함',
-      '브리핑 서비스 (세부 요청)',
       '전담 매니저 배정',
     ],
     monthlyFeatures: [
-      '매월 400젬 지급 (사진 40장)',
+      '매월 400젬 자동 지급 (사진 40장)',
       '스탠다드 전체 포함',
       '메뉴 모음컷 이용 가능',
-      '수작업 보정 포함',
-      '브리핑 서비스 (세부 요청)',
       '전담 매니저 배정',
     ],
   },
@@ -428,7 +420,7 @@ export default function PricingPage() {
             </div>
 
             <p style={{ textAlign: 'center', color: '#aaa', fontSize: '13px', marginTop: '20px' }}>
-              구독 없이 필요할 때만 충전 · 젬은 유효기간 없이 사용 가능
+              구독 젬은 유효기간 없이 사용 가능 · 언제든 해지 가능
             </p>
 
             {/* Add-on Packages */}
