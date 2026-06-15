@@ -74,11 +74,8 @@ export async function POST(req: NextRequest) {
       var1:        email,
       var2:        pkgId,
       var3:        orderId,
-      var4:        cleanedPhone,
+      var4:        cleanedPhone,  // webhook에서 폰번호 사용 (카톡 알림은 recvphone 미전달로 차단)
     })
-    if (cleanedPhone.length >= 10) {
-      params.set('recvphone', cleanedPhone)
-    }
 
     const res  = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
     const text = await res.text()

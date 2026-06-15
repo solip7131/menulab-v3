@@ -87,9 +87,8 @@ export async function POST(req: NextRequest) {
         var1:        email,
         var2:        `sub_${key}`,
         var3:        subId,
-        var4:        recvphone,
+        var4:        recvphone,  // webhook용 (recvphone 미전달로 카톡 알림 차단)
       })
-      if (recvphone.length >= 10) params.set('recvphone', recvphone)
 
       const res = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
       const text = await res.text()
@@ -114,8 +113,8 @@ export async function POST(req: NextRequest) {
         var1:            email,
         var2:            `sub_${key}`,
         var3:            subId,
+        // recvphone 미전달 → Payapp 자동 카톡 알림 차단
       })
-      if (recvphone.length >= 10) params.set('recvphone', recvphone)
 
       const res = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
       const text = await res.text()
