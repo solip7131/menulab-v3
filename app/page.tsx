@@ -245,9 +245,16 @@ function ImageCompareSlider() {
 function ReviewCarousel() {
   const trackRef  = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
-  const total = REVIEWS.length
+  const dragX      = useRef(0)
+  const dragScroll = useRef(0)
+  const dragging   = useRef(false)
 
-  const scrollTo = (i: number) => {
+  const total     = REVIEWS.length
+  const PAGE_SIZE = 3
+  const pages     = Math.ceil(total / PAGE_SIZE)
+  const activePage = Math.floor(active / PAGE_SIZE)
+
+  const snapTo = (i: number) => {
     const el = trackRef.current
     if (!el) return
     const card = el.children[i] as HTMLElement | undefined
@@ -258,7 +265,7 @@ function ReviewCarousel() {
 
   const onScroll = () => {
     const el = trackRef.current
-    if (!el) return
+    if (!el || dragging.current) return
     let closest = 0, minDist = Infinity
     Array.from(el.children).forEach((c, i) => {
       const dist = Math.abs((c as HTMLElement).offsetLeft - el.scrollLeft)
@@ -267,9 +274,47 @@ function ReviewCarousel() {
     setActive(closest)
   }
 
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragging.current = true
+    dragX.current = e.clientX
+    dragScroll.current = trackRef.current?.scrollLeft ?? 0
+    e.currentTarget.setPointerCapture(e.pointerId)
+    e.currentTarget.style.scrollSnapType = 'none'
+    e.currentTarget.style.cursor = 'grabbing'
+  }
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current || !trackRef.current) return
+    trackRef.current.scrollLeft = dragScroll.current - (e.clientX - dragX.current)
+  }
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return
+    dragging.current = false
+    e.currentTarget.style.scrollSnapType = ''
+    e.currentTarget.style.cursor = ''
+    const el = trackRef.current
+    if (!el) return
+    let closest = 0, minDist = Infinity
+    Array.from(el.children).forEach((c, i) => {
+      const dist = Math.abs((c as HTMLElement).offsetLeft - el.scrollLeft)
+      if (dist < minDist) { minDist = dist; closest = i }
+    })
+    snapTo(closest)
+  }
+
   return (
     <div>
-      <div ref={trackRef} className="rv-grid" onScroll={onScroll}>
+      <div
+        ref={trackRef}
+        className="rv-grid"
+        onScroll={onScroll}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={{ cursor: 'grab' }}
+      >
         {REVIEWS.map((r, i) => (
           <div key={i} className="rv-card-hover" style={{
             background: '#fff', borderRadius: '20px', padding: '28px 24px',
@@ -291,21 +336,21 @@ function ReviewCarousel() {
         ))}
       </div>
 
-      {/* 화살표 + 점 네비게이션 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '24px' }}>
+      {/* 화살표 + 2개 페이지 점 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '24px' }}>
         <button
-          onClick={() => scrollTo(Math.max(0, active - 1))}
+          onClick={() => snapTo(Math.max(0, active - 1))}
           style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: active === 0 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
         >←</button>
-        {REVIEWS.map((_, i) => (
+        {Array.from({ length: pages }, (_, p) => (
           <button
-            key={i}
-            onClick={() => scrollTo(i)}
-            style={{ width: i === active ? '22px' : '8px', height: '8px', borderRadius: '4px', border: 'none', background: i === active ? 'var(--orange)' : 'rgba(0,0,0,0.15)', cursor: 'pointer', padding: 0, transition: 'all 0.3s', flexShrink: 0 }}
+            key={p}
+            onClick={() => snapTo(p * PAGE_SIZE)}
+            style={{ width: p === activePage ? '28px' : '8px', height: '8px', borderRadius: '4px', border: 'none', background: p === activePage ? 'var(--orange)' : 'rgba(0,0,0,0.15)', cursor: 'pointer', padding: 0, transition: 'all 0.3s', flexShrink: 0 }}
           />
         ))}
         <button
-          onClick={() => scrollTo(Math.min(total - 1, active + 1))}
+          onClick={() => snapTo(Math.min(total - 1, active + 1))}
           style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: active === total - 1 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
         >→</button>
       </div>
