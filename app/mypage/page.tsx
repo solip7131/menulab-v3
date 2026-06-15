@@ -469,16 +469,47 @@ function MyPageContent() {
 
     // Pick up generation request stored by BasicPlanModal before navigation
     const pendingStr = sessionStorage.getItem('menulab_pending_generate')
-    if (!pendingStr) {
-      try { localStorage.removeItem(GENERATING_KEY) } catch {}
+    if (pendingStr) {
+      sessionStorage.removeItem('menulab_pending_generate')
+      try {
+        const { requests } = JSON.parse(pendingStr) as { requests: Record<string, unknown>[] }
+        if (Array.isArray(requests) && requests.length > 0) runGeneration(requests, sessionToken)
+      } catch {}
       return
     }
-    sessionStorage.removeItem('menulab_pending_generate')
+
+    // No pending generate — restore generating state if a recent generation is in progress
     try {
-      const { requests } = JSON.parse(pendingStr) as { requests: Record<string, unknown>[] }
-      if (Array.isArray(requests) && requests.length > 0) runGeneration(requests, sessionToken)
+      const raw = localStorage.getItem(GENERATING_KEY)
+      if (raw) {
+        const { count, startedAt } = JSON.parse(raw)
+        const age = Date.now() - (startedAt ?? 0)
+        if (age < 5 * 60 * 1000) {
+          setIsGenerating(true)
+          setGeneratingInfo({ count: count ?? 1, completed: 0 })
+        } else {
+          localStorage.removeItem(GENERATING_KEY)
+        }
+      }
     } catch {}
   }, [sessionToken])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Detect completion when generating state was restored from localStorage (cross-navigation)
+  useEffect(() => {
+    if (!isGenerating) return
+    try {
+      const raw = localStorage.getItem(GENERATING_KEY)
+      if (!raw) return // runGeneration manages its own state
+      const { startedAt } = JSON.parse(raw)
+      if (!startedAt) return
+      const arrived = images.filter(img => new Date(img.created_at).getTime() > startedAt).length
+      if (arrived > 0) {
+        localStorage.removeItem(GENERATING_KEY)
+        setIsGenerating(false)
+        setGeneratingInfo(null)
+      }
+    } catch {}
+  }, [images, isGenerating])
 
   // Polling: 3s during generation, 10s otherwise
   useEffect(() => {

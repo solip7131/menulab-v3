@@ -496,7 +496,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
           : (bgMethod === 'prompt' ? bgPrompt : ''),
         bgPrompt:   bgMethod === 'prompt' ? bgPrompt : '',
       }))
-      localStorage.setItem('menulab_generating', JSON.stringify({ count: validPhotos.length }))
+      localStorage.setItem('menulab_generating', JSON.stringify({ count: validPhotos.length, startedAt: Date.now() }))
     } catch {}
 
     if (onGenerate) {
