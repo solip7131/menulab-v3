@@ -748,7 +748,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 clamp(24px,6vw,120px)' }}>
           <div className="process-steps-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', paddingBottom: '80px' }}>
             {/* Step 1 */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+            <div className="process-card" style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: '48px', fontWeight: 400, color: '#ddd', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '20px' }}>01</p>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>사진 업로드</h3>
               <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, flex: 1 }}>
@@ -759,7 +759,7 @@ export default function HomePage() {
               <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '20px' }}>✔ 자연광 OK&nbsp;&nbsp;&nbsp;✔ 스마트폰 OK&nbsp;&nbsp;&nbsp;✔ 무편집 OK</p>
             </div>
             {/* Step 2 */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+            <div className="process-card" style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: '48px', fontWeight: 400, color: '#ddd', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '20px' }}>02</p>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>옵션 선택</h3>
               <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, flex: 1 }}>
@@ -770,7 +770,7 @@ export default function HomePage() {
               <p style={{ fontSize: '13px', color: '#FF5722', marginTop: '20px' }}>✔ 배달의민족&nbsp;&nbsp;&nbsp;✔ 쿠팡이츠&nbsp;&nbsp;&nbsp;✔ 네이버 플레이스</p>
             </div>
             {/* Step 3 */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+            <div className="process-card" style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: '48px', fontWeight: 400, color: '#ddd', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '20px' }}>03</p>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>AI 생성 완료</h3>
               <p style={{ fontSize: '15px', fontWeight: 400, color: '#666', lineHeight: 1.7, flex: 1 }}>

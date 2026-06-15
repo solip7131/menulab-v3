@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { verifySessionToken } from '../../mypage/_utils'
-import { sendAlimtalk } from '../../../../lib/solapi'
+import { sendAlimtalk, cleanPhone } from '../../../../lib/solapi'
 
 const GEM_PACKAGES = {
   gem10:  { gems: 10,  won: 5900,  label: '10젬 패키지 (사진 1장)'  },
@@ -21,7 +22,22 @@ export async function POST(req: NextRequest) {
     const email = verifySessionToken(token)
     if (!email) return NextResponse.json({ error: '세션이 만료됐어요' }, { status: 401 })
 
-    const { packageId, goodname: rawGoodname, price: rawPrice, recvphone } = await req.json()
+    const { packageId, goodname: rawGoodname, price: rawPrice, recvphone: rawRecvphone } = await req.json()
+
+    // recvphone 없으면 DB에서 조회
+    let recvphone = rawRecvphone ?? ''
+    if (!recvphone || cleanPhone(recvphone).length < 10) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+      const { data } = await supabase
+        .from('kakao_tokens')
+        .select('phone')
+        .eq('kakao_email', email)
+        .single()
+      recvphone = data?.phone ?? ''
+    }
 
     // packageId 방식 (CoinChargeModal) 또는 goodname+price 방식 (어드민/테스트) 모두 지원
     let goodname: string
@@ -47,19 +63,22 @@ export async function POST(req: NextRequest) {
 
     const orderId = `${email.replace(/[^a-zA-Z0-9]/g, '_')}_${pkgId || 'custom'}_${Date.now()}`
 
+    const cleanedPhone = cleanPhone(recvphone)
     const params = new URLSearchParams({
       cmd:         'payrequest',
       userid:      userId,
       key,
       goodname,
       price:       String(price),
-      recvphone:   recvphone ?? '',
       feedbackurl: `${BASE_URL}/api/payapp/webhook`,
       var1:        email,
       var2:        pkgId,
       var3:        orderId,
-      var4:        recvphone ?? '',
+      var4:        cleanedPhone,
     })
+    if (cleanedPhone.length >= 10) {
+      params.set('recvphone', cleanedPhone)
+    }
 
     const res  = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
     const text = await res.text()

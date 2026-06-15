@@ -209,6 +209,20 @@ html { overscroll-behavior-y: none; }
   display: flex;
   flex-direction: column;
 }
+.process-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  border: 1.5px solid transparent;
+  cursor: default;
+}
+.process-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.1);
+  border-color: rgba(196,81,13,0.2);
+}
+.process-card:hover p:first-child {
+  color: var(--orange) !important;
+  transition: color 0.25s ease;
+}
 @media (max-width: 768px) {
   .process-col {
     grid-column: span 3;
