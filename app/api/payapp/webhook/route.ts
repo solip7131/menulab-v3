@@ -44,9 +44,10 @@ export async function POST(req: NextRequest) {
     const userId   = params.get('userid')
     const price    = params.get('price')
     const var1     = params.get('var1')       // userEmail
-    const var2     = params.get('var2')       // packageId
-    const var3     = params.get('var3')       // orderId
+    const var2     = params.get('var2')       // packageId or 'sub_basic_monthly' etc.
+    const var3     = params.get('var3')       // orderId or subscriptionId
     const payseq   = params.get('payseq')     // 결제 일련번호
+    const rebillNo = params.get('rebill_no')  // 정기결제 등록번호
 
     // 결제 완료 상태 체크 (state=1 또는 pay_state=2)
     const isPaid = state === '1' || payState === '2' || payState === '4' || payState === '8'
@@ -57,7 +58,6 @@ export async function POST(req: NextRequest) {
 
     const userEmail = var1
     const packageId = var2
-    const orderId   = var3 ?? payseq ?? `payapp_${Date.now()}`
 
     if (!userEmail) {
       console.error('payapp webhook: missing userEmail')
@@ -69,6 +69,69 @@ export async function POST(req: NextRequest) {
       console.error('payapp webhook: invalid userid', userId)
       return new NextResponse('ok', { status: 200 })
     }
+
+    // ── 구독 결제 처리 ──────────────────────────────────────────
+    if (packageId?.startsWith('sub_')) {
+      const subId = var3 ?? ''
+      const txKey = `sub:${rebillNo ?? subId}:${payseq ?? Date.now()}`
+
+      // 중복 처리 방지
+      const { data: existingTx } = await supabase
+        .from('credit_transactions').select('id').eq('description', txKey).maybeSingle()
+      if (existingTx) {
+        console.log('payapp webhook: duplicate sub tx', txKey)
+        return new NextResponse('ok', { status: 200 })
+      }
+
+      // 구독 레코드 조회 (subId 또는 rebill_no로)
+      let subQuery = supabase.from('subscriptions').select('*')
+      if (rebillNo) {
+        subQuery = subQuery.eq('rebill_no', rebillNo)
+      } else if (subId) {
+        subQuery = subQuery.eq('id', subId)
+      } else {
+        subQuery = subQuery.eq('user_email', userEmail).eq('status', 'pending')
+      }
+      const { data: sub } = await subQuery.maybeSingle()
+
+      if (!sub) {
+        console.error('payapp webhook: subscription not found', { subId, rebillNo, userEmail })
+        return new NextResponse('ok', { status: 200 })
+      }
+
+      const gems = sub.gems_per_cycle
+
+      // 구독 활성화 / rebill_no 저장
+      const nextBilling = new Date()
+      nextBilling.setMonth(nextBilling.getMonth() + 1)
+      await supabase.from('subscriptions').update({
+        status:          'active',
+        rebill_no:       rebillNo ?? sub.rebill_no,
+        next_billing_at: nextBilling.toISOString(),
+      }).eq('id', sub.id)
+
+      // 젬 지급
+      const { data: credits } = await supabase
+        .from('user_credits').select('balance').eq('user_email', userEmail).maybeSingle()
+      const newBalance = (credits?.balance ?? 0) + gems
+      await supabase.from('user_credits').upsert(
+        { user_email: userEmail, balance: newBalance, updated_at: new Date().toISOString() },
+        { onConflict: 'user_email' },
+      )
+      await supabase.from('credit_transactions').insert({
+        user_email:  userEmail,
+        type:        'charge',
+        amount:      gems,
+        won:         Number(price) || sub.price_per_cycle,
+        description: txKey,
+      })
+
+      console.log(`payapp webhook: sub gems ${gems} → ${userEmail}, balance ${newBalance}`)
+      return new NextResponse('ok', { status: 200 })
+    }
+
+    // ── 일회성 젬 충전 처리 ────────────────────────────────────
+    const orderId = var3 ?? payseq ?? `payapp_${Date.now()}`
 
     // 젬 수량 결정: packageId 우선, 없으면 가격으로 fallback
     let gems = 0

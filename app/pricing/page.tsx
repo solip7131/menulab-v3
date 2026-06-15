@@ -104,6 +104,8 @@ export default function PricingPage() {
   const [hasPhone, setHasPhone]             = useState(true)
   const [scrolled, setScrolled]             = useState(false)
   const [billingCycle, setBillingCycle]     = useState<'monthly' | 'yearly'>('yearly')
+  const [activeSubscription, setActiveSubscription] = useState<{ plan_key: string; billing_cycle: string; next_billing_at: string } | null>(null)
+  const [subscribing, setSubscribing]       = useState(false)
   const countdown = useCountdown()
 
   useEffect(() => {
@@ -158,6 +160,10 @@ export default function PricingPage() {
       .then(r => r.json())
       .then(d => { if (typeof d.balance === 'number') setGemBalance(d.balance) })
       .catch(() => {})
+    fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${userToken}` } })
+      .then(r => r.json())
+      .then(d => { if (d.subscription) setActiveSubscription(d.subscription) })
+      .catch(() => {})
   }, [userToken])
 
   const handleChargeClick = () => {
@@ -166,6 +172,40 @@ export default function PricingPage() {
       setShowChargeModal(true)
     } else {
       setLoginModal(true)
+    }
+  }
+
+  const handleSubscribeClick = async (planKey: string) => {
+    if (!isLoggedIn) { setLoginModal(true); return }
+    if (!hasPhone) { setShowPhoneVerify(true); return }
+    if (!userToken) return
+    if (subscribing) return
+
+    if (activeSubscription) {
+      alert(`이미 ${activeSubscription.plan_key} 플랜을 구독 중이에요.\n마이페이지에서 해지 후 재구독할 수 있어요.`)
+      return
+    }
+
+    setSubscribing(true)
+    try {
+      const popup = window.open('about:blank', '_blank', 'width=480,height=700')
+      const res = await fetch('/api/payapp/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
+        body: JSON.stringify({ planKey, billingCycle }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        popup?.close()
+        alert(data.error || '구독 연동 중 오류가 발생했어요')
+        return
+      }
+      if (popup) popup.location.href = data.url
+      else window.open(data.url, '_blank', 'width=480,height=700')
+    } catch {
+      alert('네트워크 오류가 발생했어요')
+    } finally {
+      setSubscribing(false)
     }
   }
 
@@ -358,17 +398,24 @@ export default function PricingPage() {
                         ))}
                       </ul>
                       <button
-                        onClick={handleChargeClick}
+                        onClick={() => handleSubscribeClick(plan.key)}
+                        disabled={subscribing}
                         style={{
                           display: 'block', width: '100%', textAlign: 'center',
-                          padding: '15px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                          background: isStandard ? 'var(--orange)' : 'var(--black)',
+                          padding: '15px', borderRadius: '12px', border: 'none',
+                          cursor: subscribing ? 'not-allowed' : 'pointer',
+                          background: activeSubscription?.plan_key === plan.key
+                            ? '#22c55e'
+                            : isStandard ? 'var(--orange)' : 'var(--black)',
                           color: '#fff', fontWeight: 800, fontSize: '15px',
                           boxShadow: isStandard ? '0 4px 20px rgba(196,81,13,0.4)' : 'none',
+                          opacity: subscribing ? 0.7 : 1,
                           transition: 'opacity 0.15s',
                         }}
                       >
-                        젬 충전하기
+                        {activeSubscription?.plan_key === plan.key
+                          ? '구독 중 ✓'
+                          : subscribing ? '처리 중...' : '구독 시작하기'}
                       </button>
                     </div>
                   </div>
