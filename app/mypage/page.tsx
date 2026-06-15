@@ -47,14 +47,6 @@ const SIDEBAR_SECTIONS = [
       { name: '배경 제거',   active: false },
     ],
   },
-  {
-    label: '홀 매장',
-    items: [
-      { name: '포스&키오스크', active: false },
-      { name: '테이블 오더',   active: false },
-      { name: '지도앱',        active: false },
-    ],
-  },
 ]
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -121,6 +113,7 @@ function ImageCard({
   onDownload,
   onDelete,
   onRegenerate,
+  onOpenPlan,
 }: {
   image:        GeneratedImage
   downloading:  boolean
@@ -130,6 +123,7 @@ function ImageCard({
   onDownload:   () => void
   onDelete:     () => void
   onRegenerate: () => void
+  onOpenPlan:   () => void
 }) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -221,13 +215,16 @@ function ImageCard({
           ) : '사진 다운로드 💎 10젬'}
         </button>
 
-        {/* Watermark trial */}
-        <button style={{
-          width: '100%', padding: '8px', borderRadius: '10px',
-          background: 'none', border: '1.5px solid rgba(196,81,13,0.25)',
-          color: 'var(--orange)', fontWeight: 700, fontSize: '11px', cursor: 'pointer',
-        }}>
-          워터마크 제거 1개월 무료 체험하기
+        {/* Watermark removal → subscription plan */}
+        <button
+          onClick={onOpenPlan}
+          style={{
+            width: '100%', padding: '8px', borderRadius: '10px',
+            background: 'none', border: '1.5px solid rgba(196,81,13,0.25)',
+            color: 'var(--orange)', fontWeight: 700, fontSize: '11px', cursor: 'pointer',
+          }}
+        >
+          지금 워터마크 제거하기
         </button>
 
         {/* Secondary actions */}
@@ -742,16 +739,18 @@ function MyPageContent() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        {/* 로고 */}
-        <Link href="/"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
+        {/* 로고 + 가이드 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link href="/"><img src="https://i.ibb.co/YF3csF80/image.png" alt="메뉴랩" style={{ height: '48px', width: 'auto' }} /></Link>
+          <button
+            onClick={() => setShowGuideModal(true)}
+            style={{ fontSize: '12px', fontWeight: 700, color: '#555', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '100px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >사진 업로드 가이드</button>
+        </div>
 
         {/* 데스크탑 우측 */}
         {!isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={() => setShowGuideModal(true)}
-              style={{ fontSize: '12px', fontWeight: 700, color: '#555', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '100px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >사진 업로드 가이드</button>
             <span style={{ fontSize: '13px', color: '#888', fontWeight: 600 }}>{displayName} 님</span>
             <button
               onClick={() => setShowChargeModal(true)}
@@ -1156,6 +1155,7 @@ function MyPageContent() {
                     onDownload={() => handleDownload(img.id)}
                     onDelete={() => handleDelete(img.id)}
                     onRegenerate={() => handleRegenerate(img)}
+                    onOpenPlan={() => setShowUpsellModal(true)}
                   />
                 ))}
               </div>
