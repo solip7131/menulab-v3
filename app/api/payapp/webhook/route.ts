@@ -141,8 +141,8 @@ export async function POST(req: NextRequest) {
           try {
             await sendAlimtalk(subPhone, templateId, {
               '#{고객명}': userEmail.split('@')[0],
-              '#{젬수량}': String(gems),
-              '#{잔액}':   String(newBalance),
+              '#{상품명}': sub.plan_key === 'basic' ? '베이직' : sub.plan_key === 'standard' ? '스탠다드' : '프로',
+              '#{젬수}':   String(gems),
             })
           } catch (e) { console.warn('alimtalk (sub charge) failed:', e) }
         }
@@ -221,8 +221,8 @@ export async function POST(req: NextRequest) {
             templateId,
             {
               '#{고객명}': userEmail.split('@')[0],
-              '#{젬수량}': String(gems),
-              '#{잔액}':   String(newBalance),
+              '#{상품명}': pkgLabel,
+              '#{젬수}':   String(gems),
             },
           )
         } catch (e) {
