@@ -842,27 +842,37 @@ export default function HomePage() {
             <h2 style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>메뉴랩 서비스</h2>
           </div>
           <div className="sv-grid">
-            {SERVICES.map((s, i) => (
-              <div
-                key={i}
-                className="reveal-up sv-card-hover"
-                data-delay={i as unknown as string}
-                onClick={handleOpenBasic}
-                style={{
-                  borderRadius: '20px', padding: '28px 24px 24px',
-                  border: '1.5px solid rgba(0,0,0,0.07)', cursor: 'pointer',
-                  background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
-                  display: 'flex', flexDirection: 'column',
-                }}
-              >
-                <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', borderRadius: '100px', padding: '5px 14px', fontSize: '13px', fontWeight: 700, alignSelf: 'flex-start', marginBottom: '16px' }}>{s.gem}</div>
-                <h3 className="h-3" style={{ margin: '0 0 10px 0' }}>{s.name}</h3>
-                <p className="lead" style={{ flex: 1, margin: 0 }}>{s.desc}</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', color: 'var(--orange)' }}><path d="M6 18L18 6M9 6h9v9"/></svg>
+            {SERVICES.map((s, i) => {
+              const disabled = s.name === '메뉴 리메이크' || s.name === '메뉴 모음컷'
+              return (
+                <div
+                  key={i}
+                  className={`reveal-up${disabled ? '' : ' sv-card-hover'}`}
+                  data-delay={i as unknown as string}
+                  onClick={disabled ? undefined : handleOpenBasic}
+                  style={{
+                    borderRadius: '20px', padding: '28px 24px 24px',
+                    border: '1.5px solid rgba(0,0,0,0.07)',
+                    cursor: disabled ? 'default' : 'pointer',
+                    background: disabled ? '#f9f9f9' : '#fff',
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
+                    display: 'flex', flexDirection: 'column',
+                    opacity: disabled ? 0.6 : 1,
+                    position: 'relative', overflow: 'hidden',
+                  }}
+                >
+                  {disabled && (
+                    <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#888', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '100px', letterSpacing: '0.5px' }}>준비중</div>
+                  )}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', borderRadius: '100px', padding: '5px 14px', fontSize: '13px', fontWeight: 700, alignSelf: 'flex-start', marginBottom: '16px' }}>{s.gem}</div>
+                  <h3 className="h-3" style={{ margin: '0 0 20px 0' }}>{s.name}</h3>
+                  <p className="lead" style={{ flex: 1, margin: 0 }}>{s.desc}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', color: disabled ? '#ccc' : 'var(--orange)' }}><path d="M6 18L18 6M9 6h9v9"/></svg>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
