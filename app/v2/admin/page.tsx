@@ -88,7 +88,7 @@ export default function V2AdminPage() {
   // ── AI 테스트 패널 ──
   const [testMode, setTestMode]               = useState(false)
   const [testPhotos, setTestPhotos]           = useState<File[]>([])
-  const [testAngle, setTestAngle]             = useState<'aerial' | 'side'>('aerial')
+  const [testAngle, setTestAngle]             = useState<'original' | 'side45' | 'topdown'>('original')
   const [testBg, setTestBg]                   = useState<'black' | 'white'>('black')
   const [testVesselId, setTestVesselId]       = useState('original')
   const [testPrompt, setTestPrompt]           = useState('')
@@ -477,7 +477,7 @@ export default function V2AdminPage() {
                 <div>
                   <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    {([['aerial', '항공뷰'], ['side', '측면뷰']] as const).map(([v, l]) => (
+                    {([['original', '원본구도'], ['topdown', '항공뷰'], ['side45', '측면뷰']] as const).map(([v, l]) => (
                       <button key={v} onClick={() => setTestAngle(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
                     ))}
                   </div>

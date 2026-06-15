@@ -52,7 +52,11 @@ export async function POST(req: NextRequest) {
       .single()
     if (orderError || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 
-    const angle = order.angle || 'aerial'
+    // order.angle: '' | 'original' | 'side45' | 'topdown'
+    // '' or 'original' → 리터치 (원본 구도 유지), 나머지 → 리메이크 (구도 강제)
+    const rawAngle = order.angle || ''
+    const preserveOriginalAngle = !rawAngle || rawAngle === 'original'
+    const angle = rawAngle === 'topdown' ? 'aerial' : rawAngle === 'side45' ? 'side' : 'aerial'
     const background = order.background || 'black'
 
     let vesselList: string[] = []
@@ -87,9 +91,7 @@ export async function POST(req: NextRequest) {
         if (customPrompt) {
           prompt = customPrompt
         } else if (stage === 1) {
-          // angle이 비어있으면 리터치 → 원본 구도 유지, 설정돼 있으면 리메이크 → 구도 강제
-          const preserveAngle = !order.angle
-          prompt = buildPrompt(angle, background, '', wasPortrait, '', preserveAngle)
+          prompt = buildPrompt(angle, background, '', wasPortrait, '', preserveOriginalAngle)
         } else {
           const rawVessel = vesselList[i] ?? vesselList[0] ?? ''
           const vesselInfo = getVesselPrompt(rawVessel)
