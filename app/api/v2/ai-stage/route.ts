@@ -159,9 +159,9 @@ export async function POST(req: NextRequest) {
       // AI 완료 알림톡 발송
       try {
         let phone = order.customer_phone
-        if (!phone && order.user_email) {
+        if (!phone && order.customer_email) {
           const { data: tokenRow } = await supabaseAdmin
-            .from('kakao_tokens').select('phone').eq('kakao_email', order.user_email).single()
+            .from('kakao_tokens').select('phone').eq('kakao_email', order.customer_email).single()
           phone = tokenRow?.phone ?? null
         }
         if (phone) {

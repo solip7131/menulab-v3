@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const { data: order, error } = await supabaseAdmin
       .from('orders')
-      .select('id, customer_phone, customer_name, user_email, v2_meta, status, cut_count')
+      .select('id, customer_phone, customer_name, customer_email, v2_meta, status, cut_count')
       .eq('id', orderId)
       .single()
 
@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
 
     // customer_phone 없으면 kakao_tokens에서 조회
     let phone = order.customer_phone
-    if (!phone && order.user_email) {
+    if (!phone && order.customer_email) {
       const { data: tokenRow } = await supabaseAdmin
-        .from('kakao_tokens').select('phone').eq('kakao_email', order.user_email).single()
+        .from('kakao_tokens').select('phone').eq('kakao_email', order.customer_email).single()
       phone = tokenRow?.phone ?? null
     }
 
