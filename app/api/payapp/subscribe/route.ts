@@ -5,13 +5,15 @@ import { createClient } from '@supabase/supabase-js'
 import { verifySessionToken } from '../../mypage/_utils'
 import { cleanPhone } from '../../../../lib/solapi'
 
-const PLANS: Record<string, { gems: number; price: number; label: string }> = {
-  basic_monthly:    { gems: 100, price: 29900, label: '메뉴랩 베이직 월간 구독' },
-  basic_yearly:     { gems: 100, price: 19900, label: '메뉴랩 베이직 연간 구독' },
-  standard_monthly: { gems: 200, price: 49900, label: '메뉴랩 스탠다드 월간 구독' },
-  standard_yearly:  { gems: 200, price: 34900, label: '메뉴랩 스탠다드 연간 구독' },
-  pro_monthly:      { gems: 400, price: 89900, label: '메뉴랩 프로 월간 구독' },
-  pro_yearly:       { gems: 400, price: 59900, label: '메뉴랩 프로 연간 구독' },
+// 월간: rebillRegist (매월 자동결제)
+// 연간: payrequest (연간 전액 선결제, 젬 12개월치 즉시 지급)
+const PLANS: Record<string, { gems: number; price: number; label: string; yearly: boolean }> = {
+  basic_monthly:    { gems: 100,  price: 29900,  label: '메뉴랩 베이직 월간 구독',   yearly: false },
+  basic_yearly:     { gems: 1200, price: 238800, label: '메뉴랩 베이직 연간 구독',   yearly: true  },
+  standard_monthly: { gems: 200,  price: 49900,  label: '메뉴랩 스탠다드 월간 구독', yearly: false },
+  standard_yearly:  { gems: 2400, price: 418800, label: '메뉴랩 스탠다드 연간 구독', yearly: true  },
+  pro_monthly:      { gems: 400,  price: 89900,  label: '메뉴랩 프로 월간 구독',     yearly: false },
+  pro_yearly:       { gems: 4800, price: 718800, label: '메뉴랩 프로 연간 구독',     yearly: true  },
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://menulab-v3.vercel.app'
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
     if (!email) return NextResponse.json({ error: '세션이 만료됐어요' }, { status: 401 })
 
     const { planKey, billingCycle } = await req.json()
-    const key = `${planKey}_${billingCycle}` // e.g. 'basic_monthly'
+    const key = `${planKey}_${billingCycle}`
     const plan = PLANS[key]
     if (!plan) return NextResponse.json({ error: '유효하지 않은 플랜이에요' }, { status: 400 })
 
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.PAYAPP_KEY
     if (!userId || !apiKey) return NextResponse.json({ error: '페이앱 설정이 없어요' }, { status: 500 })
 
-    // pending 구독 레코드 생성 (webhook 수신 전)
+    // pending 구독 레코드 생성
     const { data: sub } = await supabase
       .from('subscriptions')
       .insert({
@@ -71,34 +73,61 @@ export async function POST(req: NextRequest) {
 
     const subId = sub?.id ?? ''
 
-    const params = new URLSearchParams({
-      cmd:             'rebillRegist',
-      userid:          userId,
-      key:             apiKey,
-      goodname:        plan.label,
-      goodprice:       String(plan.price),
-      rebillCycleType: 'Month',
-      rebillExpire:    '9999-12-31',
-      feedbackurl:     `${BASE_URL}/api/payapp/webhook`,
-      var1:            email,
-      var2:            `sub_${key}`,   // e.g. 'sub_basic_monthly' — 구독 식별자
-      var3:            subId,           // subscription row id
-    })
-    if (recvphone.length >= 10) {
-      params.set('recvphone', recvphone)
+    let payUrl: string
+
+    if (plan.yearly) {
+      // 연간: payrequest (전액 선결제)
+      const params = new URLSearchParams({
+        cmd:         'payrequest',
+        userid:      userId,
+        key:         apiKey,
+        goodname:    plan.label,
+        price:       String(plan.price),
+        feedbackurl: `${BASE_URL}/api/payapp/webhook`,
+        var1:        email,
+        var2:        `sub_${key}`,
+        var3:        subId,
+        var4:        recvphone,
+      })
+      if (recvphone.length >= 10) params.set('recvphone', recvphone)
+
+      const res = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
+      const text = await res.text()
+      const result = new URLSearchParams(text)
+
+      if (result.get('errno') !== '00000') {
+        await supabase.from('subscriptions').delete().eq('id', subId)
+        return NextResponse.json({ error: `페이앱 오류: ${result.get('errorMessage') ?? text}` }, { status: 400 })
+      }
+      payUrl = result.get('payurl') ?? ''
+    } else {
+      // 월간: rebillRegist (매월 자동결제)
+      const params = new URLSearchParams({
+        cmd:             'rebillRegist',
+        userid:          userId,
+        key:             apiKey,
+        goodname:        plan.label,
+        goodprice:       String(plan.price),
+        rebillCycleType: 'Month',
+        rebillExpire:    '9999-12-31',
+        feedbackurl:     `${BASE_URL}/api/payapp/webhook`,
+        var1:            email,
+        var2:            `sub_${key}`,
+        var3:            subId,
+      })
+      if (recvphone.length >= 10) params.set('recvphone', recvphone)
+
+      const res = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
+      const text = await res.text()
+      const result = new URLSearchParams(text)
+
+      if (result.get('errno') !== '00000') {
+        await supabase.from('subscriptions').delete().eq('id', subId)
+        return NextResponse.json({ error: `페이앱 오류: ${result.get('errorMessage') ?? text}` }, { status: 400 })
+      }
+      payUrl = result.get('payurl') ?? ''
     }
 
-    const res = await fetch(`https://api.payapp.kr/oapi/apiLoad.html?${params}`, { method: 'GET' })
-    const text = await res.text()
-    const result = new URLSearchParams(text)
-
-    if (result.get('errno') !== '00000') {
-      console.error('Payapp rebillRegist error:', text)
-      await supabase.from('subscriptions').delete().eq('id', subId)
-      return NextResponse.json({ error: `페이앱 오류: ${result.get('errorMessage') ?? text}` }, { status: 400 })
-    }
-
-    const payUrl = result.get('payurl')
     if (!payUrl) {
       await supabase.from('subscriptions').delete().eq('id', subId)
       return NextResponse.json({ error: '페이앱 응답에 payurl 없음' }, { status: 500 })

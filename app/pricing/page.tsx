@@ -371,23 +371,29 @@ export default function PricingPage() {
                       <p style={{ fontSize: '13px', color: '#888', marginBottom: '20px', lineHeight: 1.4 }}>{plan.subtitle}</p>
                       <div style={{ marginBottom: '6px' }}>
                         {isYearly && (
-                          <span style={{ fontSize: '13px', color: '#ccc', textDecoration: 'line-through', display: 'block', marginBottom: '2px' }}>₩{plan.monthlyPrice.toLocaleString()}/월</span>
+                          <span style={{ fontSize: '13px', color: '#ccc', textDecoration: 'line-through', display: 'block', marginBottom: '2px' }}>₩{(plan.monthlyPrice * 12).toLocaleString()}/년</span>
                         )}
                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
-                          <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-1.5px', lineHeight: 1 }}>₩{price.toLocaleString()}</span>
-                          <span style={{ fontSize: '13px', color: '#888', fontWeight: 500, paddingBottom: '5px' }}>/월</span>
+                          <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-1.5px', lineHeight: 1 }}>
+                            ₩{isYearly ? plan.yearlyTotal.toLocaleString() : plan.monthlyPrice.toLocaleString()}
+                          </span>
+                          <span style={{ fontSize: '13px', color: '#888', fontWeight: 500, paddingBottom: '5px' }}>
+                            {isYearly ? '/년' : '/월'}
+                          </span>
                         </div>
                       </div>
                       {isYearly ? (
                         <p style={{ fontSize: '12px', color: '#22c55e', fontWeight: 700, marginBottom: '4px' }}>
-                          Actually: ₩{plan.yearlyTotal.toLocaleString()}
+                          월 ₩{plan.yearlyMonthly.toLocaleString()} 상당 · 연 1회 결제
                         </p>
                       ) : (
-                        <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>매월 청구</p>
+                        <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>매월 자동 결제</p>
                       )}
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.05)', borderRadius: '100px', padding: '5px 12px', marginBottom: '20px', alignSelf: 'flex-start' }}>
                         <span style={{ fontSize: '14px' }}>💎</span>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--black)' }}>{plan.gems}젬/월</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--black)' }}>
+                          {isYearly ? `${plan.gems * 12}젬/년` : `${plan.gems}젬/월`}
+                        </span>
                       </div>
                       <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '9px', flex: 1 }}>
                         {features.map((f, i) => (

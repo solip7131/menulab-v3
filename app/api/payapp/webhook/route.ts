@@ -100,10 +100,15 @@ export async function POST(req: NextRequest) {
       }
 
       const gems = sub.gems_per_cycle
+      const isYearly = sub.billing_cycle === 'yearly'
 
-      // 구독 활성화 / rebill_no 저장
+      // 구독 활성화 / rebill_no 저장 / 다음 결제일 계산
       const nextBilling = new Date()
-      nextBilling.setMonth(nextBilling.getMonth() + 1)
+      if (isYearly) {
+        nextBilling.setFullYear(nextBilling.getFullYear() + 1)
+      } else {
+        nextBilling.setMonth(nextBilling.getMonth() + 1)
+      }
       await supabase.from('subscriptions').update({
         status:          'active',
         rebill_no:       rebillNo ?? sub.rebill_no,
