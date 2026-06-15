@@ -45,8 +45,14 @@ const DELIVERY_PLATFORMS: Platform[] = [
 const BG_PRESETS: BgPreset[] = [
   { id: 'lightgray', label: '라이트그레이',         category: 'solid',    src: '/backgrounds/lightgray.jpg' },
   { id: 'ivory',     label: '실키 페브릭 아이보리', category: 'solid',    src: '/backgrounds/ivory.jpg'     },
-  { id: 'concrete',  label: '콘크리트',             category: 'concrete', src: '/backgrounds/concrete.jpg'  },
+  { id: 'solid1',    label: '단색',                 category: 'solid',    src: '/backgrounds/단색.png'      },
+  { id: 'solid2',    label: '단색2',                category: 'solid',    src: '/backgrounds/단색2.png'     },
   { id: 'marble',    label: '마블',                 category: 'tile',     src: '/backgrounds/marble.jpg'    },
+  { id: 'tile1',     label: '타일',                 category: 'tile',     src: '/backgrounds/타일.png'      },
+  { id: 'fabric1',   label: '패브릭',               category: 'fabric',   src: '/backgrounds/패브릭.png'    },
+  { id: 'wood1',     label: '우드',                 category: 'wood',     src: '/backgrounds/우드.png'      },
+  { id: 'concrete',  label: '콘크리트',             category: 'concrete', src: '/backgrounds/concrete.jpg'  },
+  { id: 'concrete2', label: '콘크리트2',            category: 'concrete', src: '/backgrounds/콘크리트.png'  },
 ]
 
 const SAMPLE_SRCS = [
