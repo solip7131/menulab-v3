@@ -559,7 +559,7 @@ export default function HomePage() {
       </nav>
 
         {/* ── Hero ── */}
-        <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4vh', paddingBottom: '0', marginTop: 68, overflow: 'hidden' }}>
+        <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4vh', paddingBottom: '8vh', marginTop: 68, overflow: 'hidden' }}>
           <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '10vh 40px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px' }}>
             <div style={{ width: 'fit-content', maxWidth: '100%' }}>
               {/* 데스크탑 헤드라인 */}
