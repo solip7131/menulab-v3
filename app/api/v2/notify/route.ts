@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const { data: order, error } = await supabaseAdmin
       .from('orders')
-      .select('id, customer_phone, customer_name, v2_meta, status, cut_count')
+      .select('id, customer_phone, customer_name, user_email, v2_meta, status, cut_count')
       .eq('id', orderId)
       .single()
 
@@ -25,7 +25,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '주문을 찾을 수 없어요' }, { status: 404 })
     }
 
-    const phone = order.customer_phone
+    // customer_phone 없으면 kakao_tokens에서 조회
+    let phone = order.customer_phone
+    if (!phone && order.user_email) {
+      const { data: tokenRow } = await supabaseAdmin
+        .from('kakao_tokens').select('phone').eq('kakao_email', order.user_email).single()
+      phone = tokenRow?.phone ?? null
+    }
+
     if (!phone) {
       return NextResponse.json({ error: '전화번호가 없어요' }, { status: 400 })
     }

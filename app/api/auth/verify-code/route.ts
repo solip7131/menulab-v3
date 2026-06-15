@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySessionToken } from '../../mypage/_utils'
+import { notifySignup } from '../../../../lib/solapi'
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,6 +37,13 @@ export async function POST(req: NextRequest) {
 
     await supabase.from('kakao_tokens').update({ phone: digits }).eq('kakao_email', email)
     await supabase.from('phone_verifications').delete().eq('phone', digits)
+
+    // 환영 알림톡 발송 (이름 조회 후)
+    try {
+      const { data: tokenRow } = await supabase
+        .from('kakao_tokens').select('kakao_name').eq('kakao_email', email).single()
+      await notifySignup({ phone: digits, customerName: tokenRow?.kakao_name || '' })
+    } catch {}
 
     return NextResponse.json({ success: true })
   } catch (e) {

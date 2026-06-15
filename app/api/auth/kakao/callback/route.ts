@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createSessionToken } from '../../../mypage/_utils'
-import { notifySignup } from '../../../../../lib/solapi'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -58,6 +57,7 @@ export async function GET(req: NextRequest) {
     try {
       await supabaseAdmin.from('kakao_tokens').upsert({
         kakao_email: email,
+        kakao_name: nickname,
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token || null,
         updated_at: new Date().toISOString(),
@@ -81,14 +81,6 @@ export async function GET(req: NextRequest) {
           won: 0,
           description: '신규 가입 보너스',
         })
-        // 신규가입 알림톡 (전화번호 있을 때만)
-        try {
-          const { data: tokenRow } = await supabaseAdmin
-            .from('kakao_tokens').select('phone').eq('kakao_email', email).single()
-          if (tokenRow?.phone) {
-            await notifySignup({ phone: tokenRow.phone, customerName: nickname })
-          }
-        } catch {}
       }
     } catch {}
 
