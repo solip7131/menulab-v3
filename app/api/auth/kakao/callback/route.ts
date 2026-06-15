@@ -63,7 +63,27 @@ export async function GET(req: NextRequest) {
       })
     } catch {}
 
-    // 4. 세션 토큰 발급
+    // 4. 신규 유저 감지 → 20젬 즉시 지급
+    // user_credits 행이 없으면 신규 가입 → insert 성공 시에만 거래 내역 기록
+    try {
+      const { data: newUser } = await supabaseAdmin
+        .from('user_credits')
+        .insert({ user_email: email, balance: 20 })
+        .select('user_email')
+        .single()
+
+      if (newUser) {
+        await supabaseAdmin.from('credit_transactions').insert({
+          user_email: email,
+          type: 'charge',
+          amount: 20,
+          won: 0,
+          description: '신규 가입 보너스',
+        })
+      }
+    } catch {}
+
+    // 5. 세션 토큰 발급
     const sessionToken = createSessionToken(email)
     const sessionPayload = JSON.stringify({ token: sessionToken, email, name: nickname })
 
