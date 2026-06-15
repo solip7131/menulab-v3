@@ -488,7 +488,7 @@ export default function V2HomePage() {
       {/* 히어로 고정 배경 — position:fixed로 스크롤해도 움직이지 않음 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url(${BG_SRC})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
-      <section className="hero-sec" style={{ position: 'relative', width: '100vw', height: `calc(100vh - ${60 + BANNER_H}px)`, minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '2vh', paddingBottom: '2vh', marginTop: 60 + BANNER_H }}>
+      <section className="hero-sec" style={{ position: 'relative', width: '100vw', height: `calc(100vh - ${60 + BANNER_H}px)`, minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '2vh', paddingBottom: '6vh', marginTop: 60 + BANNER_H }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.12) 100%)' }} />
         <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <h1 className="hero-headline" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, textAlign: 'center', fontSize: 'clamp(34px, 5.8vw, 64px)', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-1.5px', color: '#fff' }}>

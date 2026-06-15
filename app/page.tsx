@@ -559,7 +559,7 @@ export default function HomePage() {
       </nav>
 
         {/* ── Hero ── */}
-        <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '4vh', paddingBottom: '4vh', marginTop: 68 }}>
+        <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4vh', paddingBottom: '6vh', marginTop: 68 }}>
           <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px' }}>
             <div style={{ width: 'fit-content', maxWidth: '100%' }}>
               {/* 데스크탑 헤드라인 */}
@@ -579,7 +579,7 @@ export default function HomePage() {
         </section>
 
         {/* ── Marquee band ── */}
-        <div className="hero-marquee-wrap" onClick={() => { setLoginReturnTo('/mypage'); isLoggedIn ? window.location.href = '/mypage' : setLoginModal(true) }} style={{ background: '#111', overflow: 'hidden', padding: '20px 0 20px', marginTop: '80px', position: 'relative', cursor: 'pointer' }}>
+        <div className="hero-marquee-wrap" onClick={() => { setLoginReturnTo('/mypage'); isLoggedIn ? window.location.href = '/mypage' : setLoginModal(true) }} style={{ background: '#111', overflow: 'hidden', padding: '20px 0 20px', marginTop: '0', position: 'relative', cursor: 'pointer' }}>
           <div className="marquee-band" style={{ animation: 'marqueeScroll 18s linear infinite' }}>
             {[...Array(20)].map((_, i) => (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '20px', padding: '0 20px', fontWeight: 400, whiteSpace: 'nowrap', fontFamily: "'Galmuri11', sans-serif" }}>
