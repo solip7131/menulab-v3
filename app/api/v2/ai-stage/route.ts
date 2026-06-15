@@ -155,6 +155,17 @@ export async function POST(req: NextRequest) {
         status: 'ai_done',
       }).eq('id', orderId)
 
+      // AI 완료 알림톡 발송
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://menulab-v3.vercel.app'}/api/v2/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, type: 'ai_done' }),
+        })
+      } catch (e) {
+        console.warn('ai_done notify failed:', e)
+      }
+
       return NextResponse.json({ success: true, urls: finalUrls, ...(errors.length && { partialErrors: errors }) })
     }
   } catch (e) {

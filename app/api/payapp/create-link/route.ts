@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySessionToken } from '../../mypage/_utils'
-import { sendAlimtalk, cleanPhone } from '../../../../lib/solapi'
+import { cleanPhone } from '../../../../lib/solapi'
 
 const GEM_PACKAGES = {
   gem10:  { gems: 10,  won: 5900,  label: '10젬 패키지 (사진 1장)'  },
@@ -93,23 +93,6 @@ export async function POST(req: NextRequest) {
     const payUrl = result.get('payurl')
     if (!payUrl) {
       return NextResponse.json({ error: '페이앱 응답에 payurl 없음', raw: text }, { status: 500 })
-    }
-
-    // 고객 휴대폰 있으면 결제 요청 알림톡 발송
-    if (recvphone && recvphone.replace(/\D/g, '').length >= 10) {
-      const templateId = process.env.SOLAPI_TEMPLATE_PAY_REQUEST
-      if (templateId) {
-        try {
-          await sendAlimtalk(
-            recvphone,
-            templateId,
-            { '#{상품명}': goodname, '#{금액}': price.toLocaleString() },
-            [{ buttonType: 'WL', buttonName: '결제하러 가기', linkMo: payUrl, linkPc: payUrl }],
-          )
-        } catch (e) {
-          console.warn('alimtalk (pay_request) failed:', e)
-        }
-      }
     }
 
     return NextResponse.json({ url: payUrl, orderId, goodname, won: price })

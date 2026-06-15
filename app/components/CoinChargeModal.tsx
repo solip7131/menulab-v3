@@ -23,6 +23,10 @@ export default function CoinChargeModal({ shortfall, onClose }: Props) {
   const handleCharge = async (packageId: string) => {
     setLoading(packageId)
     setError(null)
+
+    // 팝업을 즉시 열어 팝업 차단 방지 + 빠른 반응
+    const popup = window.open('about:blank', '_blank', 'width=480,height=700')
+
     try {
       const token = (() => {
         try { return JSON.parse(localStorage.getItem('menulab_session') ?? '{}').token ?? '' } catch { return '' }
@@ -37,10 +41,11 @@ export default function CoinChargeModal({ shortfall, onClose }: Props) {
 
       if (!res.ok) throw new Error(data.error || '결제 링크 생성 실패')
 
-      // 페이앱 결제 페이지를 새 탭으로 오픈
-      window.open(data.url, '_blank', 'width=480,height=700')
+      if (popup) popup.location.href = data.url
+      else window.open(data.url, '_blank', 'width=480,height=700')
       onClose()
     } catch (e: any) {
+      popup?.close()
       setError(e?.message || '오류가 발생했어요. 다시 시도해주세요.')
     } finally {
       setLoading(null)

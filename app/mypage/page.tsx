@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import BasicPlanModal from '../components/BasicPlanModal'
 import CoinChargeModal from '../components/CoinChargeModal'
+import PhoneVerificationModal from '../components/PhoneVerificationModal'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -330,6 +331,7 @@ function MyPageContent() {
   const [gemBalance,          setGemBalance]           = useState(0)
 
   // Modals
+  const [showPhoneVerify,     setShowPhoneVerify]     = useState(false)
   const [showBasicModal,      setShowBasicModal]      = useState(false)
   const [showChargeModal,     setShowChargeModal]      = useState(false)
   const [creditShortfall,     setCreditShortfall]      = useState(0)
@@ -424,6 +426,15 @@ function MyPageContent() {
       setSessionEmail(e); setSessionName(name || ''); setSessionToken(token)
     } catch { localStorage.removeItem(SESSION_KEY) }
   }, [])
+
+  // Phone verification check (1회)
+  useEffect(() => {
+    if (!sessionToken) return
+    fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${sessionToken}` } })
+      .then(r => r.json())
+      .then(d => { if (!d.hasPhone) setShowPhoneVerify(true) })
+      .catch(() => {})
+  }, [sessionToken])
 
   // Fetch gem balance
   const fetchGemBalance = useCallback(async (token: string) => {
@@ -1222,6 +1233,13 @@ function MyPageContent() {
       )}
 
       {/* ── Modals ── */}
+      {showPhoneVerify && sessionToken && (
+        <PhoneVerificationModal
+          token={sessionToken}
+          onVerified={() => setShowPhoneVerify(false)}
+          onSkip={() => setShowPhoneVerify(false)}
+        />
+      )}
       {showBasicModal && (
         <BasicPlanModal
           onClose={handleBasicModalClose}
@@ -1319,13 +1337,13 @@ function MyPageContent() {
             <p style={{ color: '#888', fontSize: '14px', lineHeight: 1.7, marginBottom: '24px' }}>구독 플랜을 이용하면 매월 젬이 자동으로 충전돼요.<br />사진이 많을수록 구독이 훨씬 유리해요.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
-                onClick={() => { setShowUpsellModal(false); setShowChargeModal(true) }}
+                onClick={() => { setShowUpsellModal(false); window.location.href = '/pricing' }}
                 style={{ padding: '14px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 800, fontSize: '15px', border: 'none', cursor: 'pointer' }}
-              >젬 충전하기</button>
+              >구독 플랜 보기 →</button>
               <button
-                onClick={() => setShowUpsellModal(false)}
+                onClick={() => { setShowUpsellModal(false); setShowChargeModal(true) }}
                 style={{ padding: '13px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', color: '#888', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
-              >닫기</button>
+              >젬 충전하기</button>
             </div>
           </div>
         </div>
