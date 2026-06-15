@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
+import { notifyAiDone } from '../../../lib/solapi'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 const supabase = createClient(
@@ -293,6 +294,17 @@ export async function POST(req: NextRequest) {
 
     if (successes.length === 0) {
       throw new Error('모든 플랫폼 생성에 실패했어요')
+    }
+
+    // AI 완료 알림톡
+    if (userEmail) {
+      try {
+        const { data: tokenRow } = await supabase
+          .from('kakao_tokens').select('phone, kakao_name').eq('kakao_email', userEmail).single()
+        if (tokenRow?.phone) {
+          await notifyAiDone({ phone: tokenRow.phone, customerName: tokenRow.kakao_name ?? '' })
+        }
+      } catch (e) { console.warn('[generate] ai_done alimtalk failed:', e) }
     }
 
     const first = successes[0]
