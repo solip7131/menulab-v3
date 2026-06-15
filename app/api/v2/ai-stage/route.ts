@@ -13,6 +13,7 @@ import {
   buildPrompt,
   buildStage2Prompt,
 } from '../../../../lib/ai-generate'
+import { notifyAiDone } from '../../../../lib/solapi'
 import vesselMaster from '../../../../lib/vessel-master.json'
 
 function getVesselPrompt(vesselKey: string): string {
@@ -157,11 +158,15 @@ export async function POST(req: NextRequest) {
 
       // AI 완료 알림톡 발송
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://menulab-v3.vercel.app'}/api/v2/notify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId, type: 'ai_done' }),
-        })
+        let phone = order.customer_phone
+        if (!phone && order.user_email) {
+          const { data: tokenRow } = await supabaseAdmin
+            .from('kakao_tokens').select('phone').eq('kakao_email', order.user_email).single()
+          phone = tokenRow?.phone ?? null
+        }
+        if (phone) {
+          await notifyAiDone({ phone, orderId, cutCount: order.cut_count ?? finalUrls.length })
+        }
       } catch (e) {
         console.warn('ai_done notify failed:', e)
       }
