@@ -419,7 +419,8 @@ export default function HomePage() {
   const [userToken, setUserToken]     = useState<string | null>(null)
   const [gemBalance, setGemBalance]   = useState(0)
   const [showChargeModal, setShowChargeModal] = useState(false)
-  const [basicModal, setBasicModal]   = useState(false)
+  const [basicModal, setBasicModal]         = useState(false)
+  const [basicServiceType, setBasicServiceType] = useState<'retouch' | 'remake'>('retouch')
   const [loginModal, setLoginModal]   = useState(false)
   const [showPhoneVerify, setShowPhoneVerify] = useState(false)
   const [hasPhone, setHasPhone]       = useState(true)
@@ -527,9 +528,10 @@ export default function HomePage() {
     return () => io.disconnect()
   }, [])
 
-  const handleOpenBasic = () => {
+  const handleOpenBasic = (svcType: 'retouch' | 'remake' = 'retouch') => {
     if (isLoggedIn) {
       if (!hasPhone) { setShowPhoneVerify(true); return }
+      setBasicServiceType(svcType)
       setBasicModal(true)
     } else {
       setLoginReturnTo('/mypage')
@@ -562,7 +564,7 @@ export default function HomePage() {
           onSkip={() => setShowPhoneVerify(false)}
         />
       )}
-      {basicModal && <BasicPlanModal onClose={() => setBasicModal(false)} />}
+      {basicModal && <BasicPlanModal onClose={() => setBasicModal(false)} serviceType={basicServiceType} />}
       {showChargeModal && userEmail && (
         <CoinChargeModal
           shortfall={0}
@@ -843,13 +845,13 @@ export default function HomePage() {
           </div>
           <div className="sv-grid">
             {SERVICES.map((s, i) => {
-              const disabled = s.name === '메뉴 리메이크' || s.name === '메뉴 모음컷'
+              const disabled = s.name === '메뉴 모음컷'
               return (
                 <div
                   key={i}
                   className={`reveal-up${disabled ? '' : ' sv-card-hover'}`}
                   data-delay={i as unknown as string}
-                  onClick={disabled ? undefined : handleOpenBasic}
+                  onClick={disabled ? undefined : () => handleOpenBasic(s.name === '메뉴 리메이크' ? 'remake' : 'retouch')}
                   style={{
                     borderRadius: '20px', padding: '28px 24px 24px',
                     border: '1.5px solid rgba(0,0,0,0.07)',

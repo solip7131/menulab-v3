@@ -27,7 +27,9 @@ interface BgPreset {
   src: string
 }
 
-type ModalStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
+type ModalStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+// 8 = 구도 선택 (remake only)
+// 9 = 그릇 선택 (remake only)
 type BgCatTab = '전체' | '단색' | '타일' | '패브릭' | '우드' | '콘크리트'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -247,9 +249,10 @@ interface Props {
   initialPlatNames?: string[]
   initialBgPresetId?: string | null
   initialBgPrompt?: string
+  serviceType?: 'retouch' | 'remake'
 }
 
-export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, initialBgPresetId, initialBgPrompt }: Props) {
+export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, initialBgPresetId, initialBgPrompt, serviceType = 'retouch' }: Props) {
   const router = useRouter()
   const [step, setStep]                     = useState<ModalStep>(1)
   const [photos, setPhotos]                 = useState<FoodPhoto[]>([])
@@ -277,6 +280,10 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
 
   const [paying, setPaying]                 = useState(false)
   const [error, setError]                   = useState<string | null>(null)
+
+  // 리메이크 전용 상태
+  const [remakeAngle,  setRemakeAngle]  = useState<'original' | 'side45' | 'topdown'>('original')
+  const [remakeVessel, setRemakeVessel] = useState<string>('original')
 
   // 콩(크레딧) 관련 상태
   const [userEmail, setUserEmail]           = useState<string | null>(null)
@@ -467,6 +474,9 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
         platforms:      activePlatforms.length > 0 ? activePlatforms : [{ name: '기본', width: 1280, height: 960 }],
         userEmail:      userEmail ?? undefined,
         backgroundName: bgMethod === 'preset' ? (selectedBgPreset?.label ?? undefined) : undefined,
+        serviceType,
+        angle:  remakeAngle,
+        vessel: remakeVessel,
       }
       if (bgMethod === 'preset' && bgData) {
         body.bgImageBase64 = bgData.base64
@@ -528,10 +538,11 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
         if (!res.ok) throw new Error(data.error || '다운로드 처리 중 오류가 발생했어요')
       } else {
         // Supabase Storage 저장 실패 케이스 — 콩만 차감
+        const gemCost = serviceType === 'remake' ? 20 : 10
         const res = await fetch('/api/credits/use', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ userEmail, amount: 10, description: '사진 다운로드' }),
+          body:    JSON.stringify({ userEmail, amount: gemCost, description: `사진 다운로드 (${serviceType === 'remake' ? '리메이크' : '리터치'})` }),
         })
         const data = await res.json()
 
@@ -569,11 +580,35 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
 
   // ── Shared bottom bar (STEP 1–3) ──────────────────────────────────────────
 
-  const canNext = step === 1 ? canProceed1 : step === 2 ? canProceed2 : canProceed3
+  // 리메이크는 스텝 2 → 8(구도) → 9(그릇) → 3, 리터치는 2 → 3
+  const isRemake = serviceType === 'remake'
+  const canNext  = step === 1 ? canProceed1
+                 : step === 2 ? canProceed2
+                 : step === 8 ? true
+                 : step === 9 ? true
+                 : canProceed3
   const btnLabel = step === 1 ? `선택 (${selectedPhotoIds.size}장)` : '다음'
   const onNext   = step === 1 ? () => { if (canProceed1) goTo(2) }
-                 : step === 2 ? () => { if (canProceed2) goTo(3) }
+                 : step === 2 ? () => { if (canProceed2) goTo(isRemake ? 8 : 3) }
+                 : step === 8 ? () => goTo(9)
+                 : step === 9 ? () => goTo(3)
                  : () => { if (canProceed3) goTo(4) }
+
+  // 뒤로가기 (step < 5)
+  const goPrevStep = () => {
+    if (step === 3 && isRemake) goTo(9)
+    else if (step === 9) goTo(8)
+    else if (step === 8) goTo(2)
+    else if (step > 1 && step < 5) goTo((step - 1) as ModalStep)
+  }
+
+  // 총 스텝 수 (헤더 표시용)
+  const totalSteps = isRemake ? 9 : 7
+  // 스텝 순서 인덱스 (표시용)
+  const remakeOrder: ModalStep[] = [1, 2, 8, 9, 3, 4, 5, 6, 7]
+  const retouchOrder: ModalStep[] = [1, 2, 3, 4, 5, 6, 7]
+  const stepOrder = isRemake ? remakeOrder : retouchOrder
+  const visualStep = stepOrder.indexOf(step) + 1
 
   // ── Step title ────────────────────────────────────────────────────────────
 
@@ -585,6 +620,8 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
     5: 'AI 생성 중...',
     6: '미리보기',
     7: '다운로드 완료!',
+    8: '구도를 선택해 주세요',
+    9: '그릇을 선택해 주세요',
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -616,7 +653,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {(showGuide || (step > 1 && step < 5)) && (
               <button
-                onClick={() => showGuide ? setShowGuide(false) : goTo((step - 1) as ModalStep)}
+                onClick={() => showGuide ? setShowGuide(false) : goPrevStep()}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#888', padding: '2px 6px 2px 0', lineHeight: 1 }}
               >←</button>
             )}
@@ -628,7 +665,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
               ) : (
                 <>
                   <p style={{ fontSize: '10px', color: 'var(--orange)', fontWeight: 700, letterSpacing: '2px', marginBottom: '2px' }}>
-                    BASIC · STEP {step} / 7
+                    {isRemake ? '리메이크' : '리터치'} · STEP {visualStep} / {totalSteps}
                   </p>
                   <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
                     {stepTitles[step]}
@@ -932,6 +969,72 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
               </div>
 
               <BottomBar selectedPhotos={selectedPhotos} canNext={canNext} label="다음" onNext={onNext} />
+            </>
+          )}
+
+          {/* ── STEP 8: 구도 선택 (remake only) ── */}
+          {step === 8 && (
+            <>
+              <div style={{ padding: '20px 22px', overflowY: 'auto', flex: 1 }}>
+                {[
+                  { id: 'original', emoji: '📷', label: '원본 구도 유지', desc: '업로드한 사진의 카메라 각도를 그대로 유지해요' },
+                  { id: 'side45',   emoji: '↗️',  label: '45도 측면샷',   desc: '그릇 옆면이 보이는 클래식한 배달앱 구도예요' },
+                  { id: 'topdown',  emoji: '🔭',  label: '수직 항공뷰',   desc: '위에서 내려다보는 탑뷰로 음식 전체가 보여요' },
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setRemakeAngle(opt.id as typeof remakeAngle)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'flex-start', gap: '14px',
+                      padding: '18px 16px', marginBottom: '10px',
+                      borderRadius: '14px', border: `2px solid ${remakeAngle === opt.id ? 'var(--orange)' : 'rgba(0,0,0,0.09)'}`,
+                      background: remakeAngle === opt.id ? 'rgba(196,81,13,0.05)' : '#fff',
+                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: '26px', flexShrink: 0 }}>{opt.emoji}</span>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: '15px', color: 'var(--black)', marginBottom: '4px' }}>{opt.label}</p>
+                      <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{opt.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <BottomBar selectedPhotos={selectedPhotos} canNext label="다음" onNext={onNext} />
+            </>
+          )}
+
+          {/* ── STEP 9: 그릇 선택 (remake only) ── */}
+          {step === 9 && (
+            <>
+              <div style={{ padding: '20px 22px', overflowY: 'auto', flex: 1 }}>
+                {[
+                  { id: 'original',      emoji: '🥣', label: '원본 그릇 유지',   desc: '업로드한 사진의 그릇을 그대로 사용해요' },
+                  { id: 'round_ceramic', emoji: '⚪',  label: '둥근 도자기',      desc: '깔끔하고 모던한 흰 도자기' },
+                  { id: 'black_iron',    emoji: '⚫',  label: '검은 무쇠',        desc: '고급스럽고 강렬한 블랙 무쇠 팬' },
+                  { id: 'white_ceramic', emoji: '🍽️', label: '흰 세라믹',        desc: '심플하고 깔끔한 흰 세라믹 플레이트' },
+                  { id: 'wood_tray',     emoji: '🪵',  label: '우드 트레이',      desc: '따뜻하고 자연스러운 원목 트레이' },
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setRemakeVessel(opt.id)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'flex-start', gap: '14px',
+                      padding: '16px', marginBottom: '10px',
+                      borderRadius: '14px', border: `2px solid ${remakeVessel === opt.id ? 'var(--orange)' : 'rgba(0,0,0,0.09)'}`,
+                      background: remakeVessel === opt.id ? 'rgba(196,81,13,0.05)' : '#fff',
+                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: '24px', flexShrink: 0 }}>{opt.emoji}</span>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: '15px', color: 'var(--black)', marginBottom: '4px' }}>{opt.label}</p>
+                      <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{opt.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <BottomBar selectedPhotos={selectedPhotos} canNext label="다음" onNext={onNext} />
             </>
           )}
 

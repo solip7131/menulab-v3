@@ -338,7 +338,8 @@ function MyPageContent() {
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
   const [showGuideModal,      setShowGuideModal]       = useState(false)
   const upsellShownRef = useRef(false)
-  const [selectedService,     setSelectedService]      = useState<'retouch' | null>(null)
+  const [selectedService,     setSelectedService]      = useState<'retouch' | 'remake' | null>(null)
+  const [modalServiceType,    setModalServiceType]     = useState<'retouch' | 'remake'>('retouch')
   const [miniSlideIndex,      setMiniSlideIndex]       = useState(0)
 
   // BasicPlanModal initial options (for "다시 만들기" / regenerate)
@@ -490,7 +491,7 @@ function MyPageContent() {
 
   // Mini landing slideshow auto-advance
   useEffect(() => {
-    if (selectedService !== 'retouch') return
+    if (selectedService !== 'retouch' && selectedService !== 'remake') return
     const t = setInterval(() => setMiniSlideIndex(i => (i + 1) % 2), 2500)
     return () => clearInterval(t)
   }, [selectedService])
@@ -915,6 +916,7 @@ function MyPageContent() {
                   key={svc.id}
                   onClick={() => {
                     if (svc.id === 'retouch') setSelectedService('retouch')
+                    else if (svc.id === 'remake') setSelectedService('remake')
                     else if (svc.id === 'collection') setShowCollectionInfo(true)
                   }}
                   style={{
@@ -1065,9 +1067,41 @@ function MyPageContent() {
                 {/* CTA */}
                 <div style={{ padding: '4px 22px 22px' }}>
                   <button
-                    onClick={() => { setSelectedService(null); setModalInitOpts({}); setShowBasicModal(true) }}
+                    onClick={() => { setSelectedService(null); setModalInitOpts({}); setModalServiceType('retouch'); setShowBasicModal(true) }}
                     style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
                   >만들러 가기 →</button>
+                </div>
+              </div>
+            </div>
+          ) : selectedService === 'remake' ? (
+            /* ── 미니 랜딩: 메뉴 리메이크 ── */
+            <div style={{ flex: 1, overflowY: 'auto', background: '#0f0f14', padding: '20px 16px 32px' }}>
+              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#1a1a24', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                <div style={{ padding: '24px 22px 16px' }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(196,81,13,0.2)', color: 'var(--orange)', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', marginBottom: '14px' }}>💎 20젬 / 장</span>
+                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.3, marginBottom: '10px' }}>구도·그릇까지 바꾸는<br /><span style={{ color: 'var(--orange)' }}>메뉴 리메이크</span></h2>
+                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: '20px' }}>원하는 구도와 그릇을 선택하면<br />AI가 음식 스타일 전체를 새롭게 리메이크해드려요.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                    {[
+                      { icon: '📐', label: '구도 선택', desc: '원본 유지 / 45도 측면 / 항공뷰' },
+                      { icon: '🥣', label: '그릇 선택', desc: '원본 / 도자기 / 무쇠 / 세라믹 / 우드' },
+                      { icon: '🎨', label: '배경 선택', desc: '20+ 프리셋 배경 중 선택' },
+                    ].map(item => (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '12px 14px' }}>
+                        <span style={{ fontSize: '22px' }}>{item.icon}</span>
+                        <div>
+                          <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{item.label}</p>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: '4px 22px 22px' }}>
+                  <button
+                    onClick={() => { setSelectedService(null); setModalInitOpts({}); setModalServiceType('remake'); setShowBasicModal(true) }}
+                    style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.4)' }}
+                  >리메이크 만들러 가기 →</button>
                 </div>
               </div>
             </div>
@@ -1202,6 +1236,7 @@ function MyPageContent() {
           initialPlatNames={modalInitOpts.platNames}
           initialBgPresetId={modalInitOpts.bgPresetId}
           initialBgPrompt={modalInitOpts.bgPrompt}
+          serviceType={modalServiceType}
         />
       )}
 

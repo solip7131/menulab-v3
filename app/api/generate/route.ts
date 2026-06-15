@@ -35,14 +35,42 @@ function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
 }
 
 // ── Call 1: food-only enhancement ────────────────────────────────────────────
-const PROMPT_ENHANCE_TMPL = `음식사진 업그레이드해줘
-구도:
-- 카메라 45도 3/4 side angle
-- 그릇 옆면이 선명하게 보여야 함 (타원형으로 보임)
-- 위에서 내려다보이면 WRONG
-- 그릇 75% + 중앙 1:1 safe zone 적용
+
+// 리터치: 원본 구도 최대한 유지
+const PROMPT_RETOUCH_ENHANCE = `Keep the ORIGINAL camera angle and composition
+as close as possible to the input photo.
+Do NOT force 45-degree angle.
+Naturally enhance color, lighting, and food appearance while preserving the original viewpoint.
 배경: {SURFACE_COLOR} 단색 스튜디오 배경
 소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것`
+
+// 리메이크: 구도별 분기
+const PROMPT_REMAKE_ANGLE: Record<string, string> = {
+  original: `Keep the ORIGINAL camera angle and composition.`,
+  side45:   `Camera: 45-degree side angle, dish rim visible as ellipse, side of dish clearly visible.`,
+  topdown:  `Camera: directly overhead (90-degree top-down view), food fills frame naturally.`,
+}
+
+const VESSEL_LABELS: Record<string, string> = {
+  round_ceramic: '둥근 도자기',
+  black_iron:    '검은 무쇠',
+  white_ceramic: '흰 세라믹',
+  wood_tray:     '우드 트레이',
+}
+
+function buildRemakeEnhancePrompt(angle: string, vessel: string, surfaceColor: string): string {
+  const angleInstruction = PROMPT_REMAKE_ANGLE[angle] ?? PROMPT_REMAKE_ANGLE.original
+  const vesselLine = vessel && vessel !== 'original'
+    ? `\nChange the bowl/dish to ${VESSEL_LABELS[vessel] ?? vessel}. Keep ALL food ingredients exactly the same.`
+    : ''
+  return `${angleInstruction}${vesselLine}
+Naturally enhance color, lighting, and food appearance.
+배경: ${surfaceColor} 단색 스튜디오 배경
+소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것`
+}
+
+// 레거시 별칭 (어드민 오버라이드 기본값 노출용으로 유지)
+const PROMPT_ENHANCE_TMPL = PROMPT_RETOUCH_ENHANCE
 
 // ── Call 2: composite onto background ────────────────────────────────────────
 const PROMPT_COMPOSE_BG_IMAGE = `Image 1: Food photo (already professionally shot)
@@ -178,10 +206,23 @@ export async function POST(req: NextRequest) {
     const overrideComposeBg   = isAdmin ? (body.overridePromptComposeBg   as string | undefined) : undefined
     const overrideComposeText = isAdmin ? (body.overridePromptComposeText as string | undefined) : undefined
 
+    // ── 서비스 타입·구도·그릇 파라미터 ──────────────────────────────────────
+    const serviceType = (body.serviceType as string | undefined) ?? 'retouch'  // 'retouch' | 'remake'
+    const angle       = (body.angle       as string | undefined) ?? 'original' // 'original' | 'side45' | 'topdown'
+    const vessel      = (body.vessel      as string | undefined) ?? 'original' // 'original' | 그릇 id
+
     const hasBgImage = !!(bgImageBase64 && bgImageMime)
     const bgName = backgroundName?.trim() || bgPrompt?.trim() || 'clean professional studio'
     const surfaceColor = getSurfaceColor(backgroundName, bgPrompt)
-    const promptEnhance = (overrideEnhance ?? PROMPT_ENHANCE_TMPL).replace('{SURFACE_COLOR}', surfaceColor)
+
+    // 서비스별 1차 프롬프트 선택
+    let baseEnhancePrompt: string
+    if (serviceType === 'remake') {
+      baseEnhancePrompt = buildRemakeEnhancePrompt(angle, vessel, surfaceColor)
+    } else {
+      baseEnhancePrompt = PROMPT_RETOUCH_ENHANCE.replace('{SURFACE_COLOR}', surfaceColor)
+    }
+    const promptEnhance = overrideEnhance ?? baseEnhancePrompt
 
     // ── Call 1: enhance food only (shared across all platforms) ──────────────
     console.log(`[generate] call 1/2 — food enhancement (surface: ${surfaceColor})`)
