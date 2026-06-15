@@ -330,6 +330,11 @@ function MyPageContent() {
   // Gem balance
   const [gemBalance,          setGemBalance]           = useState(0)
 
+  // Subscription
+  type Subscription = { id: string; plan_key: string; billing_cycle: string; gems_per_cycle: number; price_per_cycle: number; next_billing_at: string | null; status: string }
+  const [subscription,        setSubscription]         = useState<Subscription | null>(null)
+  const [cancellingSubscription, setCancellingSubscription] = useState(false)
+
   // Modals
   const [showPhoneVerify,     setShowPhoneVerify]     = useState(false)
   const [showBasicModal,      setShowBasicModal]      = useState(false)
@@ -448,7 +453,34 @@ function MyPageContent() {
   useEffect(() => {
     if (!sessionToken) return
     fetchGemBalance(sessionToken)
+    fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${sessionToken}` } })
+      .then(r => r.json())
+      .then(d => { if (d.subscription) setSubscription(d.subscription) })
+      .catch(() => {})
   }, [sessionToken, fetchGemBalance])
+
+  const handleCancelSubscription = useCallback(async () => {
+    if (!sessionToken || !subscription) return
+    if (!confirm('구독을 해지하면 다음 결제일부터 자동 결제가 중단돼요.\n해지하시겠어요?')) return
+    setCancellingSubscription(true)
+    try {
+      const res = await fetch('/api/subscription/status', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      })
+      if (res.ok) {
+        setSubscription(null)
+        alert('구독이 해지됐어요.')
+      } else {
+        const d = await res.json()
+        alert(d.error || '해지 중 오류가 발생했어요')
+      }
+    } catch {
+      alert('네트워크 오류가 발생했어요')
+    } finally {
+      setCancellingSubscription(false)
+    }
+  }, [sessionToken, subscription])
 
   // Handle pending plan (from pricing page CTA)
   useEffect(() => {
@@ -851,11 +883,28 @@ function MyPageContent() {
               <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '16px' }}>
                 {sessionEmail ?? ''}
               </p>
-              <div style={{ background: '#f7f4ef', borderRadius: '14px', padding: '14px 16px', marginBottom: '12px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#aaa', letterSpacing: '0.5px', marginBottom: '6px' }}>사용 중인 요금제</p>
-                <p style={{ fontSize: '14px', fontWeight: 800, color: '#333', marginBottom: '2px' }}>무료 플랜</p>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--orange)' }}>💎 {gemBalance}젬 남음</p>
-              </div>
+              {subscription ? (
+                <div style={{ background: 'linear-gradient(135deg, #111 0%, #333 100%)', borderRadius: '14px', padding: '14px 16px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>
+                      {subscription.plan_key === 'basic' ? '베이직' : subscription.plan_key === 'standard' ? '스탠다드' : '프로'} 플랜
+                    </p>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.15)', padding: '2px 7px', borderRadius: '100px' }}>활성</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>💎 {subscription.gems_per_cycle}젬/월</p>
+                  <button
+                    onClick={() => { handleCancelSubscription(); setShowMobileNav(false) }}
+                    disabled={cancellingSubscription}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                  >구독 해지</button>
+                </div>
+              ) : (
+                <div style={{ background: '#f7f4ef', borderRadius: '14px', padding: '14px 16px', marginBottom: '12px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#aaa', letterSpacing: '0.5px', marginBottom: '6px' }}>사용 중인 요금제</p>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: '#333', marginBottom: '2px' }}>무료 플랜</p>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--orange)' }}>💎 {gemBalance}젬 남음</p>
+                </div>
+              )}
               <Link
                 href="/pricing"
                 onClick={() => setShowMobileNav(false)}
@@ -1013,9 +1062,39 @@ function MyPageContent() {
               ))}
             </div>
 
-            {/* Username */}
-            <div style={{ padding: '16px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: '#555' }}>{displayName}</p>
+            {/* Subscription & account */}
+            <div style={{ padding: '14px 12px 20px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+              {subscription ? (
+                <div style={{ background: 'linear-gradient(135deg, #111 0%, #333 100%)', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.5px' }}>구독 중</span>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.15)', padding: '2px 7px', borderRadius: '100px' }}>활성</span>
+                  </div>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '2px' }}>
+                    {subscription.plan_key === 'basic' ? '베이직' : subscription.plan_key === 'standard' ? '스탠다드' : '프로'} 플랜
+                  </p>
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>
+                    💎 {subscription.gems_per_cycle}젬/월 · {subscription.billing_cycle === 'yearly' ? '연간' : '월간'}
+                  </p>
+                  {subscription.next_billing_at && (
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px' }}>
+                      다음 결제: {new Date(subscription.next_billing_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                    </p>
+                  )}
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={cancellingSubscription}
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, cursor: cancellingSubscription ? 'not-allowed' : 'pointer' }}
+                  >{cancellingSubscription ? '처리 중...' : '구독 해지'}</button>
+                </div>
+              ) : (
+                <div style={{ background: '#f7f4ef', borderRadius: '14px', padding: '12px 14px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#aaa', marginBottom: '4px' }}>무료 플랜</p>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--orange)', marginBottom: '10px' }}>💎 {gemBalance}젬 남음</p>
+                  <Link href="/pricing" style={{ display: 'block', textAlign: 'center', padding: '9px', borderRadius: '9px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '12px', textDecoration: 'none' }}>구독 플랜 보기</Link>
+                </div>
+              )}
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginTop: '12px', padding: '0 2px' }}>{displayName}</p>
             </div>
           </aside>
         )}
