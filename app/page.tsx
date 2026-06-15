@@ -242,6 +242,77 @@ function ImageCompareSlider() {
   )
 }
 
+function ReviewCarousel() {
+  const trackRef  = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+  const total = REVIEWS.length
+
+  const scrollTo = (i: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const card = el.children[i] as HTMLElement | undefined
+    if (!card) return
+    el.scrollTo({ left: card.offsetLeft, behavior: 'smooth' })
+    setActive(i)
+  }
+
+  const onScroll = () => {
+    const el = trackRef.current
+    if (!el) return
+    let closest = 0, minDist = Infinity
+    Array.from(el.children).forEach((c, i) => {
+      const dist = Math.abs((c as HTMLElement).offsetLeft - el.scrollLeft)
+      if (dist < minDist) { minDist = dist; closest = i }
+    })
+    setActive(closest)
+  }
+
+  return (
+    <div>
+      <div ref={trackRef} className="rv-grid" onScroll={onScroll}>
+        {REVIEWS.map((r, i) => (
+          <div key={i} className="rv-card-hover" style={{
+            background: '#fff', borderRadius: '20px', padding: '28px 24px',
+            border: '1px solid rgba(0,0,0,0.05)',
+            boxShadow: '0 2px 20px rgba(0,0,0,0.05)',
+            display: 'flex', flexDirection: 'column', gap: '12px',
+          }}>
+            <div style={{ fontSize: '18px', color: '#FFB800', letterSpacing: '2px' }}>★★★★★</div>
+            <h3 className="h-3" style={{ lineHeight: 1.4 }}>{r.title}</h3>
+            <p style={{ fontSize: '15px', color: '#666', lineHeight: 1.7, flex: 1, whiteSpace: 'pre-line' }}>{r.body}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#fff', fontWeight: 700 }}>{r.name[0]}</div>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--black)' }}>{r.name}</div>
+                <div style={{ fontSize: '12px', color: '#999' }}>{r.cat}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 화살표 + 점 네비게이션 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '24px' }}>
+        <button
+          onClick={() => scrollTo(Math.max(0, active - 1))}
+          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: active === 0 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
+        >←</button>
+        {REVIEWS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => scrollTo(i)}
+            style={{ width: i === active ? '22px' : '8px', height: '8px', borderRadius: '4px', border: 'none', background: i === active ? 'var(--orange)' : 'rgba(0,0,0,0.15)', cursor: 'pointer', padding: 0, transition: 'all 0.3s', flexShrink: 0 }}
+          />
+        ))}
+        <button
+          onClick={() => scrollTo(Math.min(total - 1, active + 1))}
+          style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: active === total - 1 ? 0.3 : 1, transition: 'opacity 0.2s', flexShrink: 0 }}
+        >→</button>
+      </div>
+    </div>
+  )
+}
+
 function FleeIcon({ src, size }: { src: string; size: number }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -715,30 +786,7 @@ export default function HomePage() {
           <div style={{ textAlign: 'left', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '36px', fontWeight: 800, fontFamily: "'Pretendard Variable', Pretendard, sans-serif", letterSpacing: '-0.03em', color: '#111', lineHeight: 1, margin: 0 }}>사장님들의 실제 후기</h2>
           </div>
-          <div className="rv-grid">
-            {REVIEWS.map((r, i) => (
-              <div key={i} className="rv-card-hover" style={{
-                background: '#fff', borderRadius: '20px', padding: '28px 24px',
-                border: '1px solid rgba(0,0,0,0.05)',
-                boxShadow: '0 2px 20px rgba(0,0,0,0.05)',
-                display: 'flex', flexDirection: 'column', gap: '14px',
-                marginTop: '0',
-              }}>
-                <div style={{ fontSize: '18px', color: '#FFB800', letterSpacing: '2px' }}>★★★★★</div>
-                <h3 className="h-3">{r.title}</h3>
-                <p style={{ fontSize: '15px', color: '#666', lineHeight: 1.7, flex: 1, whiteSpace: 'pre-line', marginTop: '8px' }}>{r.body}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#fff', fontWeight: 700 }}>
-                    {r.name[0]}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--black)' }}>{r.name}</div>
-                    <div style={{ fontSize: '12px', color: '#999' }}>{r.cat}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ReviewCarousel />
         </div>
       </section>
 
