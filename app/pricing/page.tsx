@@ -165,6 +165,37 @@ export default function PricingPage() {
     }
   }
 
+  const [chargingPkg, setChargingPkg] = useState<string | null>(null)
+
+  const handleDirectCharge = async (packageId: string) => {
+    if (!isLoggedIn) { setLoginModal(true); return }
+    if (!hasPhone) { setShowPhoneVerify(true); return }
+    if (!userToken) return
+    if (chargingPkg) return
+
+    setChargingPkg(packageId)
+    try {
+      const popup = window.open('about:blank', '_blank', 'width=480,height=700')
+      const res = await fetch('/api/payapp/create-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
+        body: JSON.stringify({ packageId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        popup?.close()
+        alert(data.error || '결제 링크 생성 중 오류가 발생했어요')
+        return
+      }
+      if (popup) popup.location.href = data.url
+      else window.open(data.url, '_blank', 'width=480,height=700')
+    } catch {
+      alert('네트워크 오류가 발생했어요')
+    } finally {
+      setChargingPkg(null)
+    }
+  }
+
   const handleSubscribeClick = async (planKey: string) => {
     if (!isLoggedIn) { setLoginModal(true); return }
     if (!hasPhone) { setShowPhoneVerify(true); return }
@@ -429,10 +460,18 @@ export default function PricingPage() {
               <h3 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px' }}>젬이 더 필요하신가요?</h3>
               <p style={{ color: '#888', fontSize: '14px', marginBottom: '32px' }}>구독 없이 한 번만 충전하세요</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', maxWidth: '560px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', maxWidth: '740px' }}>
                 {[
                   {
-                    id: 'small' as const,
+                    packageId: 'gem10',
+                    name: '미니 패키지',
+                    subtitle: '딱 한 장만 필요할 때',
+                    price: '5,900',
+                    gems: 10,
+                    features: ['1회 결제', '10젬 즉시 지급 (사진 1장)', '구독 불필요', '유효기간 90일'],
+                  },
+                  {
+                    packageId: 'gem50',
                     name: '스몰 패키지',
                     subtitle: '가끔 필요할 때',
                     price: '24,900',
@@ -440,15 +479,23 @@ export default function PricingPage() {
                     features: ['1회 결제', '50젬 즉시 지급 (사진 5장)', '구독 불필요', '유효기간 90일'],
                   },
                   {
-                    id: 'large' as const,
+                    packageId: 'gem100',
                     name: '라지 패키지',
                     subtitle: '넉넉하게 쓰고 싶을 때',
                     price: '44,900',
                     gems: 100,
                     features: ['1회 결제', '100젬 즉시 지급 (사진 10장)', '구독 불필요', '유효기간 90일'],
                   },
+                  {
+                    packageId: 'gem300',
+                    name: '맥스 패키지',
+                    subtitle: '메뉴가 많은 사장님께',
+                    price: '99,000',
+                    gems: 300,
+                    features: ['1회 결제', '300젬 즉시 지급 (사진 30장)', '구독 불필요', '유효기간 90일'],
+                  },
                 ].map(pkg => (
-                  <div key={pkg.id} style={{
+                  <div key={pkg.packageId} style={{
                     borderRadius: '20px', background: '#fff',
                     border: '1px solid rgba(0,0,0,0.07)',
                     boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
@@ -474,10 +521,11 @@ export default function PricingPage() {
                       ))}
                     </ul>
                     <button
-                      onClick={handleChargeClick}
-                      style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                      onClick={() => handleDirectCharge(pkg.packageId)}
+                      disabled={chargingPkg === pkg.packageId}
+                      style={{ display: 'block', width: '100%', padding: '13px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', cursor: chargingPkg === pkg.packageId ? 'not-allowed' : 'pointer', opacity: chargingPkg === pkg.packageId ? 0.7 : 1 }}
                     >
-                      한 번만 충전하기
+                      {chargingPkg === pkg.packageId ? '처리 중...' : '바로 충전하기'}
                     </button>
                   </div>
                 ))}
