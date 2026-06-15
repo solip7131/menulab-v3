@@ -136,10 +136,66 @@ function PlatformMarquee() {
   )
 }
 
+// 자동 슬라이더 상수: 50% → 10%(before) → 90%(after) → 50%, 총 4.5초 루프
+const SLIDER_KEYFRAMES = [50, 10, 90, 50]
+const SLIDER_DURATIONS = [1500, 1500, 1500]
+const SLIDER_CYCLE_MS  = 4500
+
+function sliderEase(t: number) {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+}
+
+function calcAutoPos(progress: number): number {
+  const t = progress % SLIDER_CYCLE_MS
+  let segStart = 0
+  for (let i = 0; i < SLIDER_DURATIONS.length; i++) {
+    const segEnd = segStart + SLIDER_DURATIONS[i]
+    if (t <= segEnd) {
+      const p = sliderEase((t - segStart) / SLIDER_DURATIONS[i])
+      return SLIDER_KEYFRAMES[i] + (SLIDER_KEYFRAMES[i + 1] - SLIDER_KEYFRAMES[i]) * p
+    }
+    segStart = segEnd
+  }
+  return 50
+}
+
 function ImageCompareSlider() {
-  const [pos, setPos] = useState(50)
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const dragging      = useRef(false)
+  const [pos, setPos]  = useState(50)
+  const containerRef   = useRef<HTMLDivElement>(null)
+  const dragging       = useRef(false)
+  const animRef        = useRef<number | null>(null)
+  const pauseTimer     = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const progressRef    = useRef(0)
+  const lastTsRef      = useRef<number | null>(null)
+
+  const tick = useCallback((ts: number) => {
+    if (lastTsRef.current !== null) {
+      progressRef.current = (progressRef.current + ts - lastTsRef.current) % SLIDER_CYCLE_MS
+    }
+    lastTsRef.current = ts
+    setPos(calcAutoPos(progressRef.current))
+    animRef.current = requestAnimationFrame(tick)
+  }, [])
+
+  const startAnim = useCallback(() => {
+    if (animRef.current) cancelAnimationFrame(animRef.current)
+    lastTsRef.current = null
+    animRef.current = requestAnimationFrame(tick)
+  }, [tick])
+
+  const stopAnim = useCallback(() => {
+    if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null }
+    lastTsRef.current = null
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(startAnim, 1000)
+    return () => {
+      clearTimeout(t)
+      stopAnim()
+      if (pauseTimer.current) clearTimeout(pauseTimer.current)
+    }
+  }, [startAnim, stopAnim])
 
   const updatePos = useCallback((clientX: number) => {
     const el = containerRef.current
@@ -148,15 +204,29 @@ function ImageCompareSlider() {
     setPos(Math.min(100, Math.max(0, ((clientX - left) / width) * 100)))
   }, [])
 
+  const onDragStart = () => {
+    dragging.current = true
+    stopAnim()
+    if (pauseTimer.current) clearTimeout(pauseTimer.current)
+  }
+
+  const onDragEnd = () => {
+    dragging.current = false
+    if (pauseTimer.current) clearTimeout(pauseTimer.current)
+    pauseTimer.current = setTimeout(startAnim, 3000)
+  }
+
   return (
     <div
       ref={containerRef}
       className="hero-compare"
-      onMouseDown={() => { dragging.current = true }}
+      onMouseDown={onDragStart}
       onMouseMove={e => { if (dragging.current) updatePos(e.clientX) }}
-      onMouseUp={() => { dragging.current = false }}
-      onMouseLeave={() => { dragging.current = false }}
-      onTouchMove={e => updatePos(e.touches[0].clientX)}
+      onMouseUp={onDragEnd}
+      onMouseLeave={() => { if (dragging.current) onDragEnd() }}
+      onTouchStart={onDragStart}
+      onTouchMove={e => { updatePos(e.touches[0].clientX) }}
+      onTouchEnd={onDragEnd}
       style={{ position: 'relative', width: '100%', borderRadius: '20px', overflow: 'hidden', cursor: 'ew-resize', userSelect: 'none', touchAction: 'none' }}
     >
       <img src={AFTER_SRC}  alt="after"  fetchPriority="high" loading="eager" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
@@ -489,8 +559,8 @@ export default function HomePage() {
       </nav>
 
         {/* ── Hero ── */}
-        <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '22vh', paddingBottom: '6vh', marginTop: 68 }}>
-          <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '860px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px' }}>
+        <section className="hero-sec" style={{ background: 'linear-gradient(to bottom, #efefef 0%, #f4f4f4 40%, #fafafa 70%, #ffffff 100%)', position: 'relative', width: '100vw', height: 'calc(100vh - 68px)', minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '4vh', paddingBottom: '4vh', marginTop: 68 }}>
+          <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px' }}>
             <div style={{ width: 'fit-content', maxWidth: '100%' }}>
               {/* 데스크탑 헤드라인 */}
               <h1 className="hero-headline hero-headline-desktop" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, fontSize: 'clamp(32px, 5.2vw, 64px)', fontWeight: 700, lineHeight: 1.45, letterSpacing: '-1.5px', color: '#111', whiteSpace: 'nowrap', margin: 0 }}>
@@ -502,7 +572,7 @@ export default function HomePage() {
               </h1>
               <p className="hero-subheadline" style={{ animation: 'fadeDown 0.7s ease 0.15s forwards', opacity: 0, textAlign: 'right', fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 400, color: '#111', marginTop: '10px', letterSpacing: '-0.3px' }}>내 매장이 돋보이는 이유, 메뉴랩</p>
             </div>
-            <div className="hero-slider" style={{ animation: 'fadeUp 0.8s ease 0.25s forwards', opacity: 0, width: '100%', maxWidth: '506px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)', borderRadius: '20px', marginTop: '0' }}>
+            <div className="hero-slider" style={{ animation: 'fadeUp 0.8s ease 0.25s forwards', opacity: 0, width: '100%', maxWidth: '860px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)', borderRadius: '20px', marginTop: '0' }}>
               <ImageCompareSlider />
             </div>
           </div>

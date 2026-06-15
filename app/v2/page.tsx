@@ -131,10 +131,66 @@ const BEFORE_SRC = '/noodle-before.jpg'
 const AFTER_SRC  = '/noodle-after.jpg'
 const BG_SRC     = '/hero-bg.jpg'
 
+// 자동 슬라이더 상수: 50% → 10%(before) → 90%(after) → 50%, 총 4.5초 루프
+const SLIDER_KEYFRAMES = [50, 10, 90, 50]
+const SLIDER_DURATIONS = [1500, 1500, 1500]
+const SLIDER_CYCLE_MS  = 4500
+
+function sliderEase(t: number) {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+}
+
+function calcAutoPos(progress: number): number {
+  const t = progress % SLIDER_CYCLE_MS
+  let segStart = 0
+  for (let i = 0; i < SLIDER_DURATIONS.length; i++) {
+    const segEnd = segStart + SLIDER_DURATIONS[i]
+    if (t <= segEnd) {
+      const p = sliderEase((t - segStart) / SLIDER_DURATIONS[i])
+      return SLIDER_KEYFRAMES[i] + (SLIDER_KEYFRAMES[i + 1] - SLIDER_KEYFRAMES[i]) * p
+    }
+    segStart = segEnd
+  }
+  return 50
+}
+
 function ImageCompareSlider() {
-  const [pos, setPos] = useState(50)
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const dragging      = useRef(false)
+  const [pos, setPos]  = useState(50)
+  const containerRef   = useRef<HTMLDivElement>(null)
+  const dragging       = useRef(false)
+  const animRef        = useRef<number | null>(null)
+  const pauseTimer     = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const progressRef    = useRef(0)
+  const lastTsRef      = useRef<number | null>(null)
+
+  const tick = useCallback((ts: number) => {
+    if (lastTsRef.current !== null) {
+      progressRef.current = (progressRef.current + ts - lastTsRef.current) % SLIDER_CYCLE_MS
+    }
+    lastTsRef.current = ts
+    setPos(calcAutoPos(progressRef.current))
+    animRef.current = requestAnimationFrame(tick)
+  }, [])
+
+  const startAnim = useCallback(() => {
+    if (animRef.current) cancelAnimationFrame(animRef.current)
+    lastTsRef.current = null
+    animRef.current = requestAnimationFrame(tick)
+  }, [tick])
+
+  const stopAnim = useCallback(() => {
+    if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null }
+    lastTsRef.current = null
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(startAnim, 1000)
+    return () => {
+      clearTimeout(t)
+      stopAnim()
+      if (pauseTimer.current) clearTimeout(pauseTimer.current)
+    }
+  }, [startAnim, stopAnim])
 
   const updatePos = useCallback((clientX: number) => {
     const el = containerRef.current
@@ -143,15 +199,29 @@ function ImageCompareSlider() {
     setPos(Math.min(100, Math.max(0, ((clientX - left) / width) * 100)))
   }, [])
 
+  const onDragStart = () => {
+    dragging.current = true
+    stopAnim()
+    if (pauseTimer.current) clearTimeout(pauseTimer.current)
+  }
+
+  const onDragEnd = () => {
+    dragging.current = false
+    if (pauseTimer.current) clearTimeout(pauseTimer.current)
+    pauseTimer.current = setTimeout(startAnim, 3000)
+  }
+
   return (
     <div
       ref={containerRef}
       className="hero-compare"
-      onMouseDown={() => { dragging.current = true }}
+      onMouseDown={onDragStart}
       onMouseMove={e => { if (dragging.current) updatePos(e.clientX) }}
-      onMouseUp={() => { dragging.current = false }}
-      onMouseLeave={() => { dragging.current = false }}
-      onTouchMove={e => updatePos(e.touches[0].clientX)}
+      onMouseUp={onDragEnd}
+      onMouseLeave={() => { if (dragging.current) onDragEnd() }}
+      onTouchStart={onDragStart}
+      onTouchMove={e => { updatePos(e.touches[0].clientX) }}
+      onTouchEnd={onDragEnd}
       style={{ position: 'relative', width: '100%', borderRadius: '20px', overflow: 'hidden', cursor: 'ew-resize', userSelect: 'none', touchAction: 'none' }}
     >
       <img src={AFTER_SRC}  alt="after"  fetchPriority="high" loading="eager" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
@@ -418,9 +488,9 @@ export default function V2HomePage() {
       {/* 히어로 고정 배경 — position:fixed로 스크롤해도 움직이지 않음 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url(${BG_SRC})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
-      <section className="hero-sec" style={{ position: 'relative', width: '100vw', height: `calc(100vh - ${60 + BANNER_H}px)`, minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '2vh', paddingBottom: '6vh', marginTop: 60 + BANNER_H }}>
+      <section className="hero-sec" style={{ position: 'relative', width: '100vw', height: `calc(100vh - ${60 + BANNER_H}px)`, minHeight: '460px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '2vh', paddingBottom: '2vh', marginTop: 60 + BANNER_H }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.12) 100%)' }} />
-        <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '860px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div className="hero-body" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1040px', padding: '0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <h1 className="hero-headline" style={{ animation: 'fadeDown 0.7s ease forwards', opacity: 0, textAlign: 'center', fontSize: 'clamp(34px, 5.8vw, 64px)', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-1.5px', color: '#fff' }}>
             <span style={{ fontSize: '0.65em', fontWeight: 700, opacity: 0.85 }}>스마트폰 사진 한 장,</span><br />
             <span style={{ color: 'var(--orange)' }}>스튜디오급</span>으로
@@ -428,7 +498,7 @@ export default function V2HomePage() {
           <p className="hero-badge" style={{ animation: 'fadeDown 0.6s ease 0.15s forwards', opacity: 0, textAlign: 'center', fontSize: 'clamp(13px, 1.8vw, 17px)', color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
             배달앱, 플레이스 메뉴사진 필요하세요?
           </p>
-          <div className="hero-slider" style={{ animation: 'fadeUp 0.8s ease 0.25s forwards', opacity: 0, width: '100%', maxWidth: '680px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', borderRadius: '20px', marginTop: '4px' }}>
+          <div className="hero-slider" style={{ animation: 'fadeUp 0.8s ease 0.25s forwards', opacity: 0, width: '100%', maxWidth: '860px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', borderRadius: '20px', marginTop: '4px' }}>
             <ImageCompareSlider />
           </div>
         </div>

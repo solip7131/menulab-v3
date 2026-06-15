@@ -412,7 +412,7 @@ html { overscroll-behavior-y: none; }
   .hero-slider {
     flex: 1 !important;
     min-height: 0 !important;
-    max-height: 374px !important;
+    max-height: 500px !important;
   }
   .hero-compare {
     aspect-ratio: unset !important;
