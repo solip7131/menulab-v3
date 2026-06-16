@@ -15,10 +15,15 @@ const supabase = createClient(
 
 // ── Background → neutral surface color mapping ────────────────────────────────
 const BG_SURFACE: Record<string, string> = {
-  '라이트그레이':     'light gray',
-  '아이보리':         'warm ivory',
-  '화이트 대리석타일': 'pure white marble',
-  '블랙 콘크리트':    'dark charcoal concrete',
+  '라이트그레이':       'light gray',
+  '아이보리':           'warm ivory',
+  '화이트 대리석타일':  'pure white marble',
+  '블랙 콘크리트':      'dark charcoal concrete',
+  '아이보리 실크':      'warm ivory',
+  '아이보리 페이퍼':    'warm ivory',
+  '그레이 콘크리트':    'gray concrete',
+  '화이트 터치드페인트':'off-white paint',
+  '화이트우드':         'white wood',
 }
 
 function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {

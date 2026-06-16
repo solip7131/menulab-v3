@@ -24,7 +24,8 @@ interface BgPreset {
   id: string
   label: string
   category: 'solid' | 'tile' | 'fabric' | 'wood' | 'concrete'
-  src: string
+  src: string        // UI 썸네일
+  promptSrc?: string // AI 전송용 (없으면 src 사용)
 }
 
 type ModalStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
@@ -43,10 +44,15 @@ const DELIVERY_PLATFORMS: Platform[] = [
 ]
 
 const BG_PRESETS: BgPreset[] = [
-  { id: 'lightgray', label: '라이트그레이',     category: 'solid',    src: '/backgrounds/lightgray.jpg' },
-  { id: 'ivory',     label: '아이보리',         category: 'solid',    src: '/backgrounds/ivory.jpg'     },
-  { id: 'concrete',  label: '블랙 콘크리트',    category: 'concrete', src: '/backgrounds/concrete.jpg'  },
-  { id: 'marble',    label: '화이트 대리석타일', category: 'tile',     src: '/backgrounds/marble.jpg'    },
+  { id: 'lightgray',          label: '라이트그레이',      category: 'solid',    src: '/backgrounds/lightgray.jpg'                                                    },
+  { id: 'ivory',              label: '아이보리',          category: 'solid',    src: '/backgrounds/ivory.jpg'                                                        },
+  { id: 'concrete',           label: '블랙 콘크리트',     category: 'concrete', src: '/backgrounds/concrete.jpg'                                                     },
+  { id: 'marble',             label: '화이트 대리석타일', category: 'tile',     src: '/backgrounds/marble.jpg'                                                       },
+  { id: 'ivory-silk',         label: '아이보리 실크',     category: 'fabric',   src: '/backgrounds/ivory-silk.jpg',        promptSrc: '/backgrounds/prompt/ivory-silk.png'        },
+  { id: 'ivory-paper',        label: '아이보리 페이퍼',   category: 'fabric',   src: '/backgrounds/ivory-paper.jpg',       promptSrc: '/backgrounds/prompt/ivory-paper.png'       },
+  { id: 'gray-concrete',      label: '그레이 콘크리트',   category: 'concrete', src: '/backgrounds/gray-concrete.jpg',     promptSrc: '/backgrounds/prompt/gray-concrete.png'     },
+  { id: 'white-touched-paint',label: '화이트 터치드페인트',category: 'concrete', src: '/backgrounds/white-touched-paint.jpg',promptSrc: '/backgrounds/prompt/white-touched-paint.png'},
+  { id: 'white-wood',         label: '화이트우드',        category: 'wood',     src: '/backgrounds/white-wood.jpg',        promptSrc: '/backgrounds/prompt/white-wood.png'        },
 ]
 
 const SAMPLE_SRCS = [
@@ -443,7 +449,8 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
     setBgData(null)
     setError(null)
     try {
-      const data = await urlToBase64(bg.src)
+      // AI 전송용은 promptSrc 우선, 없으면 src 사용
+      const data = await urlToBase64(bg.promptSrc ?? bg.src)
       setBgData(data)
     } catch {
       setError('배경 이미지를 불러오지 못했어요.')
