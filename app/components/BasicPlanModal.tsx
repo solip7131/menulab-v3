@@ -43,10 +43,10 @@ const DELIVERY_PLATFORMS: Platform[] = [
 ]
 
 const BG_PRESETS: BgPreset[] = [
-  { id: 'lightgray', label: '라이트그레이',         category: 'solid',    src: '/backgrounds/lightgray.jpg' },
-  { id: 'ivory',     label: '실키 페브릭 아이보리', category: 'solid',    src: '/backgrounds/ivory.jpg'     },
-  { id: 'concrete',  label: '콘크리트',             category: 'concrete', src: '/backgrounds/concrete.jpg'  },
-  { id: 'marble',    label: '마블',                 category: 'tile',     src: '/backgrounds/marble.jpg'    },
+  { id: 'lightgray', label: '라이트그레이',     category: 'solid',    src: '/backgrounds/lightgray.jpg' },
+  { id: 'ivory',     label: '아이보리',         category: 'solid',    src: '/backgrounds/ivory.jpg'     },
+  { id: 'concrete',  label: '블랙 콘크리트',    category: 'concrete', src: '/backgrounds/concrete.jpg'  },
+  { id: 'marble',    label: '화이트 대리석타일', category: 'tile',     src: '/backgrounds/marble.jpg'    },
 ]
 
 const SAMPLE_SRCS = [
