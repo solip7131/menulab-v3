@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifySessionToken } from '../../mypage/_utils'
+import { verifySessionFull } from '../../mypage/_utils'
 import { notifySignup } from '../../../../lib/solapi'
 
 export async function POST(req: NextRequest) {
@@ -8,9 +8,10 @@ export async function POST(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) return NextResponse.json({ error: '로그인이 필요해요' }, { status: 401 })
 
-    const email = verifySessionToken(token)
-    if (!email) return NextResponse.json({ error: '세션이 만료됐어요' }, { status: 401 })
+    const session = verifySessionFull(token)
+    if (!session) return NextResponse.json({ error: '세션이 만료됐어요' }, { status: 401 })
 
+    const { email, kakaoId } = session
     const { phone, code } = await req.json()
     const digits = phone?.replace(/\D/g, '')
     if (!digits || !code) return NextResponse.json({ error: '잘못된 요청이에요' }, { status: 400 })
@@ -35,24 +36,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '인증번호가 틀렸어요' }, { status: 400 })
     }
 
-    // 기존 행 업데이트 시도
-    const { data: updated } = await supabase
-      .from('kakao_tokens')
-      .update({ phone: digits })
-      .eq('kakao_email', email)
-      .select('kakao_email')
+    // 이메일 형태 변동 대응: email + kakao:id 두 가지로 기존 row 탐색
+    const fallbackEmail = kakaoId ? `kakao:${kakaoId}` : null
+    const searchEmails = fallbackEmail && email !== fallbackEmail
+      ? [email, fallbackEmail]
+      : [email]
 
-    // 행이 없으면 insert (kakao_tokens 행 자체가 없는 경우 대비)
-    if (!updated || updated.length === 0) {
+    const { data: existingRows } = await supabase
+      .from('kakao_tokens')
+      .select('kakao_email')
+      .in('kakao_email', searchEmails)
+      .limit(1)
+
+    if (existingRows && existingRows.length > 0) {
+      await supabase
+        .from('kakao_tokens')
+        .update({ phone: digits })
+        .eq('kakao_email', existingRows[0].kakao_email)
+    } else {
       await supabase.from('kakao_tokens').insert({ kakao_email: email, phone: digits })
     }
 
     await supabase.from('phone_verifications').delete().eq('phone', digits)
 
-    // 환영 알림톡 발송 (이름 조회 후)
     try {
       const { data: tokenRows } = await supabase
-        .from('kakao_tokens').select('kakao_name').eq('kakao_email', email).limit(1)
+        .from('kakao_tokens').select('kakao_name').in('kakao_email', searchEmails).limit(1)
       await notifySignup({ phone: digits, customerName: tokenRows?.[0]?.kakao_name || '' })
     } catch {}
 
