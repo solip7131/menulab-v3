@@ -109,7 +109,7 @@ function buildPrompt(params: {
   lines.push('FRAMING: Dish occupies 50% of image height. Centered.')
   lines.push('Show plenty of background — 20% margin top, 15% bottom, 15% each side.')
   lines.push('Never crop the dish.')
-  lines.push('Match lighting naturally.')
+  lines.push('Lighting: soft overhead studio light, bright but not harsh. Gentle natural shadow beneath the dish. Keep lighting consistent regardless of background texture.')
 
   // 6. 소품 금지
   lines.push('소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것')
