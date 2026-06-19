@@ -77,8 +77,6 @@ export async function POST(req: NextRequest) {
       config: {
         responseModalities: ['IMAGE', 'TEXT'],
         temperature: 0.2,
-        mediaResolution: 'MEDIA_RESOLUTION_HIGH',
-        imageConfig: { imageSize: '4K' },
       } as never,
     })
 
