@@ -400,8 +400,9 @@ export default function V2AdminPage() {
           try {
             const bgRes = await fetch(bgSrc)
             const bgBlob = await bgRes.blob()
-            bgImageBase64 = await toBase64(bgBlob)
-            bgImageMime = bgBlob.type || 'image/jpeg'
+            const compressedBg = await compressForUpload(bgBlob)
+            bgImageBase64 = await toBase64(compressedBg)
+            bgImageMime = 'image/jpeg'
           } catch {}
         }
       } else if (fullBgMode === 'prompt') {
