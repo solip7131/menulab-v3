@@ -197,7 +197,7 @@ async function callGemini(
 
 async function uploadWithWatermark(
   imageBase64: string,
-): Promise<{ wmUrl: string; origPath: string; wmPath: string } | null> {
+): Promise<{ wmUrl: string; origUrl: string; origPath: string; wmPath: string } | null> {
   try {
     const rawBuffer = Buffer.from(imageBase64, 'base64')
     const meta = await sharp(rawBuffer).metadata()
@@ -217,8 +217,9 @@ async function uploadWithWatermark(
     const { error } = await supabase.storage.from('photos').upload(wmPath, wmBuffer, { contentType: 'image/jpeg', upsert: false })
     if (error) return null
 
-    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(wmPath)
-    return { wmUrl: urlData.publicUrl, origPath, wmPath }
+    const { data: wmUrlData }   = supabase.storage.from('photos').getPublicUrl(wmPath)
+    const { data: origUrlData } = supabase.storage.from('photos').getPublicUrl(origPath)
+    return { wmUrl: wmUrlData.publicUrl, origUrl: origUrlData.publicUrl, origPath, wmPath }
   } catch {
     return null
   }
@@ -339,6 +340,7 @@ export async function POST(req: NextRequest) {
             imageBase64: croppedB64,
             imageMime:   'image/jpeg',
             wmUrl:       upload.wmUrl,
+            origUrl:     upload.origUrl,
           }
         } catch (err: any) {
           console.error(`Platform ${plat.name} failed:`, err?.message ?? err)
@@ -348,7 +350,7 @@ export async function POST(req: NextRequest) {
     )
 
     const successes = platResults.filter(Boolean) as {
-      platform: string; imageBase64: string; imageMime: string; wmUrl: string
+      platform: string; imageBase64: string; imageMime: string; wmUrl: string; origUrl: string
     }[]
 
     if (successes.length === 0) {
@@ -368,7 +370,11 @@ export async function POST(req: NextRequest) {
     }
 
     const first = successes[0]
-    return NextResponse.json({ imageBase64: first.imageBase64, imageMime: first.imageMime, wmUrl: first.wmUrl })
+    return NextResponse.json({
+      imageBase64: first.imageBase64,
+      imageMime:   first.imageMime,
+      wmUrl:       isAdmin ? first.origUrl : first.wmUrl,
+    })
 
   } catch (e) {
     console.error('generate error:', e)
