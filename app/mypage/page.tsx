@@ -1013,16 +1013,14 @@ function MyPageContent() {
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
                     width: '100%', padding: '8px 16px',
-                    background: 'none', border: 'none', cursor: svc.id === 'remake' ? 'default' : 'pointer',
-                    textAlign: 'left', opacity: svc.id === 'remake' ? 0.5 : 1,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    textAlign: 'left', opacity: 1,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                     <span style={{ fontSize: '13px', fontWeight: 700, color: '#222' }}>{svc.name}</span>
-                    {svc.gems ? (
+                    {svc.gems && (
                       <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--orange)', background: 'rgba(196,81,13,0.08)', padding: '2px 7px', borderRadius: '100px' }}>{svc.gems}</span>
-                    ) : (
-                      svc.id === 'remake' && <span style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', background: 'rgba(0,0,0,0.05)', padding: '2px 7px', borderRadius: '100px' }}>준비 중</span>
                     )}
                   </div>
                   <span style={{ fontSize: '11px', color: '#aaa', lineHeight: 1.4, marginTop: '2px' }}>{svc.subtitle}</span>
