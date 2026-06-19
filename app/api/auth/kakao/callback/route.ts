@@ -56,13 +56,13 @@ export async function GET(req: NextRequest) {
     // 3. 카카오 토큰 Supabase 저장 (알림 전송용)
     // upsert 대신 update+insert 패턴 사용 — phone 컬럼을 건드리지 않기 위해
     try {
-      const { data: existing } = await supabaseAdmin
+      const { data: rows } = await supabaseAdmin
         .from('kakao_tokens')
         .select('kakao_email')
         .eq('kakao_email', email)
-        .maybeSingle()
+        .limit(1)
 
-      if (existing) {
+      if (rows && rows.length > 0) {
         await supabaseAdmin
           .from('kakao_tokens')
           .update({

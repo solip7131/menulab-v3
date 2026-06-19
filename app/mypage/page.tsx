@@ -13,6 +13,7 @@ import PhoneVerificationModal from '../components/PhoneVerificationModal'
 const SESSION_KEY      = 'menulab_session'
 const GEN_OPTIONS_KEY  = 'menulab_last_gen_options'
 const GENERATING_KEY   = 'menulab_generating'
+const PHONE_OK_KEY     = (email: string) => `menulab_phone_ok_${email}`
 
 const CATS = [
   '전체 보기', '배달앱', 'SNS', '포스터',
@@ -431,14 +432,21 @@ function MyPageContent() {
     } catch { localStorage.removeItem(SESSION_KEY) }
   }, [])
 
-  // Phone verification check (1회)
+  // Phone verification check (1회) — localStorage 캐시 우선 확인
   useEffect(() => {
-    if (!sessionToken) return
+    if (!sessionToken || !sessionEmail) return
+    try { if (localStorage.getItem(PHONE_OK_KEY(sessionEmail)) === '1') return } catch {}
     fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${sessionToken}` } })
       .then(r => r.json())
-      .then(d => { if (!d.hasPhone) setShowPhoneVerify(true) })
+      .then(d => {
+        if (d.hasPhone) {
+          try { localStorage.setItem(PHONE_OK_KEY(sessionEmail), '1') } catch {}
+        } else {
+          setShowPhoneVerify(true)
+        }
+      })
       .catch(() => {})
-  }, [sessionToken])
+  }, [sessionToken, sessionEmail])
 
   // Fetch gem balance
   const fetchGemBalance = useCallback(async (token: string) => {
@@ -1304,7 +1312,10 @@ function MyPageContent() {
       {showPhoneVerify && sessionToken && (
         <PhoneVerificationModal
           token={sessionToken}
-          onVerified={() => setShowPhoneVerify(false)}
+          onVerified={() => {
+            try { if (sessionEmail) localStorage.setItem(PHONE_OK_KEY(sessionEmail), '1') } catch {}
+            setShowPhoneVerify(false)
+          }}
           onSkip={() => setShowPhoneVerify(false)}
         />
       )}
