@@ -368,7 +368,7 @@ export async function POST(req: NextRequest) {
     }
 
     const first = successes[0]
-    return NextResponse.json({ imageBase64: first.imageBase64, imageMime: first.imageMime })
+    return NextResponse.json({ imageBase64: first.imageBase64, imageMime: first.imageMime, wmUrl: first.wmUrl })
 
   } catch (e) {
     console.error('generate error:', e)

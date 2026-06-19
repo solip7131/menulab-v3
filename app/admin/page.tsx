@@ -4,10 +4,13 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 
-const getSupabase = () => createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const getSupabase = () => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return null
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
 
 const VIBE_LABELS: Record<string, string> = {
   warm: '따뜻한', premium: '고급스러운', modern: '깔끔모던', natural: '내추럴우드', cafe: '감성카페',
@@ -181,8 +184,10 @@ export default function V2AdminPage() {
   }
 
   const fetchOrders = async () => {
+    const sb = getSupabase()
+    if (!sb) { setLoading(false); return }
     setLoading(true)
-    const { data } = await getSupabase()
+    const { data } = await sb
       .from('orders')
       .select('*')
       .not('v2_meta', 'is', null)
@@ -193,7 +198,7 @@ export default function V2AdminPage() {
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(true)
-    await getSupabase().from('orders').update({ status }).eq('id', id)
+    await getSupabase()?.from('orders').update({ status }).eq('id', id)
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : null)
     setUpdating(false)
@@ -216,7 +221,7 @@ export default function V2AdminPage() {
 
   const markKakaoSent = async (id: string) => {
     const newMeta = { ...(selected?.v2_meta || {}), kakao_channel_sent: true }
-    await getSupabase().from('orders').update({ v2_meta: newMeta }).eq('id', id)
+    await getSupabase()?.from('orders').update({ v2_meta: newMeta }).eq('id', id)
     setOrders(prev => prev.map(o => o.id === id ? { ...o, v2_meta: newMeta as V2Meta } : o))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, v2_meta: newMeta as V2Meta } : null)
   }
@@ -363,8 +368,24 @@ export default function V2AdminPage() {
           reader.readAsDataURL(file)
         })
 
-      const base64 = await toBase64(fullPhoto)
-      const mime = fullPhoto.type || 'image/jpeg'
+      // 이미지 압축 (큰 사진 → request body 4.5MB 초과 방지)
+      const compressForUpload = async (file: File | Blob, quality = 0.85): Promise<Blob> => {
+        const bitmap = await createImageBitmap(file)
+        const MAX_DIM = 1400
+        let w = bitmap.width, h = bitmap.height
+        if (w > MAX_DIM || h > MAX_DIM) {
+          const ratio = Math.min(MAX_DIM / w, MAX_DIM / h)
+          w = Math.round(w * ratio); h = Math.round(h * ratio)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h)
+        return new Promise<Blob>(res => canvas.toBlob(blob => res(blob!), 'image/jpeg', quality))
+      }
+
+      const compressed = await compressForUpload(fullPhoto)
+      const base64 = await toBase64(compressed)
+      const mime = 'image/jpeg'
 
       // 배경 이미지 로드 (preset인 경우 promptSrc 우선)
       let bgImageBase64: string | undefined
@@ -409,19 +430,24 @@ export default function V2AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      const data = await res.json()
 
-      if (data.error) {
-        setFullError(data.error)
-      } else {
-        // generated_images DB에서 방금 저장된 결과 가져오기
-        const platResults: FullPlatResult[] = platforms.map(p => ({
-          platform: p.name,
-          wmUrl: '',
-        }))
-        setFullResults(platResults)
-        // wmUrl은 DB polling 대신 간단히 imageBase64로 표시
+      const rawText = await res.text()
+      let data: any
+      try {
+        data = JSON.parse(rawText)
+      } catch {
+        setFullError(`서버 오류 (HTTP ${res.status}): ${rawText.slice(0, 300)}`)
+        return
+      }
+
+      if (!res.ok || data.error) {
+        setFullError(data.error ?? `HTTP ${res.status}`)
+      } else if (data.wmUrl) {
+        setFullResults(platforms.map(p => ({ platform: p.name, wmUrl: data.wmUrl })))
+      } else if (data.imageBase64) {
         setFullResults(platforms.map(p => ({ platform: p.name, wmUrl: `data:image/jpeg;base64,${data.imageBase64}` })))
+      } else {
+        setFullError(`응답 내용: ${JSON.stringify(data).slice(0, 200)}`)
       }
     } catch (e: any) {
       setFullError(String(e))
