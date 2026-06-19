@@ -300,6 +300,9 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
   const [remakeAngle,  setRemakeAngle]  = useState<'original' | 'side45' | 'topdown'>('original')
   const [remakeVessel, setRemakeVessel] = useState<string>('original')
 
+  // 화질
+  const [dslr, setDslr] = useState(false)
+
   // 콩(크레딧) 관련 상태
   const [userEmail, setUserEmail]           = useState<string | null>(null)
   const [showChargeModal, setShowChargeModal] = useState(false)
@@ -493,6 +496,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
         serviceType,
         angle:  remakeAngle,
         vessel: remakeVessel,
+        dslr,
       }
       if (bgMethod === 'preset' && bgData) {
         body.bgImageBase64 = bgData.base64
@@ -1237,6 +1241,20 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
                 <p style={{ fontSize: '12px', color: '#86efac', marginTop: '3px' }}>
                   {selectedPhotos.length}장 × {Math.max(activePlatforms.length, 1)}개 플랫폼
                 </p>
+              </div>
+
+              {/* DSLR 고화질 토글 */}
+              <div
+                onClick={() => setDslr(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${dslr ? 'var(--orange)' : 'rgba(0,0,0,0.08)'}`, background: dslr ? 'rgba(196,81,13,0.05)' : '#fff', cursor: 'pointer', marginBottom: '14px' }}
+              >
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '2px' }}>📸 DSLR 고화질</p>
+                  <p style={{ fontSize: '11px', color: '#aaa' }}>2K 해상도로 생성 — 처리 시간이 다소 길어질 수 있어요</p>
+                </div>
+                <div style={{ width: '44px', height: '26px', borderRadius: '13px', background: dslr ? 'var(--orange)' : '#ddd', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: '3px', left: dslr ? '21px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
+                </div>
               </div>
 
               {error && <p style={{ color: '#e53e3e', fontSize: '13px', marginBottom: '14px', lineHeight: 1.5 }}>{error}</p>}

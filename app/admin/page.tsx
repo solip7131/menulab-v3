@@ -133,7 +133,8 @@ export default function V2AdminPage() {
     { id: 'pasta-bowl',        label: '파스타볼' },
   ]
   const [fullPhoto, setFullPhoto]             = useState<File | null>(null)
-  const [fullServiceType, setFullServiceType] = useState<'retouch' | 'remake'>('retouch')
+  const [fullServiceType, setFullServiceType] = useState<'remake' | 'collection'>('remake')
+  const [fullDslr, setFullDslr]               = useState(false)
   const [fullAngle, setFullAngle]             = useState<'original' | 'side45' | 'topdown'>('original')
   const [fullVessel, setFullVessel]           = useState('original')
   const [fullBgPresetId, setFullBgPresetId]   = useState<string | null>('lightgray')
@@ -389,6 +390,7 @@ export default function V2AdminPage() {
         serviceType: fullServiceType,
         angle: fullAngle,
         vessel: fullVessel,
+        dslr: fullDslr,
         adminToken: password,
       }
       if (backgroundName)  body.backgroundName = backgroundName
@@ -716,13 +718,23 @@ export default function V2AdminPage() {
                   <div>
                     <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>서비스 타입</p>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      {([['retouch', '리터치'], ['remake', '리메이크']] as const).map(([v, l]) => (
+                      {([['remake', '메뉴샷'], ['collection', '모음컷']] as const).map(([v, l]) => (
                         <button key={v} onClick={() => setFullServiceType(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullServiceType === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
                       ))}
                     </div>
                   </div>
 
-                  {/* 구도 + 그릇 (리메이크만) */}
+                  {/* DSLR 고화질 토글 */}
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>화질</p>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {([false, true] as const).map(v => (
+                        <button key={String(v)} onClick={() => setFullDslr(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullDslr === v ? '#FF8C00' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v ? '📸 DSLR 고화질 (2K)' : '기본'}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 구도 + 그릇 (메뉴샷만) */}
                   {fullServiceType === 'remake' && (
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                       <div>

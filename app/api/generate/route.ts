@@ -150,7 +150,11 @@ async function resizeCrop(base64: string, w: number, h: number): Promise<Buffer>
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-preview'): Promise<{ data: string; mimeType: string }> {
+async function callGemini(
+  parts: unknown[],
+  modelName = 'gemini-3-pro-image-preview',
+  dslr = false,
+): Promise<{ data: string; mimeType: string }> {
   const contents = [{
     role: 'user',
     parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
@@ -164,6 +168,9 @@ async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-prev
         contents: contents as never,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: dslr
+            ? { aspectRatio: '1:1', imageSize: '2K' }
+            : { aspectRatio: '1:1' },
         } as never,
       })
 
@@ -255,10 +262,11 @@ export async function POST(req: NextRequest) {
     const overrideComposeBg   = isAdmin ? (body.overridePromptComposeBg   as string | undefined) : undefined
     const overrideComposeText = isAdmin ? (body.overridePromptComposeText as string | undefined) : undefined
 
-    // ── 서비스 타입·구도·그릇 파라미터 ──────────────────────────────────────
+    // ── 서비스 타입·구도·그릇·품질 파라미터 ─────────────────────────────────
     const serviceType = (body.serviceType as string | undefined) ?? 'retouch'  // 'retouch' | 'remake'
     const angle       = (body.angle       as string | undefined) ?? 'original' // 'original' | 'side45' | 'topdown'
     const vessel      = (body.vessel      as string | undefined) ?? 'original' // 'original' | 그릇 id
+    const dslr        = !!(body.dslr)                                          // true → imageSize: '2K'
 
     const hasBgImage = !!(bgImageBase64 && bgImageMime)
     const bgName = backgroundName?.trim() || bgPrompt?.trim() || 'clean professional studio'
@@ -274,11 +282,11 @@ export async function POST(req: NextRequest) {
     const promptEnhance = overrideEnhance ?? baseEnhancePrompt
 
     // ── Call 1: enhance food only (shared across all platforms) ──────────────
-    console.log(`[generate] call 1/2 — food enhancement (surface: ${surfaceColor})`)
+    console.log(`[generate] call 1/2 — food enhancement (surface: ${surfaceColor}, dslr: ${dslr})`)
     const enhanced = await callGemini([
       { inlineData: { data: foodBase64, mimeType: foodMime } },
       promptEnhance,
-    ])
+    ], 'gemini-3-pro-image-preview', dslr)
     console.log('[generate] call 1/2 done')
 
     // ── Call 2: composite onto background — one call per platform ─────────────
@@ -308,7 +316,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const img      = await callGemini([...parts, prompt])
+          const img      = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview', dslr)
           const cropped  = await resizeCrop(img.data, platCfg.finalW, platCfg.finalH)
           const croppedB64 = cropped.toString('base64')
           const upload = await uploadWithWatermark(croppedB64)
