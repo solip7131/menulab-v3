@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ hasPhone: false })
 
   const email = verifySessionToken(token)
-  if (!email) return NextResponse.json({ hasPhone: false })
+  if (!email) return NextResponse.json({ hasPhone: false, invalidSession: true })
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

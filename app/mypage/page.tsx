@@ -14,6 +14,7 @@ const SESSION_KEY      = 'menulab_session'
 const GEN_OPTIONS_KEY  = 'menulab_last_gen_options'
 const GENERATING_KEY   = 'menulab_generating'
 const PHONE_OK_KEY     = (email: string) => `menulab_phone_ok_${email}`
+const PHONE_SKIP_KEY   = (email: string) => `menulab_phone_skip_${email}`
 
 const CATS = [
   '전체 보기', '배달앱', 'SNS', '포스터',
@@ -547,10 +548,16 @@ function MyPageContent() {
   // Phone verification check (1회) — localStorage 캐시 우선 확인
   useEffect(() => {
     if (!sessionToken || !sessionEmail) return
-    try { if (localStorage.getItem(PHONE_OK_KEY(sessionEmail)) === '1') return } catch {}
+    try {
+      if (localStorage.getItem(PHONE_OK_KEY(sessionEmail)) === '1') return
+      // 오늘 이미 스킵한 경우 재노출 안 함
+      const skipVal = localStorage.getItem(PHONE_SKIP_KEY(sessionEmail))
+      if (skipVal === new Date().toISOString().slice(0, 10)) return
+    } catch {}
     fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${sessionToken}` } })
       .then(r => r.json())
       .then(d => {
+        if (d.invalidSession) return  // 만료된 세션이면 모달 띄우지 않음
         if (d.hasPhone) {
           try { localStorage.setItem(PHONE_OK_KEY(sessionEmail), '1') } catch {}
         } else {
@@ -1388,7 +1395,10 @@ function MyPageContent() {
             try { if (sessionEmail) localStorage.setItem(PHONE_OK_KEY(sessionEmail), '1') } catch {}
             setShowPhoneVerify(false)
           }}
-          onSkip={() => setShowPhoneVerify(false)}
+          onSkip={() => {
+            try { if (sessionEmail) localStorage.setItem(PHONE_SKIP_KEY(sessionEmail), new Date().toISOString().slice(0, 10)) } catch {}
+            setShowPhoneVerify(false)
+          }}
         />
       )}
       {showBasicModal && (
