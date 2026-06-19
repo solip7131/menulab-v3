@@ -51,9 +51,7 @@ function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
 // ── Call 1: food-only enhancement ────────────────────────────────────────────
 
 // 리터치: 원본 구도 최대한 유지
-const PROMPT_RETOUCH_ENHANCE = `Upgrade the image into true-to-life, professional-grade photography.
-Reconstruct fine real-world detail and restore materials with physically plausible properties.
-Keep the ORIGINAL camera angle and composition
+const PROMPT_RETOUCH_ENHANCE = `Keep the ORIGINAL camera angle and composition
 as close as possible to the input photo.
 Do NOT force 45-degree angle.
 Naturally enhance color, lighting, and food appearance while preserving the original viewpoint.
@@ -83,9 +81,7 @@ function buildRemakeEnhancePrompt(angle: string, vessel: string, surfaceColor: s
   const vesselLine = vessel && vessel !== 'original'
     ? `\nChange the bowl/dish to ${VESSEL_LABELS[vessel] ?? vessel}. Keep ALL food ingredients exactly the same.`
     : ''
-  return `Upgrade the image into true-to-life, professional-grade photography.
-Reconstruct fine real-world detail and restore materials with physically plausible properties.
-${angleInstruction}${vesselLine}
+  return `${angleInstruction}${vesselLine}
 Naturally enhance color, lighting, and food appearance.
 배경: ${surfaceColor} 단색 스튜디오 배경
 소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것`
