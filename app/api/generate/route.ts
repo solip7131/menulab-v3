@@ -150,11 +150,7 @@ async function resizeCrop(base64: string, w: number, h: number): Promise<Buffer>
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-async function callGemini(
-  parts: unknown[],
-  modelName = 'gemini-3-pro-image-preview',
-  aspectRatio?: string,
-): Promise<{ data: string; mimeType: string }> {
+async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-preview'): Promise<{ data: string; mimeType: string }> {
   const contents = [{
     role: 'user',
     parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
@@ -168,9 +164,6 @@ async function callGemini(
         contents: contents as never,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          imageConfig: aspectRatio
-            ? { aspectRatio, imageSize: '2K' }
-            : { imageSize: '2K' },
         } as never,
       })
 
@@ -315,7 +308,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const img      = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview', platCfg.aspectRatio)
+          const img      = await callGemini([...parts, prompt])
           const cropped  = await resizeCrop(img.data, platCfg.finalW, platCfg.finalH)
           const croppedB64 = cropped.toString('base64')
           const upload = await uploadWithWatermark(croppedB64)
