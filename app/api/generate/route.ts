@@ -126,9 +126,9 @@ function buildWmSvg(w: number, h: number): Buffer {
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-async function callGemini(parts: unknown[]): Promise<{ data: string; mimeType: string }> {
+async function callGemini(parts: unknown[], modelName = 'gemini-3.1-flash-image'): Promise<{ data: string; mimeType: string }> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-3.1-flash-image',
+    model: modelName,
     generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } as never,
   })
 
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const img    = await callGemini([...parts, prompt])
+          const img    = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview')
           const upload = await uploadWithWatermark(img.data)
           if (!upload) return null
 
