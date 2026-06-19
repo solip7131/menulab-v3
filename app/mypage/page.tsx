@@ -244,13 +244,21 @@ function ImageCard({
 // ── GeneratingCard ────────────────────────────────────────────────────────────
 
 function GeneratingCard({ count, completed = 0 }: { count: number; completed?: number }) {
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(s => s + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const mins = Math.floor(elapsed / 60)
+  const secs = elapsed % 60
+  const timeStr = mins > 0 ? `${mins}분 ${secs}초` : `${secs}초`
+
   return (
     <div style={{
       borderRadius: '16px', overflow: 'hidden',
       background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
       display: 'flex', flexDirection: 'column',
     }}>
-      {/* Image area — same aspect ratio as ImageCard */}
       <div style={{
         aspectRatio: '4/3', background: '#f5f4f2',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -279,11 +287,10 @@ function GeneratingCard({ count, completed = 0 }: { count: number; completed?: n
         </div>
       </div>
 
-      {/* Card body — matches ImageCard */}
       <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
         <div>
-          <p style={{ fontSize: '11px', color: '#ccc', marginBottom: '2px' }}>AI 생성 중...</p>
-          <p style={{ fontSize: '10px', color: '#ddd' }}>잠시만 기다려주세요</p>
+          <p style={{ fontSize: '11px', color: '#ccc', marginBottom: '2px' }}>AI 생성 중... ({timeStr})</p>
+          <p style={{ fontSize: '10px', color: '#ddd' }}>{elapsed < 30 ? '잠시만 기다려주세요' : elapsed < 90 ? '거의 다 됐어요 🙂' : '조금 더 기다려주세요 ☕'}</p>
         </div>
         <button
           disabled
@@ -724,11 +731,19 @@ function MyPageContent() {
       let completed = 0
       try {
         for (const body of requests) {
-          const res  = await fetch('/api/generate', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(body),
-          })
+          const controller = new AbortController()
+          const timer = setTimeout(() => controller.abort(), 150_000)
+          let res: Response
+          try {
+            res = await fetch('/api/generate', {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify(body),
+              signal:  controller.signal,
+            })
+          } finally {
+            clearTimeout(timer)
+          }
           const data = await res.json().catch(() => ({ error: res.status === 413 ? '이미지가 너무 커요. 더 작은 사진을 사용해주세요.' : `서버 오류 (${res.status})` }))
           if (!res.ok) {
             failed   = true
@@ -742,7 +757,7 @@ function MyPageContent() {
         }
       } catch (e: any) {
         failed   = true
-        errorMsg = e?.message || '네트워크 오류가 발생했어요'
+        errorMsg = e?.name === 'AbortError' ? '생성 시간이 초과됐어요 (150초). 다시 시도해주세요.' : (e?.message || '네트워크 오류가 발생했어요')
         console.error('generate error:', e)
       } finally {
         try { localStorage.removeItem(GENERATING_KEY) } catch {}
