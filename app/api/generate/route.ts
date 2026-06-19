@@ -95,8 +95,8 @@ const PROMPT_ENHANCE_TMPL = PROMPT_RETOUCH_ENHANCE
 // ── Call 2: composite onto background ────────────────────────────────────────
 const PROMPT_COMPOSE_BG_IMAGE = `Image 1: Food photo (already professionally shot)
 Image 2: Background texture reference
-TASK: Place the food from Image 1 naturally onto
-the background surface from Image 2.
+CAMERA: {ANGLE_INSTRUCTION} — do NOT change the viewpoint.
+TASK: Place the food from Image 1 naturally onto the background surface from Image 2.
 FRAMING: Dish occupies 50–60% of image height. Centered horizontally and vertically.
 Show plenty of background — at least 15% margin on all sides.
 Never crop the dish.
@@ -104,12 +104,19 @@ Match lighting direction from Image 1.
 OUTPUT: Final composited image only.`
 
 const PROMPT_COMPOSE_TEXT_BG = `Image 1: Food photo (already professionally shot)
+CAMERA: {ANGLE_INSTRUCTION} — do NOT change the viewpoint.
 TASK: Place the food from Image 1 onto a {BG_NAME} background.
 FRAMING: Dish occupies 50–60% of image height. Centered horizontally and vertically.
 Show plenty of background — at least 15% margin on all sides.
 Never crop the dish.
 Match lighting direction from Image 1.
 OUTPUT: Final composited image only.`
+
+const ANGLE_INSTRUCTIONS_CALL2: Record<string, string> = {
+  original: 'Keep the EXACT same camera angle as Image 1',
+  side45:   '45-degree side angle — dish rim visible as ellipse, side of dish clearly visible',
+  topdown:  'Directly overhead (90-degree top-down view)',
+}
 
 // ── Watermark ─────────────────────────────────────────────────────────────────
 
@@ -341,17 +348,17 @@ export async function POST(req: NextRequest) {
             { inlineData: { data: enhanced.data,  mimeType: enhanced.mimeType } },
             { inlineData: { data: bgImageBase64!, mimeType: bgImageMime!      } },
           ]
+          const angleInstr = ANGLE_INSTRUCTIONS_CALL2[angle] ?? ANGLE_INSTRUCTIONS_CALL2.original
           prompt = (overrideComposeBg ?? PROMPT_COMPOSE_BG_IMAGE)
-            .replace('{WIDTH}',  String(platCfg.finalW))
-            .replace('{HEIGHT}', String(platCfg.finalH))
+            .replace('{ANGLE_INSTRUCTION}', angleInstr)
         } else {
           parts = [
             { inlineData: { data: enhanced.data, mimeType: enhanced.mimeType } },
           ]
+          const angleInstr = ANGLE_INSTRUCTIONS_CALL2[angle] ?? ANGLE_INSTRUCTIONS_CALL2.original
           prompt = (overrideComposeText ?? PROMPT_COMPOSE_TEXT_BG)
             .replace(/{BG_NAME}/g, bgName)
-            .replace('{WIDTH}',    String(platCfg.finalW))
-            .replace('{HEIGHT}',   String(platCfg.finalH))
+            .replace('{ANGLE_INSTRUCTION}', angleInstr)
         }
 
         try {
