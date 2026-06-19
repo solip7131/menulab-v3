@@ -2,12 +2,12 @@ export const maxDuration = 180
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
 import { notifyAiDone } from '../../../lib/solapi'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -126,20 +126,35 @@ function buildWmSvg(w: number, h: number): Buffer {
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image'): Promise<{ data: string; mimeType: string }> {
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } as never,
-  })
+function toInteractionInput(parts: unknown[]): unknown[] {
+  return parts.map(p =>
+    typeof p === 'string'
+      ? { parts: [{ text: p }] }
+      : { parts: [p] }
+  )
+}
 
+async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-preview'): Promise<{ data: string; mimeType: string }> {
   const MAX_RETRIES = 3
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const result = await model.generateContent(parts as never)
-      const candidates = result.response.candidates?.[0]?.content?.parts ?? []
-      for (const part of candidates) {
-        const id = (part as { inlineData?: { mimeType: string; data: string } }).inlineData
-        if (id?.mimeType?.startsWith('image/')) return { data: id.data, mimeType: id.mimeType }
+      const result = await ai.interactions.create({
+        model: modelName,
+        input: toInteractionInput(parts) as never,
+        response_format: { image_size: '4K' } as never,
+      })
+
+      for (const step of (result as any).steps ?? []) {
+        if (step.type === 'model_output') {
+          for (const content of step.content ?? []) {
+            for (const part of content.parts ?? []) {
+              const id = part.inlineData ?? part.inline_data
+              if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
+                return { data: id.data, mimeType: id.mimeType ?? id.mime_type }
+              }
+            }
+          }
+        }
       }
       throw new Error('AI가 이미지를 반환하지 않았어요')
     } catch (err: any) {

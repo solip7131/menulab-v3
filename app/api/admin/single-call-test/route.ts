@@ -2,10 +2,10 @@ export const maxDuration = 180
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
 const ANGLE_INSTRUCTIONS: Record<string, string> = {
   original: 'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
@@ -65,26 +65,32 @@ export async function POST(req: NextRequest) {
       '소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것',
     ].filter(Boolean).join('\n')
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3-pro-image',
-      generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } as never,
+    const result = await ai.interactions.create({
+      model: 'gemini-3-pro-image-preview',
+      input: [
+        { parts: [{ inlineData: { data: base64, mimeType } }] },
+        { parts: [{ text: prompt }] },
+      ] as never,
+      response_format: { image_size: '4K' } as never,
     })
 
-    const result = await model.generateContent([
-      { inlineData: { data: base64, mimeType } },
-      prompt,
-    ] as never)
-
-    const candidates = result.response.candidates?.[0]?.content?.parts ?? []
     let imageData: string | null = null
     let imageMime = 'image/jpeg'
 
-    for (const part of candidates) {
-      const id = (part as { inlineData?: { mimeType: string; data: string } }).inlineData
-      if (id?.mimeType?.startsWith('image/')) {
-        imageData = id.data
-        imageMime = id.mimeType
-        break
+    for (const step of (result as any).steps ?? []) {
+      if (step.type === 'model_output') {
+        for (const content of step.content ?? []) {
+          for (const part of content.parts ?? []) {
+            const id = part.inlineData ?? part.inline_data
+            if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
+              imageData = id.data
+              imageMime = id.mimeType ?? id.mime_type
+              break
+            }
+          }
+          if (imageData) break
+        }
+        if (imageData) break
       }
     }
 
