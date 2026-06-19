@@ -150,7 +150,7 @@ export async function notifySignup(params: {
   phone: string
   customerName: string
 }) {
-  const templateId = process.env.SOLAPI_TEMPLATE_WELCOME
+  const templateId = process.env.SOLAPI_TEMPLATE_SIGNUP || process.env.SOLAPI_TEMPLATE_WELCOME
   if (!templateId) return
   const siteUrl = SITE_URL()
   await sendAlimtalk(
@@ -172,7 +172,7 @@ export async function notifyAiDone(params: {
   orderId?: string
   cutCount?: string | number
 }) {
-  const templateId = process.env.SOLAPI_TEMPLATE_COMPLETE
+  const templateId = process.env.SOLAPI_TEMPLATE_AI_DONE || process.env.SOLAPI_TEMPLATE_COMPLETE
   if (!templateId) return
   const siteUrl = SITE_URL()
   await sendAlimtalk(
