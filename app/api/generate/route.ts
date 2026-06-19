@@ -124,9 +124,37 @@ function buildWmSvg(w: number, h: number): Buffer {
   return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${t}</svg>`)
 }
 
+// ── Platform → aspectRatio + final size mapping ───────────────────────────────
+
+type PlatConfig = { aspectRatio: string; finalW: number; finalH: number }
+
+const PLATFORM_CONFIG: Record<string, PlatConfig> = {
+  '배달의민족': { aspectRatio: '4:3',  finalW: 1280, finalH: 960  },
+  '쿠팡이츠':   { aspectRatio: '16:9', finalW: 1080, finalH: 660  },
+  '요기요':     { aspectRatio: '16:9', finalW: 1080, finalH: 640  },
+  '땡겨요':     { aspectRatio: '16:9', finalW: 1080, finalH: 660  },
+  '먹깨비':     { aspectRatio: '3:2',  finalW: 800,  finalH: 533  },
+  '기본':       { aspectRatio: '4:3',  finalW: 1280, finalH: 960  },
+}
+
+function getPlatConfig(platName: string, w: number, h: number): PlatConfig {
+  return PLATFORM_CONFIG[platName] ?? { aspectRatio: '4:3', finalW: w, finalH: h }
+}
+
+async function resizeCrop(base64: string, w: number, h: number): Promise<Buffer> {
+  return sharp(Buffer.from(base64, 'base64'))
+    .resize(w, h, { fit: 'cover', position: 'centre' })
+    .jpeg({ quality: 92 })
+    .toBuffer()
+}
+
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-preview'): Promise<{ data: string; mimeType: string }> {
+async function callGemini(
+  parts: unknown[],
+  modelName = 'gemini-3-pro-image-preview',
+  aspectRatio?: string,
+): Promise<{ data: string; mimeType: string }> {
   const contents = [{
     role: 'user',
     parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
@@ -140,7 +168,9 @@ async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-prev
         contents: contents as never,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          imageConfig: { aspectRatio: '1:1', imageSize: '2K' },
+          imageConfig: aspectRatio
+            ? { aspectRatio, imageSize: '2K' }
+            : { imageSize: '2K' },
         } as never,
       })
 
@@ -261,7 +291,8 @@ export async function POST(req: NextRequest) {
     // ── Call 2: composite onto background — one call per platform ─────────────
     const platResults = await Promise.all(
       platformList.map(async (plat) => {
-        console.log(`[generate] call 2/2 — compose platform: ${plat.name}`)
+        const platCfg = getPlatConfig(plat.name, plat.width, plat.height)
+        console.log(`[generate] call 2/2 — compose platform: ${plat.name} (${platCfg.aspectRatio} → ${platCfg.finalW}x${platCfg.finalH})`)
         let parts: unknown[]
         let prompt: string
 
@@ -271,21 +302,23 @@ export async function POST(req: NextRequest) {
             { inlineData: { data: bgImageBase64!, mimeType: bgImageMime!      } },
           ]
           prompt = (overrideComposeBg ?? PROMPT_COMPOSE_BG_IMAGE)
-            .replace('{WIDTH}',  String(plat.width))
-            .replace('{HEIGHT}', String(plat.height))
+            .replace('{WIDTH}',  String(platCfg.finalW))
+            .replace('{HEIGHT}', String(platCfg.finalH))
         } else {
           parts = [
             { inlineData: { data: enhanced.data, mimeType: enhanced.mimeType } },
           ]
           prompt = (overrideComposeText ?? PROMPT_COMPOSE_TEXT_BG)
             .replace(/{BG_NAME}/g, bgName)
-            .replace('{WIDTH}',    String(plat.width))
-            .replace('{HEIGHT}',   String(plat.height))
+            .replace('{WIDTH}',    String(platCfg.finalW))
+            .replace('{HEIGHT}',   String(platCfg.finalH))
         }
 
         try {
-          const img    = await callGemini([...parts, prompt])
-          const upload = await uploadWithWatermark(img.data)
+          const img      = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview', platCfg.aspectRatio)
+          const cropped  = await resizeCrop(img.data, platCfg.finalW, platCfg.finalH)
+          const croppedB64 = cropped.toString('base64')
+          const upload = await uploadWithWatermark(croppedB64)
           if (!upload) return null
 
           // Insert immediately so mypage polling picks it up as soon as it's ready
@@ -302,8 +335,8 @@ export async function POST(req: NextRequest) {
           console.log(`[generate] platform ${plat.name} saved to DB`)
           return {
             platform:    plat.name,
-            imageBase64: img.data,
-            imageMime:   img.mimeType,
+            imageBase64: croppedB64,
+            imageMime:   'image/jpeg',
             wmUrl:       upload.wmUrl,
           }
         } catch (err: any) {
