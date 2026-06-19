@@ -345,6 +345,81 @@ export default function V2AdminPage() {
     setSingleLoading(false)
   }
 
+  const runFullTest = async () => {
+    if (!fullPhoto) return
+    setFullLoading(true)
+    setFullResults([])
+    setFullError(null)
+    setFullOrigUrl(URL.createObjectURL(fullPhoto))
+
+    try {
+      // 사진 → base64
+      const ab = await fullPhoto.arrayBuffer()
+      const base64 = btoa(Array.from(new Uint8Array(ab), b => String.fromCharCode(b)).join(''))
+      const mime = fullPhoto.type || 'image/jpeg'
+
+      // 배경 이미지 로드 (preset인 경우 promptSrc 우선)
+      let bgImageBase64: string | undefined
+      let bgImageMime: string | undefined
+      let backgroundName: string | undefined
+      let bgPromptVal: string | undefined
+
+      if (fullBgMode === 'preset' && fullBgPresetId) {
+        const preset = FULL_BG_PRESETS.find(p => p.id === fullBgPresetId)
+        if (preset) {
+          backgroundName = preset.label
+          const bgSrc = preset.promptSrc ?? preset.src
+          try {
+            const bgRes = await fetch(bgSrc)
+            const bgBuf = await bgRes.arrayBuffer()
+            bgImageBase64 = btoa(Array.from(new Uint8Array(bgBuf), b => String.fromCharCode(b)).join(''))
+            bgImageMime = bgRes.headers.get('content-type') || 'image/jpeg'
+          } catch {}
+        }
+      } else if (fullBgMode === 'prompt') {
+        bgPromptVal = fullBgPrompt.trim()
+      }
+
+      const selectedPlats = FULL_PLATFORMS.filter(p => fullPlatSel.has(p.name))
+      const platforms = selectedPlats.length > 0 ? selectedPlats : [{ name: '기본', width: 1280, height: 960 }]
+
+      const body: Record<string, unknown> = {
+        foodImages: [{ base64, mime }],
+        platforms,
+        serviceType: fullServiceType,
+        angle: fullAngle,
+        vessel: fullVessel,
+        adminToken: password,
+      }
+      if (backgroundName)  body.backgroundName = backgroundName
+      if (bgImageBase64)   { body.bgImageBase64 = bgImageBase64; body.bgImageMime = bgImageMime }
+      if (bgPromptVal)     body.bgPrompt = bgPromptVal
+
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+
+      if (data.error) {
+        setFullError(data.error)
+      } else {
+        // generated_images DB에서 방금 저장된 결과 가져오기
+        const platResults: FullPlatResult[] = platforms.map(p => ({
+          platform: p.name,
+          wmUrl: '',
+        }))
+        setFullResults(platResults)
+        // wmUrl은 DB polling 대신 간단히 imageBase64로 표시
+        setFullResults(platforms.map(p => ({ platform: p.name, wmUrl: `data:image/jpeg;base64,${data.imageBase64}` })))
+      }
+    } catch (e: any) {
+      setFullError(String(e))
+    }
+    setFullLoading(false)
+  }
+
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 
   const planLabel = (order: Order) => {
@@ -624,7 +699,120 @@ export default function V2AdminPage() {
             ) : (
               /* ── 풀 플로우 테스트 ── */
               <div>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '20px' }}>준비 중</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '20px' }}>/api/generate 실제 호출 — 실제 앱과 동일한 플로우로 테스트합니다.</p>
+
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                  {/* 사진 업로드 */}
+                  <div>
+                    <div onClick={() => fullInputRef.current?.click()} style={{ border: `2px dashed ${fullPhoto ? 'rgba(196,81,13,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
+                      <p style={{ fontSize: '20px' }}>📷</p>
+                      <p style={{ fontWeight: 700, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>{fullPhoto ? fullPhoto.name : '사진 1장 업로드'}</p>
+                      <input ref={fullInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) { setFullPhoto(e.target.files[0]); setFullResults([]); setFullError(null) } e.target.value = '' }} />
+                    </div>
+                  </div>
+
+                  {/* 서비스 타입 */}
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>서비스 타입</p>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {([['retouch', '리터치'], ['remake', '리메이크']] as const).map(([v, l]) => (
+                        <button key={v} onClick={() => setFullServiceType(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullServiceType === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 구도 + 그릇 (리메이크만) */}
+                  {fullServiceType === 'remake' && (
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {([['original', '원본'], ['side45', '측면45'], ['topdown', '탑다운']] as const).map(([v, l]) => (
+                            <button key={v} onClick={() => setFullAngle(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>그릇</p>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {FULL_VESSELS.map(v => (
+                            <button key={v.id} onClick={() => setFullVessel(v.id)} style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullVessel === v.id ? '#5856D6' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v.label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 배경 모드 */}
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>배경</p>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                      {([['preset', '프리셋'], ['prompt', '텍스트']] as const).map(([v, l]) => (
+                        <button key={v} onClick={() => setFullBgMode(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullBgMode === v ? '#34C759' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                      ))}
+                    </div>
+                    {fullBgMode === 'preset' ? (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {FULL_BG_PRESETS.map(p => (
+                          <button key={p.id} onClick={() => setFullBgPresetId(p.id)} style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '11px', fontWeight: 700, border: `2px solid ${fullBgPresetId === p.id ? '#34C759' : 'transparent'}`, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: '#fff' }}>{p.label}</button>
+                        ))}
+                      </div>
+                    ) : (
+                      <input value={fullBgPrompt} onChange={e => setFullBgPrompt(e.target.value)} placeholder="배경 설명 (예: dark wooden table)" style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    )}
+                  </div>
+
+                  {/* 플랫폼 선택 */}
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>플랫폼</p>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {FULL_PLATFORMS.map(p => (
+                        <button key={p.name} onClick={() => setFullPlatSel(prev => { const s = new Set(prev); s.has(p.name) ? s.delete(p.name) : s.add(p.name); return s })} style={{ padding: '6px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: fullPlatSel.has(p.name) ? '#FF8C00' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{p.name} <span style={{ opacity: 0.6, fontSize: '10px' }}>{p.width}×{p.height}</span></button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 실행 */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                  <button onClick={runFullTest} disabled={fullLoading || !fullPhoto} style={{ padding: '12px 28px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: (fullLoading || !fullPhoto) ? 'not-allowed' : 'pointer', background: (fullLoading || !fullPhoto) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #C4510D, #FF8C00)', color: (fullLoading || !fullPhoto) ? 'rgba(255,255,255,0.3)' : '#fff' }}>
+                    {fullLoading ? '생성 중...' : fullResults.length ? '↺ 재실행' : '▶ 생성 실행'}
+                  </button>
+                </div>
+
+                {/* 에러 */}
+                {fullError && (
+                  <div style={{ background: 'rgba(255,0,0,0.08)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
+                    <p style={{ fontSize: '12px', color: '#ff6b6b', wordBreak: 'break-all' }}>{fullError}</p>
+                  </div>
+                )}
+
+                {/* 결과 */}
+                {(fullResults.length > 0 || fullOrigUrl) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(fullResults.length + 1, 3)}, 1fr)`, gap: '12px' }}>
+                    {fullOrigUrl && (
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '5px' }}>원본</p>
+                        <img src={fullOrigUrl} alt="원본" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block' }} />
+                      </div>
+                    )}
+                    {fullResults.map((r, i) => (
+                      <div key={i}>
+                        <p style={{ fontSize: '11px', color: '#C4510D', marginBottom: '5px' }}>{r.platform} ✨</p>
+                        {r.wmUrl ? (
+                          <a href={r.wmUrl} target="_blank" rel="noopener noreferrer">
+                            <img src={r.wmUrl} alt={r.platform} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block', border: '2px solid #C4510D' }} />
+                          </a>
+                        ) : (
+                          <div style={{ width: '100%', aspectRatio: '4/3', borderRadius: '10px', background: 'rgba(255,0,0,0.06)', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <p style={{ fontSize: '12px', color: '#ff6b6b' }}>{r.error ?? '실패'}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
