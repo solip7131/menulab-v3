@@ -555,14 +555,16 @@ function MyPageContent() {
     // kakaoId가 있으면 안정적인 kakaoId로 키 생성, 없으면 email fallback
     const phoneKey = sessionKakaoId ? PHONE_OK_KEY(sessionKakaoId) : PHONE_OK_KEY(sessionEmail)
     const skipKey  = sessionKakaoId ? PHONE_SKIP_KEY(sessionKakaoId) : PHONE_SKIP_KEY(sessionEmail)
+    console.log('[phone-check] start', { sessionEmail, sessionKakaoId, phoneKey, cached: localStorage.getItem(phoneKey) })
     try {
-      if (localStorage.getItem(phoneKey) === '1') return
+      if (localStorage.getItem(phoneKey) === '1') { console.log('[phone-check] cache hit → skip'); return }
       const skipUntil = Number(localStorage.getItem(skipKey) ?? 0)
-      if (Date.now() < skipUntil) return
+      if (Date.now() < skipUntil) { console.log('[phone-check] skip period active →', new Date(skipUntil).toLocaleString()); return }
     } catch {}
     fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${sessionToken}` } })
       .then(r => r.json())
       .then(d => {
+        console.log('[phone-check] api result', d)
         if (d.invalidSession) return
         if (d.hasPhone) {
           try { localStorage.setItem(phoneKey, '1') } catch {}
