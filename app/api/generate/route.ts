@@ -159,7 +159,7 @@ async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-prev
         api_version: 'v1alpha',
         model: modelName,
         input: toInteractionInput(parts) as never,
-        response_modalities: ['IMAGE', 'TEXT'] as never,
+        response_modalities: ['image', 'text'] as never,
         response_format: { mime_type: 'image/jpeg', delivery: 'inline', image_size: '4K' } as never,
       })
 
