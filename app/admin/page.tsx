@@ -624,7 +624,7 @@ export default function V2AdminPage() {
                           <div>
                             <p style={{ fontSize: '11px', color: '#C4510D', marginBottom: '5px' }}>단일 호출 결과 {singlePhotos.length > 1 ? i + 1 : ''} ✨</p>
                             {r.result ? (
-                              <a href={r.result} download={`single_${i + 1}.jpg`} style={{ display: 'block' }}>
+                              <a href={r.result} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
                                 <img src={r.result} alt="결과" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #C4510D' }} />
                               </a>
                             ) : (
