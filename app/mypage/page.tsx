@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Suspense } from 'react'
 import BasicPlanModal from '../components/BasicPlanModal'
 import CoinChargeModal from '../components/CoinChargeModal'
@@ -417,6 +418,7 @@ function IconBowl() {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function MyPageContent() {
+  const router       = useRouter()
   const searchParams = useSearchParams()
   const kakaoError   = searchParams.get('kakao_error')
   const kakaoDetail  = searchParams.get('detail')
@@ -455,7 +457,6 @@ function MyPageContent() {
   const [showChargeModal,     setShowChargeModal]      = useState(false)
   const [creditShortfall,     setCreditShortfall]      = useState(0)
   const [pendingDownloadId,   setPendingDownloadId]    = useState<string | null>(null)
-  const [showComingSoonModal, setShowComingSoonModal]  = useState(false)
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
   const [showGuideModal,      setShowGuideModal]       = useState(false)
   const upsellShownRef = useRef(false)
@@ -897,21 +898,6 @@ function MyPageContent() {
 
   return (
     <>
-      {/* 모음컷 준비 중 안내 모달 */}
-      {showComingSoonModal && (
-        <div
-          onClick={e => { if (e.target === e.currentTarget) setShowComingSoonModal(false) }}
-          style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', padding: '16px' }}
-        >
-          <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '360px', padding: '32px 24px', boxShadow: '0 24px 80px rgba(0,0,0,0.3)', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: '16px' }}>🛠️</div>
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--black)', marginBottom: '10px' }}>준비 중입니다.</h3>
-            <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.6, marginBottom: '24px' }}>곧 오픈 예정이에요!</p>
-            <button onClick={() => setShowComingSoonModal(false)} style={{ padding: '12px 32px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer' }}>확인</button>
-          </div>
-        </div>
-      )}
-
       {/* Sticky nav */}
       <div style={{
         background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.08)',
@@ -1112,7 +1098,7 @@ function MyPageContent() {
                   key={svc.id}
                   onClick={() => {
                     if (svc.id === 'remake') setSelectedService('remake')
-                    else if (svc.id === 'collection') setShowComingSoonModal(true)
+                    else if (svc.id === 'collection') router.push('/create/collage')
                   }}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
