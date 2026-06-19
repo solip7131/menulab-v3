@@ -126,44 +126,31 @@ function buildWmSvg(w: number, h: number): Buffer {
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-function toInteractionInput(parts: unknown[]): unknown[] {
-  // interactions API Content: { type: "image", data, mime_type } or { type: "text", text }
-  const contents: unknown[] = parts.map(p => {
-    if (typeof p === 'string') return { type: 'text', text: p }
-    const id = (p as any).inlineData
-    return { type: 'image', data: id.data, mime_type: id.mimeType }
-  })
-  return [{ type: 'user_input', content: contents }]
-}
-
-function extractImage(result: unknown): { data: string; mimeType: string } | null {
-  const steps: unknown[] = (result as any)?.steps ?? []
-  for (const step of steps) {
-    if ((step as any).type === 'model_output') {
-      for (const content of (step as any).content ?? []) {
-        if (content.type === 'image' && content.data) {
-          return { data: content.data, mimeType: content.mime_type ?? 'image/jpeg' }
-        }
-      }
-    }
-  }
-  return null
-}
-
 async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-preview'): Promise<{ data: string; mimeType: string }> {
+  const contents = [{
+    role: 'user',
+    parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
+  }]
+
   const MAX_RETRIES = 3
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const result = await ai.interactions.create({
-        api_version: 'v1alpha',
+      const result = await ai.models.generateContent({
         model: modelName,
-        input: toInteractionInput(parts) as never,
-        response_modalities: ['image', 'text'] as never,
-        response_format: { type: 'image', mime_type: 'image/jpeg', delivery: 'inline', image_size: '4K' } as never,
+        contents: contents as never,
+        config: {
+          responseModalities: ['IMAGE', 'TEXT'],
+          temperature: 0.2,
+          mediaResolution: 'MEDIA_RESOLUTION_HIGH',
+          imageConfig: { imageSize: '4K' },
+        } as never,
       })
 
-      const img = extractImage(result)
-      if (img) return img
+      const resParts: unknown[] = (result as any).candidates?.[0]?.content?.parts ?? []
+      for (const part of resParts) {
+        const id = (part as any).inlineData
+        if (id?.mimeType?.startsWith('image/')) return { data: id.data, mimeType: id.mimeType }
+      }
       throw new Error('AI가 이미지를 반환하지 않았어요')
     } catch (err: any) {
       const is503 = err?.message?.includes('503')
