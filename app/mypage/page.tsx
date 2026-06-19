@@ -1193,34 +1193,101 @@ function MyPageContent() {
               </div>
             </div>
           ) : selectedService === 'remake' ? (
-            /* ── 미니 랜딩: 메뉴 리메이크 ── */
-            <div style={{ flex: 1, overflowY: 'auto', background: '#0f0f14', padding: '20px 16px 32px' }}>
-              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#1a1a24', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                <div style={{ padding: '24px 22px 16px' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(196,81,13,0.2)', color: 'var(--orange)', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', marginBottom: '14px' }}>💎 20젬 / 장</span>
-                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.3, marginBottom: '10px' }}>구도·그릇까지 바꾸는<br /><span style={{ color: 'var(--orange)' }}>메뉴 리메이크</span></h2>
-                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: '20px' }}>원하는 구도와 그릇을 선택하면<br />AI가 음식 스타일 전체를 새롭게 리메이크해드려요.</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+            /* ── 미니 랜딩: 메뉴샷(리메이크) ── */
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f0ece6', padding: '20px 16px 32px' }}>
+              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+
+                {/* 비포/애프터 슬라이드 */}
+                <div style={{ position: 'relative', height: '220px', background: '#111', overflow: 'hidden' }}>
+                  {[
+                    { src: 'https://i.ibb.co/qK9VJv9/image.png', label: 'Before' },
+                    { src: 'https://i.ibb.co/xK5Pjg2h/12.png',   label: 'After ✨' },
+                  ].map(({ src, label }, i) => (
+                    <img
+                      key={src}
+                      src={src}
+                      alt={label}
+                      style={{
+                        position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                        opacity: miniSlideIndex === i ? 1 : 0,
+                        transition: 'opacity 0.7s ease',
+                      }}
+                    />
+                  ))}
+                  <span style={{
+                    position: 'absolute', top: '12px', left: '12px',
+                    background: miniSlideIndex === 0 ? 'rgba(0,0,0,0.6)' : 'rgba(196,81,13,0.9)',
+                    color: '#fff', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
+                    transition: 'background 0.3s',
+                  }}>
+                    {miniSlideIndex === 0 ? 'Before' : 'After ✨'}
+                  </span>
+                  <div style={{ position: 'absolute', bottom: '10px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                    {[0, 1].map(i => (
+                      <div key={i} onClick={() => setMiniSlideIndex(i)} style={{
+                        width: miniSlideIndex === i ? '18px' : '6px', height: '6px', borderRadius: '3px', cursor: 'pointer',
+                        background: miniSlideIndex === i ? '#fff' : 'rgba(255,255,255,0.5)',
+                        transition: 'all 0.3s',
+                      }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* 텍스트 콘텐츠 */}
+                <div style={{ padding: '24px 22px 20px' }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', marginBottom: '12px' }}>💎 20젬 / 장</span>
+                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>스마트폰 사진을<br/>메뉴샷으로</h2>
+                  <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>원하는 배경과 구도를 선택하면<br/>AI가 스튜디오급 메뉴 사진으로 만들어드려요.</p>
+
+                  {/* 옵션 카드 3개 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
                     {[
-                      { icon: '📐', label: '구도 선택', desc: '원본 유지 / 45도 측면 / 항공뷰' },
-                      { icon: '🥣', label: '그릇 선택', desc: '원본 / 도자기 / 무쇠 / 세라믹 / 우드' },
+                      { icon: '📐', label: '구도 선택', desc: '원본 유지 · 45도 측면 · 항공뷰' },
+                      { icon: '🥣', label: '그릇 선택', desc: '원본 · 도자기 · 무쇠 · 세라믹 · 우드' },
                       { icon: '🎨', label: '배경 선택', desc: '20+ 프리셋 배경 중 선택' },
                     ].map(item => (
-                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '12px 14px' }}>
-                        <span style={{ fontSize: '22px' }}>{item.icon}</span>
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.1)', borderRadius: '14px', padding: '14px 16px' }}>
+                        <span style={{ fontSize: '24px', flexShrink: 0 }}>{item.icon}</span>
                         <div>
-                          <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{item.label}</p>
-                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>{item.desc}</p>
+                          <p style={{ fontWeight: 800, fontSize: '13px', color: 'var(--black)', marginBottom: '2px' }}>{item.label}</p>
+                          <p style={{ color: '#888', fontSize: '12px', lineHeight: 1.5 }}>{item.desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* 플랫폼 마퀴 */}
+                  <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '12px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
+                  <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
+                    <div style={{ display: 'flex', gap: '16px', animation: 'marquee-rtl 14s linear infinite', width: 'max-content', alignItems: 'flex-start' }}>
+                      {[
+                        { name: '배달의민족', size: '1280×960', src: '/logos/baemin.png'      },
+                        { name: '쿠팡이츠',   size: '1080×660', src: '/logos/coupangeats.svg' },
+                        { name: '요기요',     size: '1080×640', src: '/logos/yogiyo.png'      },
+                        { name: '땡겨요',     size: '1080×660', src: '/logos/ddanggyeo.svg'   },
+                        { name: '먹깨비',     size: '800×533',  src: '/logos/mukggaebi.webp'  },
+                        { name: '배달의민족', size: '1280×960', src: '/logos/baemin.png'      },
+                        { name: '쿠팡이츠',   size: '1080×660', src: '/logos/coupangeats.svg' },
+                        { name: '요기요',     size: '1080×640', src: '/logos/yogiyo.png'      },
+                        { name: '땡겨요',     size: '1080×660', src: '/logos/ddanggyeo.svg'   },
+                        { name: '먹깨비',     size: '800×533',  src: '/logos/mukggaebi.webp'  },
+                      ].map((logo, i) => (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0, width: '68px' }}>
+                          <img src={logo.src} alt={logo.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '12px' }} />
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#222', textAlign: 'center', whiteSpace: 'nowrap' }}>{logo.name}</span>
+                          <span style={{ fontSize: '10px', color: '#aaa', textAlign: 'center', whiteSpace: 'nowrap' }}>{logo.size}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+
+                {/* CTA */}
                 <div style={{ padding: '4px 22px 22px' }}>
                   <button
                     onClick={() => { setSelectedService(null); setModalInitOpts({}); setModalServiceType('remake'); setShowBasicModal(true) }}
-                    style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.4)' }}
-                  >리메이크 만들러 가기 →</button>
+                    style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
+                  >메뉴샷 만들러 가기 →</button>
                 </div>
               </div>
             </div>
