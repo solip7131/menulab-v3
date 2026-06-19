@@ -127,11 +127,13 @@ function buildWmSvg(w: number, h: number): Buffer {
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
 function toInteractionInput(parts: unknown[]): unknown[] {
-  // All parts merged into a single user Content so multimodal works correctly
-  return [{
-    role: 'user',
-    parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
-  }]
+  // interactions API Content: { type: "image", data, mime_type } or { type: "text", text }
+  const contents: unknown[] = parts.map(p => {
+    if (typeof p === 'string') return { type: 'text', text: p }
+    const id = (p as any).inlineData
+    return { type: 'image', data: id.data, mime_type: id.mimeType }
+  })
+  return [{ role: 'user', content: contents }]
 }
 
 function extractImage(result: unknown): { data: string; mimeType: string } | null {
@@ -139,11 +141,8 @@ function extractImage(result: unknown): { data: string; mimeType: string } | nul
   for (const step of steps) {
     if ((step as any).type === 'model_output') {
       for (const content of (step as any).content ?? []) {
-        for (const part of content.parts ?? []) {
-          const id = part.inlineData ?? part.inline_data
-          if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
-            return { data: id.data, mimeType: id.mimeType ?? id.mime_type }
-          }
+        if (content.type === 'image' && content.data) {
+          return { data: content.data, mimeType: content.mime_type ?? 'image/jpeg' }
         }
       }
     }

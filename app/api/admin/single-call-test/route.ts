@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
       model: 'gemini-3-pro-image-preview',
       input: [{
         role: 'user',
-        parts: [
-          { inlineData: { data: base64, mimeType } },
-          { text: prompt },
+        content: [
+          { type: 'image', data: base64, mime_type: mimeType },
+          { type: 'text', text: prompt },
         ],
       }] as never,
       response_modalities: ['image', 'text'] as never,
@@ -86,13 +86,10 @@ export async function POST(req: NextRequest) {
     outer: for (const step of steps) {
       if ((step as any).type === 'model_output') {
         for (const content of (step as any).content ?? []) {
-          for (const part of content.parts ?? []) {
-            const id = part.inlineData ?? part.inline_data
-            if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
-              imageData = id.data
-              imageMime = id.mimeType ?? id.mime_type
-              break outer
-            }
+          if (content.type === 'image' && content.data) {
+            imageData = content.data
+            imageMime = content.mime_type ?? 'image/jpeg'
+            break outer
           }
         }
       }
