@@ -106,7 +106,7 @@ export default function V2AdminPage() {
   const [singleBg, setSingleBg]               = useState<'black' | 'white' | 'ivory' | 'gray'>('black')
   const [singleVesselId, setSingleVesselId]   = useState('original')
   const [singlePrompt, setSinglePrompt]       = useState('')
-  const [singleStage, setSingleStage]         = useState<1 | 2 | 3 | 4>(1)
+  const [singleStage, setSingleStage]         = useState<1 | 2 | 3 | 4 | 5>(1)
   const [singleResults, setSingleResults]     = useState<{ orig: string; result: string; error?: string }[]>([])
   const [singleLoading, setSingleLoading]     = useState(false)
   const singleInputRef                        = useRef<HTMLInputElement>(null)
@@ -574,7 +574,8 @@ export default function V2AdminPage() {
                         { stage: 1, label: '1단계 — 기본' },
                         { stage: 2, label: '2단계 — aspectRatio' },
                         { stage: 3, label: '3단계 — 2K' },
-                        { stage: 4, label: '4단계 — 전체' },
+                        { stage: 4, label: '4단계 — temperature' },
+                        { stage: 5, label: '5단계 — mediaResolution' },
                       ] as const).map(({ stage, label }) => (
                         <button key={stage} onClick={() => setSingleStage(stage)} style={{ padding: '7px 15px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: singleStage === stage ? '#34C759' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{label}</button>
                       ))}
@@ -583,7 +584,8 @@ export default function V2AdminPage() {
                       {singleStage === 1 && 'responseModalities: ["TEXT","IMAGE"]'}
                       {singleStage === 2 && 'responseModalities + imageConfig: { aspectRatio: "1:1" }'}
                       {singleStage === 3 && 'responseModalities + imageConfig: { aspectRatio: "1:1", imageSize: "2K" }'}
-                      {singleStage === 4 && 'responseModalities + temperature + mediaResolution + imageConfig: { aspectRatio, imageSize }'}
+                      {singleStage === 4 && '3단계 + temperature: 0.2'}
+                      {singleStage === 5 && '3단계 + mediaResolution: "MEDIA_RESOLUTION_HIGH"'}
                     </p>
                   </div>
 

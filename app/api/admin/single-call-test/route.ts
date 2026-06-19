@@ -48,6 +48,10 @@ function buildConfig(stage: number): Record<string, unknown> {
     case 4: return {
       responseModalities: ['TEXT', 'IMAGE'],
       temperature: 0.2,
+      imageConfig: { aspectRatio: '1:1', imageSize: '2K' },
+    }
+    case 5: return {
+      responseModalities: ['TEXT', 'IMAGE'],
       mediaResolution: 'MEDIA_RESOLUTION_HIGH',
       imageConfig: { aspectRatio: '1:1', imageSize: '2K' },
     }
