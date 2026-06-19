@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       api_version: 'v1alpha',
       model: 'gemini-3-pro-image-preview',
       input: [{
-        role: 'user',
+        type: 'user_input',
         content: [
           { type: 'image', data: base64, mime_type: mimeType },
           { type: 'text', text: prompt },

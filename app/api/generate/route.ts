@@ -133,7 +133,7 @@ function toInteractionInput(parts: unknown[]): unknown[] {
     const id = (p as any).inlineData
     return { type: 'image', data: id.data, mime_type: id.mimeType }
   })
-  return [{ role: 'user', content: contents }]
+  return [{ type: 'user_input', content: contents }]
 }
 
 function extractImage(result: unknown): { data: string; mimeType: string } | null {
