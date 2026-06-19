@@ -300,6 +300,119 @@ function GeneratingCard({ count, completed = 0 }: { count: number; completed?: n
   )
 }
 
+// ── MiniCompareSlider ─────────────────────────────────────────────────────────
+
+const MINI_BEFORE = 'https://i.ibb.co/qK9VJv9/image.png'
+const MINI_AFTER  = 'https://i.ibb.co/xK5Pjg2h/12.png'
+const MINI_KF  = [50, 10, 90, 50]
+const MINI_DUR = [1500, 1500, 1500]
+const MINI_CYCLE = 4500
+function miniEase(t: number) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t }
+function calcMiniPos(prog: number) {
+  const t = prog % MINI_CYCLE; let s = 0
+  for (let i = 0; i < MINI_DUR.length; i++) {
+    const e = s + MINI_DUR[i]
+    if (t <= e) return MINI_KF[i] + (MINI_KF[i+1] - MINI_KF[i]) * miniEase((t-s)/MINI_DUR[i])
+    s = e
+  }
+  return 50
+}
+
+function MiniCompareSlider() {
+  const [pos, setPos] = useState(50)
+  const ref = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+  const animRef = useRef<number|null>(null)
+  const pauseRef = useRef<ReturnType<typeof setTimeout>|null>(null)
+  const progRef = useRef(0)
+  const tsRef = useRef<number|null>(null)
+
+  const tick = useCallback((ts: number) => {
+    if (tsRef.current !== null) progRef.current = (progRef.current + ts - tsRef.current) % MINI_CYCLE
+    tsRef.current = ts
+    setPos(calcMiniPos(progRef.current))
+    animRef.current = requestAnimationFrame(tick)
+  }, [])
+
+  const startAnim = useCallback(() => {
+    if (animRef.current) cancelAnimationFrame(animRef.current)
+    tsRef.current = null
+    animRef.current = requestAnimationFrame(tick)
+  }, [tick])
+
+  const stopAnim = useCallback(() => {
+    if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null }
+    tsRef.current = null
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(startAnim, 800)
+    return () => { clearTimeout(t); stopAnim(); if (pauseRef.current) clearTimeout(pauseRef.current) }
+  }, [startAnim, stopAnim])
+
+  const updatePos = useCallback((clientX: number) => {
+    const el = ref.current; if (!el) return
+    const { left, width } = el.getBoundingClientRect()
+    setPos(Math.min(100, Math.max(0, ((clientX - left) / width) * 100)))
+  }, [])
+
+  const onStart = () => { dragging.current = true; stopAnim(); if (pauseRef.current) clearTimeout(pauseRef.current) }
+  const onEnd   = () => {
+    dragging.current = false
+    if (pauseRef.current) clearTimeout(pauseRef.current)
+    pauseRef.current = setTimeout(startAnim, 2500)
+  }
+
+  return (
+    <div ref={ref}
+      onMouseDown={onStart} onMouseMove={e => { if (dragging.current) updatePos(e.clientX) }} onMouseUp={onEnd} onMouseLeave={() => { if (dragging.current) onEnd() }}
+      onTouchStart={onStart} onTouchMove={e => updatePos(e.touches[0].clientX)} onTouchEnd={onEnd}
+      style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', cursor: 'ew-resize', userSelect: 'none', touchAction: 'none' }}
+    >
+      <img src={MINI_AFTER}  alt="after"  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - pos}% 0 0)`, pointerEvents: 'none' }}>
+        <img src={MINI_BEFORE} alt="before" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, transform: 'translateX(-50%)', width: '2px', background: '#fff', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '32px', height: '32px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900, color: '#333', letterSpacing: '-1px' }}>◀▶</div>
+      </div>
+      <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '100px', pointerEvents: 'none' }}>BEFORE</div>
+      <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: '#FF5722', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '100px', pointerEvents: 'none' }}>AFTER</div>
+    </div>
+  )
+}
+
+// ── Tabler icon SVGs ──────────────────────────────────────────────────────────
+
+function IconPhoto() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 8h.01"/>
+      <path d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z"/>
+      <path d="M3 16l5-5c.928-.893 2.072-.893 3 0l5 5"/>
+      <path d="M14 14l1-1c.928-.893 2.072-.893 3 0l3 3"/>
+    </svg>
+  )
+}
+
+function IconViewfinder() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0"/>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
+    </svg>
+  )
+}
+
+function IconBowl() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8h16a1 1 0 0 1 1 1v1a8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8V9a1 1 0 0 1 1-1z"/>
+      <path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg>
+  )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function MyPageContent() {
@@ -347,7 +460,6 @@ function MyPageContent() {
   const upsellShownRef = useRef(false)
   const [selectedService,     setSelectedService]      = useState<'remake' | null>(null)
   const [modalServiceType,    setModalServiceType]     = useState<'remake'>('remake')
-  const [miniSlideIndex,      setMiniSlideIndex]       = useState(0)
 
   // BasicPlanModal initial options (for "다시 만들기" / regenerate)
   const [modalInitOpts, setModalInitOpts] = useState<{
@@ -569,13 +681,6 @@ function MyPageContent() {
       if (sessionToken) fetchGemBalance(sessionToken)
     }
   }, [isGenerating]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Mini landing slideshow auto-advance
-  useEffect(() => {
-    if (selectedService !== 'remake') return
-    const t = setInterval(() => setMiniSlideIndex(i => (i + 1) % 2), 2500)
-    return () => clearInterval(t)
-  }, [selectedService])
 
   // Shared generation runner — works whether navigating from /v2 or opening modal on this page
   const runGeneration = useCallback((requests: Record<string, unknown>[], token: string) => {
@@ -1094,64 +1199,31 @@ function MyPageContent() {
           <style>{`@keyframes marquee-rtl { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
 
           {selectedService === 'remake' ? (
-            /* ── 미니 랜딩: 메뉴샷(리메이크) ── */
-            <div style={{ flex: 1, overflowY: 'auto', background: '#f0ece6', padding: '20px 16px 32px' }}>
-              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+            /* ── 미니 랜딩: 메뉴샷 ── */
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f0eeeb', padding: '16px 16px 32px' }}>
+              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '16px', overflow: 'hidden' }}>
 
-                {/* 비포/애프터 슬라이드 */}
-                <div style={{ position: 'relative', height: '220px', background: '#111', overflow: 'hidden' }}>
-                  {[
-                    { src: 'https://i.ibb.co/qK9VJv9/image.png', label: 'Before' },
-                    { src: 'https://i.ibb.co/xK5Pjg2h/12.png',   label: 'After ✨' },
-                  ].map(({ src, label }, i) => (
-                    <img
-                      key={src}
-                      src={src}
-                      alt={label}
-                      style={{
-                        position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-                        opacity: miniSlideIndex === i ? 1 : 0,
-                        transition: 'opacity 0.7s ease',
-                      }}
-                    />
-                  ))}
-                  <span style={{
-                    position: 'absolute', top: '12px', left: '12px',
-                    background: miniSlideIndex === 0 ? 'rgba(0,0,0,0.6)' : 'rgba(196,81,13,0.9)',
-                    color: '#fff', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
-                    transition: 'background 0.3s',
-                  }}>
-                    {miniSlideIndex === 0 ? 'Before' : 'After ✨'}
-                  </span>
-                  <div style={{ position: 'absolute', bottom: '10px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                    {[0, 1].map(i => (
-                      <div key={i} onClick={() => setMiniSlideIndex(i)} style={{
-                        width: miniSlideIndex === i ? '18px' : '6px', height: '6px', borderRadius: '3px', cursor: 'pointer',
-                        background: miniSlideIndex === i ? '#fff' : 'rgba(255,255,255,0.5)',
-                        transition: 'all 0.3s',
-                      }} />
-                    ))}
-                  </div>
-                </div>
+                {/* Before/After 슬라이더 — 좌우 꽉 차게 */}
+                <MiniCompareSlider />
 
                 {/* 텍스트 콘텐츠 */}
-                <div style={{ padding: '24px 22px 20px' }}>
+                <div style={{ padding: '20px 20px 16px' }}>
                   <span style={{ display: 'inline-block', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', marginBottom: '12px' }}>💎 20젬 / 장</span>
                   <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>스마트폰 사진을<br/>메뉴샷으로</h2>
                   <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>원하는 배경과 구도를 선택하면<br/>AI가 스튜디오급 메뉴 사진으로 만들어드려요.</p>
 
-                  {/* 옵션 카드 3개 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-                    {[
-                      { icon: '📐', label: '구도 선택', desc: '원본 유지 · 45도 측면 · 항공뷰' },
-                      { icon: '🥣', label: '그릇 선택', desc: '원본 · 도자기 · 무쇠 · 세라믹 · 우드' },
-                      { icon: '🎨', label: '배경 선택', desc: '20+ 프리셋 배경 중 선택' },
-                    ].map(item => (
-                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.1)', borderRadius: '14px', padding: '14px 16px' }}>
-                        <span style={{ fontSize: '24px', flexShrink: 0 }}>{item.icon}</span>
+                  {/* 옵션 카드 3개 — 배경→구도→그릇 순서 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                    {([
+                      { icon: <IconPhoto />,      label: '배경 선택', desc: '20+ 프리셋 배경 중 선택' },
+                      { icon: <IconViewfinder />, label: '구도 선택', desc: '원본 유지 · 45도 측면 · 항공뷰' },
+                      { icon: <IconBowl />,       label: '그릇 선택', desc: '원본 · 도자기 · 무쇠 · 세라믹 · 우드' },
+                    ] as { icon: React.ReactNode; label: string; desc: string }[]).map(item => (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '16px', padding: '14px 16px' }}>
+                        <span style={{ color: 'var(--orange)', flexShrink: 0 }}>{item.icon}</span>
                         <div>
                           <p style={{ fontWeight: 800, fontSize: '13px', color: 'var(--black)', marginBottom: '2px' }}>{item.label}</p>
-                          <p style={{ color: '#888', fontSize: '12px', lineHeight: 1.5 }}>{item.desc}</p>
+                          <p style={{ color: '#aaa', fontSize: '12px', lineHeight: 1.5 }}>{item.desc}</p>
                         </div>
                       </div>
                     ))}
@@ -1184,10 +1256,10 @@ function MyPageContent() {
                 </div>
 
                 {/* CTA */}
-                <div style={{ padding: '4px 22px 22px' }}>
+                <div style={{ padding: '8px 20px 20px' }}>
                   <button
                     onClick={() => { setSelectedService(null); setModalInitOpts({}); setModalServiceType('remake'); setShowBasicModal(true) }}
-                    style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
+                    style={{ width: '100%', padding: '16px', borderRadius: '100px', background: '#FF5722', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer' }}
                   >메뉴샷 만들러 가기 →</button>
                 </div>
               </div>
