@@ -87,6 +87,7 @@ export default function V2AdminPage() {
 
   // ── AI 테스트 패널 ──
   const [testMode, setTestMode]               = useState(false)
+  const [testSubMode, setTestSubMode]         = useState<'two-stage' | 'single'>('two-stage')
   const [testPhotos, setTestPhotos]           = useState<File[]>([])
   const [testAngle, setTestAngle]             = useState<'original' | 'side45' | 'topdown'>('original')
   const [testBg, setTestBg]                   = useState<'black' | 'white'>('black')
@@ -99,6 +100,16 @@ export default function V2AdminPage() {
   const [testStage2Loading, setTestStage2Loading] = useState(false)
   const testInputRef = useRef<HTMLInputElement>(null)
 
+  // ── 단일 호출 테스트 ──
+  const [singlePhotos, setSinglePhotos]       = useState<File[]>([])
+  const [singleAngle, setSingleAngle]         = useState<'original' | 'side45' | 'topdown'>('original')
+  const [singleBg, setSingleBg]               = useState<'black' | 'white' | 'ivory' | 'gray'>('black')
+  const [singleVesselId, setSingleVesselId]   = useState('original')
+  const [singlePrompt, setSinglePrompt]       = useState('')
+  const [singleResults, setSingleResults]     = useState<{ orig: string; result: string }[]>([])
+  const [singleLoading, setSingleLoading]     = useState(false)
+  const singleInputRef                        = useRef<HTMLInputElement>(null)
+
   const TEST_VESSELS = [
     { id: 'original',        label: '원본 그대로' },
     { id: 'white-plate',     label: '흰색 접시' },
@@ -109,6 +120,18 @@ export default function V2AdminPage() {
     { id: 'hotpot',          label: '전골냄비' },
     { id: 'pasta-bowl',      label: '파스타 볼' },
     { id: 'wood-board',      label: '우드 도마' },
+  ]
+
+  const SINGLE_VESSELS = [
+    { id: 'original',          label: '원본 그대로' },
+    { id: 'white-noodle-bowl', label: '흰색 면기' },
+    { id: 'black-noodle-bowl', label: '검정 면기' },
+    { id: 'white-plate',       label: '흰색 접시' },
+    { id: 'black-plate',       label: '검정 접시' },
+    { id: 'ttukbbaeki',        label: '뚝배기' },
+    { id: 'black-pot',         label: '전골냄비' },
+    { id: 'cold-noodle-bowl',  label: '스텐 냉면보울' },
+    { id: 'pasta-bowl',        label: '파스타볼' },
   ]
 
   useEffect(() => { if (authed) fetchOrders() }, [authed])
@@ -313,6 +336,35 @@ export default function V2AdminPage() {
     setTestStage2Loading(false)
   }
 
+  const runSingleCallTest = async () => {
+    if (!singlePhotos.length) return
+    setSingleLoading(true)
+    setSingleResults([])
+    const results: { orig: string; result: string }[] = []
+    for (const photo of singlePhotos) {
+      const origUrl = URL.createObjectURL(photo)
+      try {
+        const fd = new FormData()
+        fd.append('photo', photo)
+        fd.append('angle', singleAngle)
+        fd.append('background', singleBg)
+        fd.append('vesselId', singleVesselId)
+        fd.append('customPrompt', singlePrompt)
+        const res = await fetch('/api/admin/single-call-test', {
+          method: 'POST',
+          headers: { 'x-admin-password': password },
+          body: fd,
+        })
+        const data = await res.json()
+        results.push({ orig: origUrl, result: data.error ? '' : data.url })
+      } catch {
+        results.push({ orig: origUrl, result: '' })
+      }
+      setSingleResults([...results])
+    }
+    setSingleLoading(false)
+  }
+
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 
   const planLabel = (order: Order) => {
@@ -444,8 +496,130 @@ export default function V2AdminPage() {
       {testMode ? (
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           <div style={{ maxWidth: '860px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px' }}>🧪 AI 이미지 테스트</h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '28px' }}>실제 주문과 동일한 프롬프트로 테스트합니다. 커스텀 프롬프트를 비우면 선택한 옵션 기반 기본 프롬프트가 적용돼요.</p>
+            <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '12px' }}>🧪 AI 이미지 테스트</h2>
+
+            {/* 탭 */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+              {([['two-stage', '2단계 테스트'], ['single', '단일 호출 테스트']] as const).map(([v, l]) => (
+                <button key={v} onClick={() => setTestSubMode(v)} style={{ padding: '8px 18px', borderRadius: '100px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testSubMode === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+              ))}
+            </div>
+
+            {testSubMode === 'single' ? (
+              /* ── 단일 호출 테스트 ── */
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '20px' }}>gemini-3-pro-image 1회 호출로 구도 + 배경 + 그릇을 한 번에 처리한 결과를 확인합니다.</p>
+
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+                  {/* 사진 업로드 */}
+                  <div
+                    onClick={() => singleInputRef.current?.click()}
+                    style={{ border: `2px dashed ${singlePhotos.length ? 'rgba(196,81,13,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '16px 20px', cursor: 'pointer', marginBottom: singlePhotos.length ? '10px' : '16px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}
+                  >
+                    <p style={{ fontSize: '20px' }}>📷</p>
+                    <p style={{ fontWeight: 700, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                      {singlePhotos.length ? `${singlePhotos.length}장 선택됨 — 클릭해서 추가/변경` : '테스트할 사진 업로드 (여러 장 가능)'}
+                    </p>
+                    <input ref={singleInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { if (e.target.files?.length) { setSinglePhotos(Array.from(e.target.files)); setSingleResults([]) } e.target.value = '' }} />
+                  </div>
+
+                  {singlePhotos.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                      {singlePhotos.map((f, i) => (
+                        <div key={i} style={{ position: 'relative' }}>
+                          <img src={URL.createObjectURL(f)} alt="" style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                          <button onClick={e => { e.stopPropagation(); setSinglePhotos(prev => prev.filter((_, j) => j !== i)); setSingleResults([]) }} style={{ position: 'absolute', top: '-4px', right: '-4px', width: '18px', height: '18px', borderRadius: '50%', background: '#ff3b30', border: 'none', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 구도 + 배경 */}
+                  <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <div>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {([['original', '원본구도'], ['topdown', '항공뷰'], ['side45', '측면뷰']] as const).map(([v, l]) => (
+                          <button key={v} onClick={() => setSingleAngle(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: singleAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>배경</p>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {([['black', '🌑 블랙'], ['white', '☀️ 화이트'], ['ivory', '🟡 아이보리'], ['gray', '⬜ 그레이']] as const).map(([v, l]) => (
+                          <button key={v} onClick={() => setSingleBg(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: singleBg === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 그릇 선택 */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>그릇</p>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {SINGLE_VESSELS.map(v => (
+                        <button key={v.id} onClick={() => setSingleVesselId(v.id)} style={{ padding: '6px 13px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: singleVesselId === v.id ? '#5856D6' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 커스텀 프롬프트 */}
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>커스텀 프롬프트 <span style={{ fontWeight: 400, opacity: 0.7 }}>(비워두면 위 옵션 기반 자동 생성)</span></p>
+                    <textarea
+                      value={singlePrompt}
+                      onChange={e => setSinglePrompt(e.target.value)}
+                      placeholder="비워두면 구도 + 배경 + 그릇 선택을 기반으로 프롬프트가 자동 생성됩니다."
+                      rows={3}
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none', resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                </div>
+
+                {/* 실행 버튼 */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                  <button
+                    onClick={runSingleCallTest}
+                    disabled={singleLoading || !singlePhotos.length}
+                    style={{ padding: '12px 28px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: (singleLoading || !singlePhotos.length) ? 'not-allowed' : 'pointer', background: (singleLoading || !singlePhotos.length) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #C4510D, #FF8C00)', color: (singleLoading || !singlePhotos.length) ? 'rgba(255,255,255,0.3)' : '#fff' }}
+                  >
+                    {singleLoading ? `처리 중... (${singleResults.length}/${singlePhotos.length})` : singleResults.length ? '↺ 재실행' : '▶ 단일 호출 실행'}
+                  </button>
+                </div>
+
+                {/* 결과 */}
+                {singleResults.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {singleResults.map((r, i) => (
+                      <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '14px', padding: '14px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div>
+                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '5px' }}>원본 {singlePhotos.length > 1 ? i + 1 : ''}</p>
+                            <img src={r.orig} alt="원본" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
+                          </div>
+                          <div>
+                            <p style={{ fontSize: '11px', color: '#C4510D', marginBottom: '5px' }}>단일 호출 결과 {singlePhotos.length > 1 ? i + 1 : ''} ✨</p>
+                            {r.result ? (
+                              <a href={r.result} download={`single_${i + 1}.jpg`} style={{ display: 'block' }}>
+                                <img src={r.result} alt="결과" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #C4510D' }} />
+                              </a>
+                            ) : (
+                              <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{singleLoading ? '처리 중...' : '실패'}</p>
+                              </div>
+                            )}
+                            {r.result && <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', textAlign: 'center' }}>클릭하면 다운로드</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* ── 2단계 테스트 (기존) ── */
+              <div>
 
             {/* ── 설정 영역 ── */}
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
@@ -599,6 +773,8 @@ export default function V2AdminPage() {
                 </div>
               )}
             </div>
+              </div>
+            )}
           </div>
         </div>
       ) : selected ? (
