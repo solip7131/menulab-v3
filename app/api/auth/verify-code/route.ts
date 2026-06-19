@@ -42,19 +42,27 @@ export async function POST(req: NextRequest) {
       ? [email, fallbackEmail]
       : [email]
 
-    const { data: existingRows } = await supabase
+    const { data: existingRows, error: selectErr } = await supabase
       .from('kakao_tokens')
       .select('kakao_email')
       .in('kakao_email', searchEmails)
       .limit(1)
 
+    if (selectErr) {
+      console.error('[verify-code] kakao_tokens select error:', selectErr, { email, kakaoId, searchEmails })
+    }
+
+    console.log('[verify-code]', { email, kakaoId, searchEmails, existingRows })
+
     if (existingRows && existingRows.length > 0) {
-      await supabase
+      const { error: updateErr } = await supabase
         .from('kakao_tokens')
         .update({ phone: digits })
         .eq('kakao_email', existingRows[0].kakao_email)
+      if (updateErr) console.error('[verify-code] phone update error:', updateErr, { targetEmail: existingRows[0].kakao_email, phone: digits })
     } else {
-      await supabase.from('kakao_tokens').insert({ kakao_email: email, phone: digits })
+      const { error: insertErr } = await supabase.from('kakao_tokens').insert({ kakao_email: email, phone: digits })
+      if (insertErr) console.error('[verify-code] phone insert error:', insertErr, { email, phone: digits })
     }
 
     await supabase.from('phone_verifications').delete().eq('phone', digits)

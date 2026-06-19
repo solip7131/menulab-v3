@@ -21,12 +21,18 @@ export async function GET(req: NextRequest) {
     ? [email, `kakao:${kakaoId}`]
     : [email]
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('kakao_tokens')
     .select('phone')
     .in('kakao_email', searchEmails)
     .not('phone', 'is', null)
     .limit(1)
 
+  if (error) {
+    console.error('[phone-status] supabase error:', error, { email, kakaoId, searchEmails })
+    return NextResponse.json({ hasPhone: false, dbError: true })
+  }
+
+  console.log('[phone-status]', { email, kakaoId, searchEmails, found: data?.length, hasPhone: !!(data?.[0]?.phone) })
   return NextResponse.json({ hasPhone: !!(data?.[0]?.phone) })
 }
