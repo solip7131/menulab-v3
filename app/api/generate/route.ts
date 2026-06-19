@@ -139,8 +139,8 @@ async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-prev
         model: modelName,
         contents: contents as never,
         config: {
-          responseModalities: ['IMAGE', 'TEXT'],
-          temperature: 0.2,
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: { aspectRatio: '1:1', imageSize: '2K' },
         } as never,
       })
 
