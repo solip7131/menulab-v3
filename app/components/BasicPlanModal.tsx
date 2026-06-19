@@ -531,7 +531,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
       onClose()
       router.push('/mypage')
     }
-  }, [selectedPhotos, bgMethod, bgData, bgPrompt, activePlatforms, onClose, onGenerate, router, userEmail, selectedBgPreset])
+  }, [selectedPhotos, bgMethod, bgData, bgPrompt, activePlatforms, onClose, onGenerate, router, userEmail, selectedBgPreset, dslr])
 
   // 다운로드 버튼 클릭 → 10젬 차감 → 원본 다운로드
   const handleDownloadWithCredits = useCallback(async () => {

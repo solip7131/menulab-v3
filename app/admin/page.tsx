@@ -800,29 +800,35 @@ export default function V2AdminPage() {
                   </div>
                 )}
 
-                {/* 결과 */}
-                {(fullResults.length > 0 || fullOrigUrl) && (
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(fullResults.length + 1, 3)}, 1fr)`, gap: '12px' }}>
-                    {fullOrigUrl && (
-                      <div>
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '5px' }}>원본</p>
-                        <img src={fullOrigUrl} alt="원본" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block' }} />
-                      </div>
-                    )}
-                    {fullResults.map((r, i) => (
-                      <div key={i}>
-                        <p style={{ fontSize: '11px', color: '#C4510D', marginBottom: '5px' }}>{r.platform} ✨</p>
-                        {r.wmUrl ? (
-                          <a href={r.wmUrl} target="_blank" rel="noopener noreferrer">
-                            <img src={r.wmUrl} alt={r.platform} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block', border: '2px solid #C4510D' }} />
-                          </a>
-                        ) : (
-                          <div style={{ width: '100%', aspectRatio: '4/3', borderRadius: '10px', background: 'rgba(255,0,0,0.06)', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <p style={{ fontSize: '12px', color: '#ff6b6b' }}>{r.error ?? '실패'}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                {/* 결과: 좌 원본 / 우 결과 or 생성중 */}
+                {fullOrigUrl && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {/* 왼쪽 — 원본 */}
+                    <div>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '6px' }}>원본</p>
+                      <img src={fullOrigUrl} alt="원본" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block' }} />
+                    </div>
+
+                    {/* 오른쪽 — 결과 or 생성중 */}
+                    <div>
+                      <p style={{ fontSize: '11px', color: '#C4510D', marginBottom: '6px' }}>
+                        {fullLoading ? '생성 중...' : fullResults.length ? `결과 (${fullResults[0].platform})` : ''}
+                      </p>
+                      {fullLoading ? (
+                        <div style={{ width: '100%', aspectRatio: '4/3', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid transparent', borderTopColor: '#C4510D', animation: 'spin 1s linear infinite' }} />
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>생성 중...</p>
+                        </div>
+                      ) : fullResults[0]?.wmUrl ? (
+                        <a href={fullResults[0].wmUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+                          <img src={fullResults[0].wmUrl} alt="결과" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', display: 'block', border: '2px solid #C4510D' }} />
+                        </a>
+                      ) : fullResults[0]?.error ? (
+                        <div style={{ width: '100%', aspectRatio: '4/3', borderRadius: '10px', background: 'rgba(255,0,0,0.06)', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', boxSizing: 'border-box' }}>
+                          <p style={{ fontSize: '11px', color: '#ff6b6b', textAlign: 'center', wordBreak: 'break-all' }}>{fullResults[0].error}</p>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 )}
               </div>
