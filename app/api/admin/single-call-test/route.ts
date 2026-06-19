@@ -67,32 +67,37 @@ export async function POST(req: NextRequest) {
 
     const result = await ai.interactions.create({
       model: 'gemini-3-pro-image-preview',
-      input: [
-        { parts: [{ inlineData: { data: base64, mimeType } }] },
-        { parts: [{ text: prompt }] },
-      ] as never,
-      response_format: { image_size: '4K' } as never,
+      input: [{
+        role: 'user',
+        parts: [
+          { inlineData: { data: base64, mimeType } },
+          { text: prompt },
+        ],
+      }] as never,
+      response_modalities: ['IMAGE', 'TEXT'] as never,
+      response_format: { mime_type: 'image/jpeg', delivery: 'inline', image_size: '4K' } as never,
     })
 
     let imageData: string | null = null
     let imageMime = 'image/jpeg'
 
-    for (const step of (result as any).steps ?? []) {
-      if (step.type === 'model_output') {
-        for (const content of step.content ?? []) {
+    const steps: unknown[] = (result as any)?.steps ?? []
+    outer: for (const step of steps) {
+      if ((step as any).type === 'model_output') {
+        for (const content of (step as any).content ?? []) {
           for (const part of content.parts ?? []) {
             const id = part.inlineData ?? part.inline_data
             if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
               imageData = id.data
               imageMime = id.mimeType ?? id.mime_type
-              break
+              break outer
             }
           }
-          if (imageData) break
         }
-        if (imageData) break
       }
     }
+
+    console.log('[single-call-test] steps:', JSON.stringify(steps.map((s: any) => ({ type: s.type, contentCount: s.content?.length }))));
 
     if (!imageData) return NextResponse.json({ error: 'AI가 이미지를 반환하지 않았어요' }, { status: 500 })
 

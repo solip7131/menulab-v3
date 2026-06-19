@@ -106,7 +106,7 @@ export default function V2AdminPage() {
   const [singleBg, setSingleBg]               = useState<'black' | 'white' | 'ivory' | 'gray'>('black')
   const [singleVesselId, setSingleVesselId]   = useState('original')
   const [singlePrompt, setSinglePrompt]       = useState('')
-  const [singleResults, setSingleResults]     = useState<{ orig: string; result: string }[]>([])
+  const [singleResults, setSingleResults]     = useState<{ orig: string; result: string; error?: string }[]>([])
   const [singleLoading, setSingleLoading]     = useState(false)
   const singleInputRef                        = useRef<HTMLInputElement>(null)
 
@@ -340,7 +340,7 @@ export default function V2AdminPage() {
     if (!singlePhotos.length) return
     setSingleLoading(true)
     setSingleResults([])
-    const results: { orig: string; result: string }[] = []
+    const results: { orig: string; result: string; error?: string }[] = []
     for (const photo of singlePhotos) {
       const origUrl = URL.createObjectURL(photo)
       try {
@@ -356,9 +356,9 @@ export default function V2AdminPage() {
           body: fd,
         })
         const data = await res.json()
-        results.push({ orig: origUrl, result: data.error ? '' : data.url })
-      } catch {
-        results.push({ orig: origUrl, result: '' })
+        results.push({ orig: origUrl, result: data.error ? '' : data.url, error: data.error })
+      } catch (e: any) {
+        results.push({ orig: origUrl, result: '', error: String(e) })
       }
       setSingleResults([...results])
     }
@@ -605,8 +605,9 @@ export default function V2AdminPage() {
                                 <img src={r.result} alt="결과" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #C4510D' }} />
                               </a>
                             ) : (
-                              <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{singleLoading ? '처리 중...' : '실패'}</p>
+                              <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,0,0,0.06)', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px', boxSizing: 'border-box' }}>
+                                <p style={{ fontSize: '12px', color: '#ff6b6b', marginBottom: r.error ? '6px' : 0 }}>{singleLoading ? '처리 중...' : '실패'}</p>
+                                {r.error && <p style={{ fontSize: '10px', color: 'rgba(255,100,100,0.7)', wordBreak: 'break-all', textAlign: 'center', lineHeight: 1.4 }}>{r.error}</p>}
                               </div>
                             )}
                             {r.result && <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', textAlign: 'center' }}>클릭하면 다운로드</p>}

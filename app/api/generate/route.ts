@@ -127,11 +127,28 @@ function buildWmSvg(w: number, h: number): Buffer {
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
 function toInteractionInput(parts: unknown[]): unknown[] {
-  return parts.map(p =>
-    typeof p === 'string'
-      ? { parts: [{ text: p }] }
-      : { parts: [p] }
-  )
+  // All parts merged into a single user Content so multimodal works correctly
+  return [{
+    role: 'user',
+    parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
+  }]
+}
+
+function extractImage(result: unknown): { data: string; mimeType: string } | null {
+  const steps: unknown[] = (result as any)?.steps ?? []
+  for (const step of steps) {
+    if ((step as any).type === 'model_output') {
+      for (const content of (step as any).content ?? []) {
+        for (const part of content.parts ?? []) {
+          const id = part.inlineData ?? part.inline_data
+          if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
+            return { data: id.data, mimeType: id.mimeType ?? id.mime_type }
+          }
+        }
+      }
+    }
+  }
+  return null
 }
 
 async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-preview'): Promise<{ data: string; mimeType: string }> {
@@ -141,21 +158,12 @@ async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-prev
       const result = await ai.interactions.create({
         model: modelName,
         input: toInteractionInput(parts) as never,
-        response_format: { image_size: '4K' } as never,
+        response_modalities: ['IMAGE', 'TEXT'] as never,
+        response_format: { mime_type: 'image/jpeg', delivery: 'inline', image_size: '4K' } as never,
       })
 
-      for (const step of (result as any).steps ?? []) {
-        if (step.type === 'model_output') {
-          for (const content of step.content ?? []) {
-            for (const part of content.parts ?? []) {
-              const id = part.inlineData ?? part.inline_data
-              if (id && (id.mimeType ?? id.mime_type)?.startsWith('image/')) {
-                return { data: id.data, mimeType: id.mimeType ?? id.mime_type }
-              }
-            }
-          }
-        }
-      }
+      const img = extractImage(result)
+      if (img) return img
       throw new Error('AI가 이미지를 반환하지 않았어요')
     } catch (err: any) {
       const is503 = err?.message?.includes('503')
