@@ -8,6 +8,7 @@ import { Suspense } from 'react'
 import BasicPlanModal from '../components/BasicPlanModal'
 import CoinChargeModal from '../components/CoinChargeModal'
 import PhoneVerificationModal from '../components/PhoneVerificationModal'
+import CollageModal from '../components/CollageModal'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -460,6 +461,7 @@ function MyPageContent() {
   const [pendingDownloadId,   setPendingDownloadId]    = useState<string | null>(null)
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
   const [showGuideModal,      setShowGuideModal]       = useState(false)
+  const [showCollageModal,    setShowCollageModal]     = useState(false)
   const upsellShownRef = useRef(false)
   const [selectedService,     setSelectedService]      = useState<'remake' | null>(null)
   const [modalServiceType,    setModalServiceType]     = useState<'remake'>('remake')
@@ -1101,7 +1103,7 @@ function MyPageContent() {
                   key={svc.id}
                   onClick={() => {
                     if (svc.id === 'remake') setSelectedService('remake')
-                    else if (svc.id === 'collection') router.push('/create/collage')
+                    else if (svc.id === 'collection') setShowCollageModal(true)
                   }}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
@@ -1196,7 +1198,7 @@ function MyPageContent() {
 
           {selectedService === 'remake' ? (
             /* ── 미니 랜딩: 메뉴샷 ── */
-            <div style={{ flex: 1, overflowY: 'auto', background: '#f0eeeb', padding: '16px 16px 32px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f0eeeb', padding: '16px 16px 100px' }}>
               <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '16px', overflow: 'hidden' }}>
 
                 {/* Before/After 슬라이더 — 좌우 꽉 차게 */}
@@ -1392,6 +1394,10 @@ function MyPageContent() {
           }}
         />
       )}
+      {showCollageModal && (
+        <CollageModal onClose={() => setShowCollageModal(false)} />
+      )}
+
       {showBasicModal && (
         <BasicPlanModal
           onClose={handleBasicModalClose}

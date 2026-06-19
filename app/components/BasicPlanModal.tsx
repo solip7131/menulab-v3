@@ -1032,24 +1032,32 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
             <>
               <div style={{ padding: '20px 22px', overflowY: 'auto', flex: 1 }}>
                 {[
-                  { id: 'original',      emoji: '🥣', label: '원본 그릇 유지',   desc: '업로드한 사진의 그릇을 그대로 사용해요' },
-                  { id: 'round_ceramic', emoji: '⚪',  label: '둥근 도자기',      desc: '깔끔하고 모던한 흰 도자기' },
-                  { id: 'black_iron',    emoji: '⚫',  label: '검은 무쇠',        desc: '고급스럽고 강렬한 블랙 무쇠 팬' },
-                  { id: 'white_ceramic', emoji: '🍽️', label: '흰 세라믹',        desc: '심플하고 깔끔한 흰 세라믹 플레이트' },
-                  { id: 'wood_tray',     emoji: '🪵',  label: '우드 트레이',      desc: '따뜻하고 자연스러운 원목 트레이' },
+                  { id: 'original',          img: null,                              label: '원본 그릇 유지', desc: '업로드한 사진의 그릇을 그대로 사용해요' },
+                  { id: 'white-noodle-bowl', img: '/bowls/02-white-noodle-bowl.png', label: '흰색 면기',     desc: '덮밥, 라멘 등' },
+                  { id: 'black-noodle-bowl', img: '/bowls/03-black-noodle-bowl.png', label: '검정 면기',     desc: '덮밥, 라멘 등' },
+                  { id: 'white-plate',       img: '/bowls/04-white-plate.png',       label: '흰색 접시',     desc: '사이드메뉴 등' },
+                  { id: 'black-plate',       img: '/bowls/05-black-plate.png',       label: '검정 접시',     desc: '사이드메뉴 등' },
+                  { id: 'ttukbbaeki',        img: '/bowls/06-ttukbbaeki.png',        label: '뚝배기',        desc: '찌개, 국밥 등' },
+                  { id: 'black-pot',         img: '/bowls/07-black-pot.png',         label: '전골냄비',      desc: '전골, 찜 등' },
+                  { id: 'cold-noodle-bowl',  img: '/bowls/08-cold-noodle-bowl.png',  label: '스텐 냉면보울', desc: '냉면류' },
+                  { id: 'pasta-bowl',        img: '/bowls/09-pasta-bowl.png',        label: '파스타볼',      desc: '파스타, 리조또 등' },
                 ].map(opt => (
                   <button
                     key={opt.id}
                     onClick={() => setRemakeVessel(opt.id)}
                     style={{
-                      width: '100%', display: 'flex', alignItems: 'flex-start', gap: '14px',
-                      padding: '16px', marginBottom: '10px',
+                      width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
+                      padding: '12px 16px', marginBottom: '8px',
                       borderRadius: '14px', border: `2px solid ${remakeVessel === opt.id ? 'var(--orange)' : 'rgba(0,0,0,0.09)'}`,
                       background: remakeVessel === opt.id ? 'rgba(196,81,13,0.05)' : '#fff',
                       cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
                     }}
                   >
-                    <span style={{ fontSize: '24px', flexShrink: 0 }}>{opt.emoji}</span>
+                    {opt.img ? (
+                      <img src={opt.img} alt={opt.label} style={{ width: '80px', height: '80px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px', background: '#f5f5f5' }} />
+                    ) : (
+                      <div style={{ width: '80px', height: '80px', flexShrink: 0, borderRadius: '8px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>🥣</div>
+                    )}
                     <div>
                       <p style={{ fontWeight: 700, fontSize: '15px', color: 'var(--black)', marginBottom: '4px' }}>{opt.label}</p>
                       <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{opt.desc}</p>

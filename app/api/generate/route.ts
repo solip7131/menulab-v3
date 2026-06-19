@@ -66,10 +66,14 @@ const PROMPT_REMAKE_ANGLE: Record<string, string> = {
 }
 
 const VESSEL_LABELS: Record<string, string> = {
-  round_ceramic: '둥근 도자기',
-  black_iron:    '검은 무쇠',
-  white_ceramic: '흰 세라믹',
-  wood_tray:     '우드 트레이',
+  'white-noodle-bowl': 'white ceramic noodle bowl',
+  'black-noodle-bowl': 'dark matte black noodle bowl',
+  'white-plate':       'round white ceramic plate',
+  'black-plate':       'round black ceramic plate',
+  'ttukbbaeki':        'Korean earthenware ttukbaegi pot',
+  'black-pot':         'black cast iron hot pot',
+  'cold-noodle-bowl':  'stainless steel cold noodle bowl',
+  'pasta-bowl':        'wide rimmed white pasta bowl',
 }
 
 function buildRemakeEnhancePrompt(angle: string, vessel: string, surfaceColor: string): string {
