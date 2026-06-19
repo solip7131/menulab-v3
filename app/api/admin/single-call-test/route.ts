@@ -31,6 +31,30 @@ const BG_COLORS: Record<string, string> = {
   gray:  'light gray',
 }
 
+// stage 1~4 config
+function buildConfig(stage: number): Record<string, unknown> {
+  switch (stage) {
+    case 1: return {
+      responseModalities: ['TEXT', 'IMAGE'],
+    }
+    case 2: return {
+      responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: { aspectRatio: '1:1' },
+    }
+    case 3: return {
+      responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: { aspectRatio: '1:1', imageSize: '2K' },
+    }
+    case 4: return {
+      responseModalities: ['TEXT', 'IMAGE'],
+      temperature: 0.2,
+      mediaResolution: 'MEDIA_RESOLUTION_HIGH',
+      imageConfig: { aspectRatio: '1:1', imageSize: '2K' },
+    }
+    default: return { responseModalities: ['TEXT', 'IMAGE'] }
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const adminPassword = req.headers.get('x-admin-password')
@@ -42,10 +66,11 @@ export async function POST(req: NextRequest) {
     const photo = formData.get('photo') as File | null
     if (!photo) return NextResponse.json({ error: '사진이 없어요' }, { status: 400 })
 
-    const angle      = (formData.get('angle')        as string) || 'original'
-    const background = (formData.get('background')   as string) || 'black'
-    const vesselId   = (formData.get('vesselId')     as string) || 'original'
+    const angle        = (formData.get('angle')        as string) || 'original'
+    const background   = (formData.get('background')   as string) || 'black'
+    const vesselId     = (formData.get('vesselId')     as string) || 'original'
     const customPrompt = (formData.get('customPrompt') as string) || ''
+    const stage        = parseInt((formData.get('stage') as string) || '1', 10)
 
     const arrayBuffer = await photo.arrayBuffer()
     const base64 = Buffer.from(arrayBuffer).toString('base64')
@@ -65,37 +90,33 @@ export async function POST(req: NextRequest) {
       '소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것',
     ].filter(Boolean).join('\n')
 
-    const result = await ai.interactions.create({
-      api_version: 'v1alpha',
+    const config = buildConfig(stage)
+    console.log(`[single-call-test] stage ${stage} config:`, JSON.stringify(config))
+
+    const result = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
-      input: [{
-        type: 'user_input',
-        content: [
-          { type: 'image', data: base64, mime_type: mimeType },
-          { type: 'text', text: prompt },
+      contents: [{
+        role: 'user',
+        parts: [
+          { inlineData: { data: base64, mimeType } },
+          { text: prompt },
         ],
       }] as never,
-      response_modalities: ['image', 'text'] as never,
-      response_format: { type: 'image', mime_type: 'image/jpeg', image_size: '2K' } as never,
+      config: config as never,
     })
 
     let imageData: string | null = null
     let imageMime = 'image/jpeg'
 
-    const steps: unknown[] = (result as any)?.steps ?? []
-    outer: for (const step of steps) {
-      if ((step as any).type === 'model_output') {
-        for (const content of (step as any).content ?? []) {
-          if (content.type === 'image' && content.data) {
-            imageData = content.data
-            imageMime = content.mime_type ?? 'image/jpeg'
-            break outer
-          }
-        }
+    const resParts: unknown[] = (result as any).candidates?.[0]?.content?.parts ?? []
+    for (const part of resParts) {
+      const id = (part as any).inlineData
+      if (id?.mimeType?.startsWith('image/')) {
+        imageData = id.data
+        imageMime = id.mimeType
+        break
       }
     }
-
-    console.log('[single-call-test] steps:', JSON.stringify(steps.map((s: any) => ({ type: s.type, contentCount: s.content?.length }))))
 
     if (!imageData) return NextResponse.json({ error: 'AI가 이미지를 반환하지 않았어요' }, { status: 500 })
 
@@ -111,7 +132,7 @@ export async function POST(req: NextRequest) {
     await supabase.storage.from('photos').upload(path, rawBuffer, { contentType: 'image/jpeg', upsert: false })
     const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path)
 
-    return NextResponse.json({ url: urlData.publicUrl })
+    return NextResponse.json({ url: urlData.publicUrl, stage })
   } catch (e) {
     console.error('[single-call-test] error:', e)
     return NextResponse.json({ error: String(e) }, { status: 500 })

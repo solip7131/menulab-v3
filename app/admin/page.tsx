@@ -106,6 +106,7 @@ export default function V2AdminPage() {
   const [singleBg, setSingleBg]               = useState<'black' | 'white' | 'ivory' | 'gray'>('black')
   const [singleVesselId, setSingleVesselId]   = useState('original')
   const [singlePrompt, setSinglePrompt]       = useState('')
+  const [singleStage, setSingleStage]         = useState<1 | 2 | 3 | 4>(1)
   const [singleResults, setSingleResults]     = useState<{ orig: string; result: string; error?: string }[]>([])
   const [singleLoading, setSingleLoading]     = useState(false)
   const singleInputRef                        = useRef<HTMLInputElement>(null)
@@ -350,6 +351,7 @@ export default function V2AdminPage() {
         fd.append('background', singleBg)
         fd.append('vesselId', singleVesselId)
         fd.append('customPrompt', singlePrompt)
+        fd.append('stage', String(singleStage))
         const res = await fetch('/api/admin/single-call-test', {
           method: 'POST',
           headers: { 'x-admin-password': password },
@@ -562,6 +564,27 @@ export default function V2AdminPage() {
                         <button key={v.id} onClick={() => setSingleVesselId(v.id)} style={{ padding: '6px 13px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: singleVesselId === v.id ? '#5856D6' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v.label}</button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Config 단계 선택 */}
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>Config 단계</p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {([
+                        { stage: 1, label: '1단계 — 기본' },
+                        { stage: 2, label: '2단계 — aspectRatio' },
+                        { stage: 3, label: '3단계 — 2K' },
+                        { stage: 4, label: '4단계 — 전체' },
+                      ] as const).map(({ stage, label }) => (
+                        <button key={stage} onClick={() => setSingleStage(stage)} style={{ padding: '7px 15px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: singleStage === stage ? '#34C759' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{label}</button>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '6px' }}>
+                      {singleStage === 1 && 'responseModalities: ["TEXT","IMAGE"]'}
+                      {singleStage === 2 && 'responseModalities + imageConfig: { aspectRatio: "1:1" }'}
+                      {singleStage === 3 && 'responseModalities + imageConfig: { aspectRatio: "1:1", imageSize: "2K" }'}
+                      {singleStage === 4 && 'responseModalities + temperature + mediaResolution + imageConfig: { aspectRatio, imageSize }'}
+                    </p>
                   </div>
 
                   {/* 커스텀 프롬프트 */}
