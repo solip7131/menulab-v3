@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
         ],
       }] as never,
       response_modalities: ['image', 'text'] as never,
-      response_format: { mime_type: 'image/jpeg', delivery: 'inline', image_size: '4K' } as never,
+      response_format: { type: 'image', mime_type: 'image/jpeg', delivery: 'inline', image_size: '4K' } as never,
     })
 
     let imageData: string | null = null
