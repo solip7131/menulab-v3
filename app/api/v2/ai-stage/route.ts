@@ -166,9 +166,10 @@ export async function POST(req: NextRequest) {
         let customerName = order.customer_name ?? ''
         console.log('[ai_done] order.customer_phone:', phone, 'order.customer_email:', order.customer_email)
         if (!phone && order.customer_email) {
-          const { data: tokenRow, error: tokenErr } = await supabaseAdmin
-            .from('kakao_tokens').select('phone, kakao_name').eq('kakao_email', order.customer_email).single()
-          console.log('[ai_done] kakao_tokens lookup:', { tokenRow, tokenErr })
+          const { data: tokenRows } = await supabaseAdmin
+            .from('kakao_tokens').select('phone, kakao_name').eq('kakao_email', order.customer_email).not('phone', 'is', null).limit(1)
+          const tokenRow = tokenRows?.[0] ?? null
+          console.log('[ai_done] kakao_tokens lookup:', { tokenRow })
           phone = tokenRow?.phone ?? null
           if (!customerName && tokenRow?.kakao_name) customerName = tokenRow.kakao_name
         }

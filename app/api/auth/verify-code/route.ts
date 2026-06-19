@@ -35,14 +35,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '인증번호가 틀렸어요' }, { status: 400 })
     }
 
-    await supabase.from('kakao_tokens').update({ phone: digits }).eq('kakao_email', email)
+    // 기존 행 업데이트 시도
+    const { data: updated } = await supabase
+      .from('kakao_tokens')
+      .update({ phone: digits })
+      .eq('kakao_email', email)
+      .select('kakao_email')
+
+    // 행이 없으면 insert (kakao_tokens 행 자체가 없는 경우 대비)
+    if (!updated || updated.length === 0) {
+      await supabase.from('kakao_tokens').insert({ kakao_email: email, phone: digits })
+    }
+
     await supabase.from('phone_verifications').delete().eq('phone', digits)
 
     // 환영 알림톡 발송 (이름 조회 후)
     try {
-      const { data: tokenRow } = await supabase
-        .from('kakao_tokens').select('kakao_name').eq('kakao_email', email).single()
-      await notifySignup({ phone: digits, customerName: tokenRow?.kakao_name || '' })
+      const { data: tokenRows } = await supabase
+        .from('kakao_tokens').select('kakao_name').eq('kakao_email', email).limit(1)
+      await notifySignup({ phone: digits, customerName: tokenRows?.[0]?.kakao_name || '' })
     } catch {}
 
     return NextResponse.json({ success: true })

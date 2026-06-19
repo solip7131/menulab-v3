@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 전화번호 조회
-    const { data: tokenRow } = await supabase
-      .from('kakao_tokens').select('phone').eq('kakao_email', email).single()
-    const recvphone = cleanPhone(tokenRow?.phone ?? '')
+    const { data: tokenRows } = await supabase
+      .from('kakao_tokens').select('phone').eq('kakao_email', email).not('phone', 'is', null).limit(1)
+    const recvphone = cleanPhone(tokenRows?.[0]?.phone ?? '')
 
     const userId = process.env.PAYAPP_USER_ID
     const apiKey = process.env.PAYAPP_KEY

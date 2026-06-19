@@ -602,7 +602,7 @@ function MyPageContent() {
           }
           completed++
           setGeneratingInfo({ count: totalCount, completed })
-          fetchImages(token)
+          await fetchImages(token)
         }
       } catch (e: any) {
         failed   = true
@@ -610,10 +610,10 @@ function MyPageContent() {
         console.error('generate error:', e)
       } finally {
         try { localStorage.removeItem(GENERATING_KEY) } catch {}
+        await fetchImages(token)
         setIsGenerating(false)
         setGeneratingInfo(null)
         if (failed) setGenError(errorMsg)
-        fetchImages(token)
       }
     })()
   }, [])  // eslint-disable-line react-hooks/exhaustive-deps

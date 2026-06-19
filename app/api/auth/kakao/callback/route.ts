@@ -54,14 +54,33 @@ export async function GET(req: NextRequest) {
     const nickname: string = userData.kakao_account?.profile?.nickname || userData.properties?.nickname || ''
 
     // 3. 카카오 토큰 Supabase 저장 (알림 전송용)
+    // upsert 대신 update+insert 패턴 사용 — phone 컬럼을 건드리지 않기 위해
     try {
-      await supabaseAdmin.from('kakao_tokens').upsert({
-        kakao_email: email,
-        kakao_name: nickname,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token || null,
-        updated_at: new Date().toISOString(),
-      })
+      const { data: existing } = await supabaseAdmin
+        .from('kakao_tokens')
+        .select('kakao_email')
+        .eq('kakao_email', email)
+        .maybeSingle()
+
+      if (existing) {
+        await supabaseAdmin
+          .from('kakao_tokens')
+          .update({
+            kakao_name: nickname,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('kakao_email', email)
+      } else {
+        await supabaseAdmin.from('kakao_tokens').insert({
+          kakao_email: email,
+          kakao_name: nickname,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token || null,
+          updated_at: new Date().toISOString(),
+        })
+      }
     } catch {}
 
     // 4. 신규 유저 감지 → 20젬 즉시 지급

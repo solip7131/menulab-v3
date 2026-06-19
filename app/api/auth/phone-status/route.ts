@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
     .from('kakao_tokens')
     .select('phone')
     .eq('kakao_email', email)
-    .single()
+    .not('phone', 'is', null)
+    .limit(1)
 
-  return NextResponse.json({ hasPhone: !!data?.phone })
+  return NextResponse.json({ hasPhone: !!(data?.[0]?.phone) })
 }

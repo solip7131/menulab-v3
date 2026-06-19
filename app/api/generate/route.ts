@@ -312,8 +312,9 @@ export async function POST(req: NextRequest) {
     // AI 완료 알림톡
     if (userEmail) {
       try {
-        const { data: tokenRow } = await supabase
-          .from('kakao_tokens').select('phone, kakao_name').eq('kakao_email', userEmail).single()
+        const { data: tokenRows } = await supabase
+          .from('kakao_tokens').select('phone, kakao_name').eq('kakao_email', userEmail).not('phone', 'is', null).limit(1)
+        const tokenRow = tokenRows?.[0]
         if (tokenRow?.phone) {
           await notifyAiDone({ phone: tokenRow.phone, customerName: tokenRow.kakao_name ?? '' })
         }

@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
     // customer_phone 없으면 kakao_tokens에서 조회
     let phone = order.customer_phone
     if (!phone && order.customer_email) {
-      const { data: tokenRow } = await supabaseAdmin
-        .from('kakao_tokens').select('phone').eq('kakao_email', order.customer_email).single()
-      phone = tokenRow?.phone ?? null
+      const { data: tokenRows } = await supabaseAdmin
+        .from('kakao_tokens').select('phone').eq('kakao_email', order.customer_email).not('phone', 'is', null).limit(1)
+      phone = tokenRows?.[0]?.phone ?? null
     }
 
     if (!phone) {
