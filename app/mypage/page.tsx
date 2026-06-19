@@ -14,8 +14,8 @@ import PhoneVerificationModal from '../components/PhoneVerificationModal'
 const SESSION_KEY      = 'menulab_session'
 const GEN_OPTIONS_KEY  = 'menulab_last_gen_options'
 const GENERATING_KEY   = 'menulab_generating'
-const PHONE_OK_KEY     = (email: string) => `menulab_phone_ok_${email}`
-const PHONE_SKIP_KEY   = (email: string) => `menulab_phone_skip_${email}`
+const PHONE_OK_KEY     = (id: string) => `menulab_phone_ok_${id}`
+const PHONE_SKIP_KEY   = (id: string) => `menulab_phone_skip_${id}`
 
 const CATS = [
   '전체 보기', '배달앱', 'SNS', '포스터',
@@ -424,9 +424,10 @@ function MyPageContent() {
   const kakaoDetail  = searchParams.get('detail')
 
   // Session
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null)
-  const [sessionName,  setSessionName]  = useState<string>('')
-  const [sessionToken, setSessionToken] = useState<string | null>(null)
+  const [sessionEmail,   setSessionEmail]   = useState<string | null>(null)
+  const [sessionName,    setSessionName]    = useState<string>('')
+  const [sessionToken,   setSessionToken]   = useState<string | null>(null)
+  const [sessionKakaoId, setSessionKakaoId] = useState<string | null>(null)
 
   // Images
   const [images,      setImages]      = useState<GeneratedImage[]>([])
@@ -530,9 +531,9 @@ function MyPageContent() {
     if (kakaoSessionCookie) {
       try {
         const val = JSON.parse(decodeURIComponent(kakaoSessionCookie.split('=').slice(1).join('=')))
-        localStorage.setItem(SESSION_KEY, JSON.stringify({ token: val.token, email: val.email, name: val.name }))
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ token: val.token, email: val.email, name: val.name, kakaoId: val.kakaoId }))
         document.cookie = 'ml_kakao_session=; max-age=0; path=/'
-        setSessionEmail(val.email); setSessionName(val.name || ''); setSessionToken(val.token)
+        setSessionEmail(val.email); setSessionName(val.name || ''); setSessionToken(val.token); setSessionKakaoId(val.kakaoId ?? null)
         return
       } catch { document.cookie = 'ml_kakao_session=; max-age=0; path=/' }
     }
@@ -541,32 +542,34 @@ function MyPageContent() {
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return
     try {
-      const { token, email: e, name } = JSON.parse(raw)
-      setSessionEmail(e); setSessionName(name || ''); setSessionToken(token)
+      const { token, email: e, name, kakaoId: kid } = JSON.parse(raw)
+      setSessionEmail(e); setSessionName(name || ''); setSessionToken(token); setSessionKakaoId(kid ?? null)
     } catch { localStorage.removeItem(SESSION_KEY) }
   }, [])
 
-  // Phone verification check (1회) — localStorage 캐시 우선 확인
+  // Phone verification check (1회) — kakaoId 기반 localStorage 캐시 우선 확인
   useEffect(() => {
     if (!sessionToken || !sessionEmail) return
+    // kakaoId가 있으면 안정적인 kakaoId로 키 생성, 없으면 email fallback
+    const phoneKey = sessionKakaoId ? PHONE_OK_KEY(sessionKakaoId) : PHONE_OK_KEY(sessionEmail)
+    const skipKey  = sessionKakaoId ? PHONE_SKIP_KEY(sessionKakaoId) : PHONE_SKIP_KEY(sessionEmail)
     try {
-      if (localStorage.getItem(PHONE_OK_KEY(sessionEmail)) === '1') return
-      // 스킵 유효 기간(30일) 내이면 재노출 안 함
-      const skipUntil = Number(localStorage.getItem(PHONE_SKIP_KEY(sessionEmail)) ?? 0)
+      if (localStorage.getItem(phoneKey) === '1') return
+      const skipUntil = Number(localStorage.getItem(skipKey) ?? 0)
       if (Date.now() < skipUntil) return
     } catch {}
     fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${sessionToken}` } })
       .then(r => r.json())
       .then(d => {
-        if (d.invalidSession) return  // 만료된 세션이면 모달 띄우지 않음
+        if (d.invalidSession) return
         if (d.hasPhone) {
-          try { localStorage.setItem(PHONE_OK_KEY(sessionEmail), '1') } catch {}
+          try { localStorage.setItem(phoneKey, '1') } catch {}
         } else {
           setShowPhoneVerify(true)
         }
       })
       .catch(() => {})
-  }, [sessionToken, sessionEmail])
+  }, [sessionToken, sessionEmail, sessionKakaoId])
 
   // Fetch gem balance
   const fetchGemBalance = useCallback(async (token: string) => {
@@ -1378,11 +1381,13 @@ function MyPageContent() {
         <PhoneVerificationModal
           token={sessionToken}
           onVerified={() => {
-            try { if (sessionEmail) localStorage.setItem(PHONE_OK_KEY(sessionEmail), '1') } catch {}
+            const id = sessionKakaoId ?? sessionEmail
+            try { if (id) localStorage.setItem(PHONE_OK_KEY(id), '1') } catch {}
             setShowPhoneVerify(false)
           }}
           onSkip={() => {
-            try { if (sessionEmail) localStorage.setItem(PHONE_SKIP_KEY(sessionEmail), String(Date.now() + 30 * 24 * 60 * 60 * 1000)) } catch {}
+            const id = sessionKakaoId ?? sessionEmail
+            try { if (id) localStorage.setItem(PHONE_SKIP_KEY(id), String(Date.now() + 30 * 24 * 60 * 60 * 1000)) } catch {}
             setShowPhoneVerify(false)
           }}
         />

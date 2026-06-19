@@ -54,24 +54,28 @@ export async function GET(req: NextRequest) {
     const nickname: string = userData.kakao_account?.profile?.nickname || userData.properties?.nickname || ''
 
     // 3. 카카오 토큰 Supabase 저장 (알림 전송용)
-    // upsert 대신 update+insert 패턴 사용 — phone 컬럼을 건드리지 않기 위해
+    // 이메일 스코프 변동으로 email이 달라질 수 있으므로 email + kakao:id 두 가지로 검색
+    const fallbackEmail = `kakao:${kakaoId}`
+    const searchEmails = email !== fallbackEmail ? [email, fallbackEmail] : [email]
     try {
       const { data: rows } = await supabaseAdmin
         .from('kakao_tokens')
         .select('kakao_email')
-        .eq('kakao_email', email)
+        .in('kakao_email', searchEmails)
         .limit(1)
 
       if (rows && rows.length > 0) {
+        // 기존 row를 현재 email로 정규화하면서 업데이트 (phone 컬럼 보존)
         await supabaseAdmin
           .from('kakao_tokens')
           .update({
+            kakao_email: email,
             kakao_name: nickname,
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token || null,
             updated_at: new Date().toISOString(),
           })
-          .eq('kakao_email', email)
+          .eq('kakao_email', rows[0].kakao_email)
       } else {
         await supabaseAdmin.from('kakao_tokens').insert({
           kakao_email: email,
@@ -103,9 +107,9 @@ export async function GET(req: NextRequest) {
       }
     } catch {}
 
-    // 5. 세션 토큰 발급
-    const sessionToken = createSessionToken(email)
-    const sessionPayload = JSON.stringify({ token: sessionToken, email, name: nickname })
+    // 5. 세션 토큰 발급 (kakaoId 포함 → phone 인증 키 안정화)
+    const sessionToken = createSessionToken(email, kakaoId)
+    const sessionPayload = JSON.stringify({ token: sessionToken, email, name: nickname, kakaoId })
 
     // state에서 returnTo 디코딩 (없으면 쿠키 fallback, 그 다음 /mypage)
     let returnTo = ''

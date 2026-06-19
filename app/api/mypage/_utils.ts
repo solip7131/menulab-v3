@@ -17,8 +17,8 @@ export function verifyOtpCode(email: string, code: string): boolean {
   })
 }
 
-export function createSessionToken(email: string): string {
-  const payload = Buffer.from(JSON.stringify({ email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 })).toString('base64url')
+export function createSessionToken(email: string, kakaoId?: string): string {
+  const payload = Buffer.from(JSON.stringify({ email, kakaoId, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 })).toString('base64url')
   const sig = crypto.createHmac('sha256', SECRET()).update(payload).digest('base64url')
   return `${payload}.${sig}`
 }
@@ -31,6 +31,19 @@ export function verifySessionToken(token: string): string | null {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString())
     if (data.exp < Date.now()) return null
     return data.email as string
+  } catch {
+    return null
+  }
+}
+
+export function verifySessionFull(token: string): { email: string; kakaoId?: string } | null {
+  try {
+    const [payload, sig] = token.split('.')
+    const expected = crypto.createHmac('sha256', SECRET()).update(payload).digest('base64url')
+    if (sig !== expected) return null
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString())
+    if (data.exp < Date.now()) return null
+    return { email: data.email as string, kakaoId: data.kakaoId as string | undefined }
   } catch {
     return null
   }
