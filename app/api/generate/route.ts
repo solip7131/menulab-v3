@@ -114,14 +114,16 @@ OUTPUT: Final composited image only.`
 // ── Watermark ─────────────────────────────────────────────────────────────────
 
 function buildWmSvg(w: number, h: number): Buffer {
-  const tileW = 150, tileH = 90
-  let t = ''
-  for (let r = -1; r <= Math.ceil(h / tileH) + 1; r++)
-    for (let c = -1; c <= Math.ceil(w / tileW) + 1; c++) {
-      const cx = c * tileW + tileW / 2, cy = r * tileH + tileH / 2
-      t += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" transform="rotate(-35,${cx},${cy})" font-family="Arial,sans-serif" font-size="20" font-weight="bold" fill="rgba(255,255,255,0.4)" stroke="rgba(0,0,0,0.1)" stroke-width="0.5">Menulab</text>`
-    }
-  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${t}</svg>`)
+  // 폰트 의존성 없는 대각선 스트라이프 워터마크
+  const d = Math.ceil(Math.sqrt(w * w + h * h))
+  const spacing = 60
+  let lines = ''
+  for (let i = -d; i <= d * 2; i += spacing) {
+    lines += `<line x1="${i}" y1="${-d}" x2="${i + d}" y2="${d * 2}" stroke="rgba(255,255,255,0.18)" stroke-width="18"/>`
+  }
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" overflow="hidden">${lines}</svg>`
+  )
 }
 
 // ── Platform → aspectRatio + final size mapping ───────────────────────────────
