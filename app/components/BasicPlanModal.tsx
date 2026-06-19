@@ -596,32 +596,39 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
 
   // ── Shared bottom bar (STEP 1–3) ──────────────────────────────────────────
 
-  // 리메이크는 스텝 2 → 8(구도) → 9(그릇) → 3, 리터치는 2 → 3
+  // 리메이크: 1 → 3(배경) → 8(구도) → 9(그릇) → 2(플랫폼) → 4, 리터치: 1 → 2(플랫폼) → 3(배경) → 4
   const isRemake = serviceType === 'remake'
   const canNext  = step === 1 ? canProceed1
                  : step === 2 ? canProceed2
+                 : step === 3 ? (isRemake ? bgMethod === 'preset' && !!selectedBgId : canProceed3)
                  : step === 8 ? true
                  : step === 9 ? true
                  : canProceed3
   const btnLabel = step === 1 ? `선택 (${selectedPhotoIds.size}장)` : '다음'
-  const onNext   = step === 1 ? () => { if (canProceed1) goTo(2) }
-                 : step === 2 ? () => { if (canProceed2) goTo(isRemake ? 8 : 3) }
+  const onNext   = step === 1 ? () => { if (canProceed1) goTo(isRemake ? 3 : 2) }
+                 : step === 2 ? () => { if (canProceed2) goTo(isRemake ? 4 : 3) }
+                 : step === 3 ? () => { if (isRemake ? bgMethod === 'preset' && !!selectedBgId : canProceed3) goTo(isRemake ? 8 : 4) }
                  : step === 8 ? () => goTo(9)
-                 : step === 9 ? () => goTo(3)
+                 : step === 9 ? () => goTo(2)
                  : () => { if (canProceed3) goTo(4) }
 
-  // 뒤로가기 (step < 5)
+  // 뒤로가기
   const goPrevStep = () => {
-    if (step === 3 && isRemake) goTo(9)
-    else if (step === 9) goTo(8)
-    else if (step === 8) goTo(2)
-    else if (step > 1 && step < 5) goTo((step - 1) as ModalStep)
+    if (isRemake) {
+      if (step === 3) goTo(1)
+      else if (step === 8) goTo(3)
+      else if (step === 9) goTo(8)
+      else if (step === 2) goTo(9)
+      else if (step === 4) goTo(2)
+    } else {
+      if (step > 1 && step < 5) goTo((step - 1) as ModalStep)
+    }
   }
 
   // 총 스텝 수 (헤더 표시용)
   const totalSteps = isRemake ? 9 : 7
   // 스텝 순서 인덱스 (표시용)
-  const remakeOrder: ModalStep[] = [1, 2, 8, 9, 3, 4, 5, 6, 7]
+  const remakeOrder: ModalStep[] = [1, 3, 8, 9, 2, 4, 5, 6, 7]
   const retouchOrder: ModalStep[] = [1, 2, 3, 4, 5, 6, 7]
   const stepOrder = isRemake ? remakeOrder : retouchOrder
   const visualStep = stepOrder.indexOf(step) + 1
@@ -667,7 +674,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
           flexShrink: 0, borderRadius: '24px 24px 0 0', background: '#fff',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {(showGuide || (step > 1 && step < 5)) && (
+            {(showGuide || (step > 1 && step < 5) || (isRemake && (step === 8 || step === 9))) && (
               <button
                 onClick={() => showGuide ? setShowGuide(false) : goPrevStep()}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#888', padding: '2px 6px 2px 0', lineHeight: 1 }}
@@ -1058,11 +1065,14 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
           {step === 3 && (
             <>
               <div style={{ padding: '16px 22px' }}>
-                <p style={{ fontSize: '13px', color: '#999', marginBottom: '18px', lineHeight: 1.6 }}>
-                  2가지 방법 중, 하나만 선택 가능
-                </p>
+                {!isRemake && (
+                  <p style={{ fontSize: '13px', color: '#999', marginBottom: '18px', lineHeight: 1.6 }}>
+                    2가지 방법 중, 하나만 선택 가능
+                  </p>
+                )}
 
-                {/* Method 1: text */}
+                {/* Method 1: text (리터치 전용) */}
+                {!isRemake && (
                 <div style={{
                   padding: '16px', borderRadius: '16px', marginBottom: '14px',
                   border: `2px solid ${bgMethod === 'prompt' ? 'var(--orange)' : 'rgba(0,0,0,0.08)'}`,
@@ -1085,17 +1095,20 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
                     }}
                   />
                 </div>
+                )}
 
                 {/* Method 2: preset */}
                 <div style={{
                   padding: '16px', borderRadius: '16px',
-                  border: `2px solid ${bgMethod === 'preset' ? 'var(--orange)' : 'rgba(0,0,0,0.08)'}`,
-                  background: bgMethod === 'preset' ? 'rgba(196,81,13,0.03)' : '#fff',
+                  border: `2px solid ${!isRemake && bgMethod === 'preset' ? 'var(--orange)' : isRemake ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                  background: !isRemake && bgMethod === 'preset' ? 'rgba(196,81,13,0.03)' : '#fff',
                   transition: 'all 0.2s',
                 }}>
+                  {!isRemake && (
                   <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '12px', color: bgMethod === 'preset' ? 'var(--orange)' : 'var(--black)' }}>
                     방법2. 원하는 배경을 선택
                   </p>
+                  )}
 
                   {/* Category tabs */}
                   <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', overflowX: 'auto' }}>
