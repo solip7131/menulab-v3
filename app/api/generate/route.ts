@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
+import path from 'path'
+import fs from 'fs'
 import { notifyAiDone } from '../../../lib/solapi'
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
@@ -95,35 +97,47 @@ const PROMPT_COMPOSE_BG_IMAGE = `Image 1: Food photo (already professionally sho
 Image 2: Background texture reference
 TASK: Place the food from Image 1 naturally onto
 the background surface from Image 2.
-FRAMING: Dish occupies 50% of image height. Centered.
-Show plenty of background — 20% margin top, 15% bottom, 15% each side.
+FRAMING: Dish occupies 50–60% of image height. Centered horizontally and vertically.
+Show plenty of background — at least 15% margin on all sides.
 Never crop the dish.
 Match lighting direction from Image 1.
-Output image size: exactly {WIDTH}x{HEIGHT} pixels.
 OUTPUT: Final composited image only.`
 
 const PROMPT_COMPOSE_TEXT_BG = `Image 1: Food photo (already professionally shot)
 TASK: Place the food from Image 1 onto a {BG_NAME} background.
-FRAMING: Dish occupies 50% of image height. Centered.
-Show plenty of background — 20% margin top, 15% bottom, 15% each side.
+FRAMING: Dish occupies 50–60% of image height. Centered horizontally and vertically.
+Show plenty of background — at least 15% margin on all sides.
 Never crop the dish.
 Match lighting direction from Image 1.
-Output image size: exactly {WIDTH}x{HEIGHT} pixels.
 OUTPUT: Final composited image only.`
 
 // ── Watermark ─────────────────────────────────────────────────────────────────
 
-function buildWmSvg(w: number, h: number): Buffer {
-  // 폰트 의존성 없는 대각선 스트라이프 워터마크
-  const d = Math.ceil(Math.sqrt(w * w + h * h))
-  const spacing = 60
-  let lines = ''
-  for (let i = -d; i <= d * 2; i += spacing) {
-    lines += `<line x1="${i}" y1="${-d}" x2="${i + d}" y2="${d * 2}" stroke="rgba(255,255,255,0.18)" stroke-width="18"/>`
+// 로고를 읽어서 반투명 PNG로 리사이즈
+async function buildLogoWm(targetW: number, targetH: number): Promise<Buffer | null> {
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'menulab-logo.png')
+    const logoBuffer = fs.readFileSync(logoPath)
+    // 이미지 너비의 20% 크기로 로고 축소, 투명도 50%
+    const logoW = Math.round(targetW * 0.20)
+    const resizedLogo = await sharp(logoBuffer)
+      .resize(logoW, undefined, { fit: 'inside' })
+      .png()
+      .toBuffer()
+    // 50% 투명도 적용
+    const meta = await sharp(resizedLogo).metadata()
+    const lw = meta.width!, lh = meta.height!
+    return await sharp({
+      create: { width: lw, height: lh, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    })
+      .composite([{ input: resizedLogo, blend: 'over' }])
+      .png()
+      .toBuffer()
+      .then(buf => sharp(buf).modulate({ brightness: 1 }).png().toBuffer())
+      .then(buf => sharp(buf).ensureAlpha().linear(0.5, 0).png().toBuffer())
+  } catch {
+    return null
   }
-  return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" overflow="hidden">${lines}</svg>`
-  )
 }
 
 // ── Platform → aspectRatio + final size mapping ───────────────────────────────
@@ -152,15 +166,27 @@ async function resizeCrop(base64: string, w: number, h: number): Promise<Buffer>
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
+// Gemini supports these aspectRatio values only
+const GEMINI_ASPECT_RATIOS = new Set(['1:1', '3:4', '4:3', '9:16', '16:9'])
+
+function toGeminiAspect(ratio: string): string {
+  if (GEMINI_ASPECT_RATIOS.has(ratio)) return ratio
+  // 3:2 → 4:3 (closest supported)
+  return '4:3'
+}
+
 async function callGemini(
   parts: unknown[],
   modelName = 'gemini-3-pro-image-preview',
   dslr = false,
+  aspectRatio = '1:1',
 ): Promise<{ data: string; mimeType: string }> {
   const contents = [{
     role: 'user',
     parts: parts.map(p => typeof p === 'string' ? { text: p } : p),
   }]
+
+  const geminiAspect = toGeminiAspect(aspectRatio)
 
   const MAX_RETRIES = 3
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -171,8 +197,8 @@ async function callGemini(
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
           imageConfig: dslr
-            ? { aspectRatio: '1:1', imageSize: '2K' }
-            : { aspectRatio: '1:1' },
+            ? { aspectRatio: geminiAspect, imageSize: '2K' }
+            : { aspectRatio: geminiAspect },
         } as never,
       })
 
@@ -206,16 +232,26 @@ async function uploadWithWatermark(
     const w = meta.width ?? 800
     const h = meta.height ?? 600
 
-    const wmBuffer = await sharp(rawBuffer)
-      .composite([{ input: buildWmSvg(w, h), top: 0, left: 0 }])
-      .jpeg({ quality: 92 })
-      .toBuffer()
+    // 로고 워터마크: 우하단 배치, 패딩 2%
+    const logoWm = await buildLogoWm(w, h)
+    let wmBuffer: Buffer
+    if (logoWm) {
+      const lMeta = await sharp(logoWm).metadata()
+      const lw = lMeta.width!, lh = lMeta.height!
+      const pad = Math.round(w * 0.02)
+      wmBuffer = await sharp(rawBuffer)
+        .composite([{ input: logoWm, left: w - lw - pad, top: h - lh - pad, blend: 'over' }])
+        .jpeg({ quality: 92 })
+        .toBuffer()
+    } else {
+      wmBuffer = rawBuffer
+    }
 
     const uid      = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const origPath = `ai_results/orig/${uid}.jpg`
     const wmPath   = `ai_results/wm/${uid}.jpg`
 
-    await supabase.storage.from('photos').upload(origPath, rawBuffer,  { contentType: 'image/jpeg', upsert: false })
+    await supabase.storage.from('photos').upload(origPath, rawBuffer, { contentType: 'image/jpeg', upsert: false })
     const { error } = await supabase.storage.from('photos').upload(wmPath, wmBuffer, { contentType: 'image/jpeg', upsert: false })
     if (error) return null
 
@@ -319,9 +355,13 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const img      = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview', dslr)
-          const cropped  = await resizeCrop(img.data, platCfg.finalW, platCfg.finalH)
-          const croppedB64 = cropped.toString('base64')
+          const img = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview', dslr, platCfg.aspectRatio)
+          // Gemini가 이미 올바른 비율로 생성 → sharp는 크롭 없이 정확한 픽셀 크기로만 조정
+          const resized = await sharp(Buffer.from(img.data, 'base64'))
+            .resize(platCfg.finalW, platCfg.finalH, { fit: 'fill' })
+            .jpeg({ quality: 92 })
+            .toBuffer()
+          const croppedB64 = resized.toString('base64')
           const upload = await uploadWithWatermark(croppedB64)
           if (!upload) return null
 
