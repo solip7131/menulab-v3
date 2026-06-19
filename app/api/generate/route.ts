@@ -179,7 +179,7 @@ async function callGemini(
         contents: contents as never,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          imageConfig: { aspectRatio: geminiAspect },
+          imageConfig: { aspectRatio: geminiAspect, imageSize: '2K' },
         } as never,
       })
       const resParts: unknown[] = (result as any).candidates?.[0]?.content?.parts ?? []
