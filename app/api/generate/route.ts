@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const img    = await callGemini([...parts, prompt], 'gemini-3-pro-image-preview')
+          const img    = await callGemini([...parts, prompt])
           const upload = await uploadWithWatermark(img.data)
           if (!upload) return null
 
