@@ -32,9 +32,8 @@ const BG_ID_BY_LABEL: Record<string, string> = {
 
 
 const SIDEBAR_SERVICES = [
-  { id: 'retouch',    name: '메뉴 리터치',  gems: '10젬/장', subtitle: '내 음식사진을 더 먹음직스럽게! 원하는 배경 선택!' },
-  { id: 'remake',     name: '메뉴 리메이크', gems: '20젬/장', subtitle: '업그레이드된 음식에 원하는 배경과 그릇까지 선택!' },
-  { id: 'collection', name: '메뉴 모음컷',   gems: '',        subtitle: '일반 모음컷과 브랜딩용 모음컷 (프랜차이즈 본사 추천)' },
+  { id: 'remake',     name: '메뉴샷',      gems: '20젬/장',  subtitle: '업그레이드된 음식에 원하는 배경과 그릇까지 선택!' },
+  { id: 'collection', name: '메뉴 모음컷', gems: '💎 40젬~', subtitle: '일반 모음컷과 브랜딩용 모음컷 (프랜차이즈 본사 추천)' },
 ]
 
 const SIDEBAR_SECTIONS = [
@@ -341,12 +340,12 @@ function MyPageContent() {
   const [showChargeModal,     setShowChargeModal]      = useState(false)
   const [creditShortfall,     setCreditShortfall]      = useState(0)
   const [pendingDownloadId,   setPendingDownloadId]    = useState<string | null>(null)
-  const [showCollectionInfo,  setShowCollectionInfo]   = useState(false)
+  const [showComingSoonModal, setShowComingSoonModal]  = useState(false)
   const [showUpsellModal,     setShowUpsellModal]      = useState(false)
   const [showGuideModal,      setShowGuideModal]       = useState(false)
   const upsellShownRef = useRef(false)
-  const [selectedService,     setSelectedService]      = useState<'retouch' | 'remake' | null>(null)
-  const [modalServiceType,    setModalServiceType]     = useState<'retouch' | 'remake'>('retouch')
+  const [selectedService,     setSelectedService]      = useState<'remake' | null>(null)
+  const [modalServiceType,    setModalServiceType]     = useState<'remake'>('remake')
   const [miniSlideIndex,      setMiniSlideIndex]       = useState(0)
 
   // BasicPlanModal initial options (for "다시 만들기" / regenerate)
@@ -565,7 +564,7 @@ function MyPageContent() {
 
   // Mini landing slideshow auto-advance
   useEffect(() => {
-    if (selectedService !== 'retouch' && selectedService !== 'remake') return
+    if (selectedService !== 'remake') return
     const t = setInterval(() => setMiniSlideIndex(i => (i + 1) % 2), 2500)
     return () => clearInterval(t)
   }, [selectedService])
@@ -778,31 +777,17 @@ function MyPageContent() {
 
   return (
     <>
-      {/* 모음컷 안내 미니 패널 */}
-      {showCollectionInfo && (
+      {/* 모음컷 준비 중 안내 모달 */}
+      {showComingSoonModal && (
         <div
-          onClick={e => { if (e.target === e.currentTarget) setShowCollectionInfo(false) }}
+          onClick={e => { if (e.target === e.currentTarget) setShowComingSoonModal(false) }}
           style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', padding: '16px' }}
         >
-          <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '400px', padding: '28px 24px', boxShadow: '0 24px 80px rgba(0,0,0,0.3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--black)' }}>메뉴 모음컷</h3>
-              <button onClick={() => setShowCollectionInfo(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#bbb', lineHeight: 1 }}>×</button>
-            </div>
-            {[
-              { name: '일반 모음컷', price: '16,900원~', desc: '여러 메뉴를 한 장에 담는 기본 구성컷', tag: '배달앱·SNS 추천' },
-              { name: '브랜딩 모음컷', price: '27,900원~', desc: '브랜드 아이덴티티가 살아있는 프리미엄 구성컷', tag: '프랜차이즈 본사 추천' },
-            ].map(item => (
-              <div key={item.name} style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 800, fontSize: '15px' }}>{item.name}</span>
-                  <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--orange)' }}>{item.price}</span>
-                </div>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>{item.desc}</p>
-                <span style={{ background: 'rgba(196,81,13,0.1)', color: 'var(--orange)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '100px' }}>{item.tag}</span>
-              </div>
-            ))}
-            <a href="/v2/order?plan=collection" style={{ display: 'block', textAlign: 'center', padding: '13px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '14px', textDecoration: 'none', marginTop: '8px' }}>모음컷 주문하기</a>
+          <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '360px', padding: '32px 24px', boxShadow: '0 24px 80px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>🛠️</div>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--black)', marginBottom: '10px' }}>준비 중입니다.</h3>
+            <p style={{ fontSize: '14px', color: '#888', lineHeight: 1.6, marginBottom: '24px' }}>곧 오픈 예정이에요!</p>
+            <button onClick={() => setShowComingSoonModal(false)} style={{ padding: '12px 32px', borderRadius: '12px', background: 'var(--black)', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', cursor: 'pointer' }}>확인</button>
           </div>
         </div>
       )}
@@ -1006,9 +991,8 @@ function MyPageContent() {
                 <button
                   key={svc.id}
                   onClick={() => {
-                    if (svc.id === 'retouch') setSelectedService('retouch')
-                    else if (svc.id === 'remake') setSelectedService('remake')
-                    else if (svc.id === 'collection') setShowCollectionInfo(true)
+                    if (svc.id === 'remake') setSelectedService('remake')
+                    else if (svc.id === 'collection') setShowComingSoonModal(true)
                   }}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
@@ -1101,98 +1085,7 @@ function MyPageContent() {
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <style>{`@keyframes marquee-rtl { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
 
-          {selectedService === 'retouch' ? (
-            /* ── 미니 랜딩: 메뉴 리터치 ── */
-            <div style={{ flex: 1, overflowY: 'auto', background: '#f0ece6', padding: '20px 16px 32px' }}>
-              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
-
-                {/* 이미지 슬라이드 */}
-                <div style={{ position: 'relative', height: '220px', background: '#111', overflow: 'hidden' }}>
-                  {[
-                    { src: '/noodle-before.jpg', label: 'Before' },
-                    { src: '/noodle-after.jpg',  label: 'After ✨' },
-                  ].map(({ src, label }, i) => (
-                    <img
-                      key={src}
-                      src={src}
-                      alt={label}
-                      style={{
-                        position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-                        opacity: miniSlideIndex === i ? 1 : 0,
-                        transition: 'opacity 0.7s ease',
-                      }}
-                    />
-                  ))}
-                  <span style={{
-                    position: 'absolute', top: '12px', left: '12px',
-                    background: miniSlideIndex === 0 ? 'rgba(0,0,0,0.6)' : 'rgba(196,81,13,0.9)',
-                    color: '#fff', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
-                    transition: 'background 0.3s',
-                  }}>
-                    {miniSlideIndex === 0 ? 'Before' : 'After ✨'}
-                  </span>
-                  <div style={{ position: 'absolute', bottom: '10px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                    {[0, 1].map(i => (
-                      <div key={i} onClick={() => setMiniSlideIndex(i)} style={{
-                        width: miniSlideIndex === i ? '18px' : '6px', height: '6px', borderRadius: '3px', cursor: 'pointer',
-                        background: miniSlideIndex === i ? '#fff' : 'rgba(255,255,255,0.5)',
-                        transition: 'all 0.3s',
-                      }} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* 텍스트 콘텐츠 */}
-                <div style={{ padding: '24px 22px 20px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--orange)', letterSpacing: '2px', marginBottom: '8px' }}>BASIC PLAN</p>
-                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>배달앱 메뉴 사진<br/>AI로 제작해요</h2>
-                  <p style={{ color: '#888', fontSize: '13px', marginBottom: '24px', lineHeight: 1.6 }}>다양한 배경으로 · 플랫폼별 맞춤 사이즈</p>
-
-                  {/* 대량 섹션 */}
-                  <div style={{ background: 'rgba(196,81,13,0.05)', border: '1px solid rgba(196,81,13,0.1)', borderRadius: '14px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '28px', flexShrink: 0 }}>📦</span>
-                    <div>
-                      <p style={{ fontWeight: 800, fontSize: '14px', color: 'var(--black)', marginBottom: '2px' }}>메뉴가 많으신가요?</p>
-                      <p style={{ color: '#888', fontSize: '12px', lineHeight: 1.5 }}>한 번에 통일된 배경으로 · 최대 10장</p>
-                    </div>
-                  </div>
-
-                  {/* 배달앱 로고 마퀴 */}
-                  <p style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginBottom: '12px', textAlign: 'center', letterSpacing: '1px' }}>사용 가능 플랫폼</p>
-                  <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
-                    <div style={{ display: 'flex', gap: '16px', animation: 'marquee-rtl 14s linear infinite', width: 'max-content', alignItems: 'flex-start' }}>
-                      {[
-                        { name: '배달의민족', size: '1280×960', src: '/logos/baemin.png'      },
-                        { name: '쿠팡이츠',   size: '1080×660', src: '/logos/coupangeats.svg' },
-                        { name: '요기요',     size: '1080×640', src: '/logos/yogiyo.png'      },
-                        { name: '땡겨요',     size: '1080×660', src: '/logos/ddanggyeo.svg'   },
-                        { name: '먹깨비',     size: '800×533',  src: '/logos/mukggaebi.webp'  },
-                        { name: '배달의민족', size: '1280×960', src: '/logos/baemin.png'      },
-                        { name: '쿠팡이츠',   size: '1080×660', src: '/logos/coupangeats.svg' },
-                        { name: '요기요',     size: '1080×640', src: '/logos/yogiyo.png'      },
-                        { name: '땡겨요',     size: '1080×660', src: '/logos/ddanggyeo.svg'   },
-                        { name: '먹깨비',     size: '800×533',  src: '/logos/mukggaebi.webp'  },
-                      ].map((logo, i) => (
-                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0, width: '68px' }}>
-                          <img src={logo.src} alt={logo.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '12px' }} />
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#222', textAlign: 'center', whiteSpace: 'nowrap' }}>{logo.name}</span>
-                          <span style={{ fontSize: '10px', color: '#aaa', textAlign: 'center', whiteSpace: 'nowrap' }}>{logo.size}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <div style={{ padding: '4px 22px 22px' }}>
-                  <button
-                    onClick={() => { setSelectedService(null); setModalInitOpts({}); setModalServiceType('retouch'); setShowBasicModal(true) }}
-                    style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'var(--orange)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(196,81,13,0.3)' }}
-                  >만들러 가기 →</button>
-                </div>
-              </div>
-            </div>
-          ) : selectedService === 'remake' ? (
+          {selectedService === 'remake' ? (
             /* ── 미니 랜딩: 메뉴샷(리메이크) ── */
             <div style={{ flex: 1, overflowY: 'auto', background: '#f0ece6', padding: '20px 16px 32px' }}>
               <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }}>

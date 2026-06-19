@@ -558,7 +558,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
         const res = await fetch('/api/credits/use', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ userEmail, amount: gemCost, description: `사진 다운로드 (${serviceType === 'remake' ? '리메이크' : '리터치'})` }),
+          body:    JSON.stringify({ userEmail, amount: gemCost, description: `사진 다운로드 (${serviceType === 'remake' ? '메뉴샷' : '리터치'})` }),
         })
         const data = await res.json()
 
@@ -681,7 +681,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
               ) : (
                 <>
                   <p style={{ fontSize: '10px', color: 'var(--orange)', fontWeight: 700, letterSpacing: '2px', marginBottom: '2px' }}>
-                    {isRemake ? '리메이크' : '리터치'} · STEP {visualStep} / {totalSteps}
+                    {isRemake ? '메뉴샷' : '리터치'} · STEP {visualStep} / {totalSteps}
                   </p>
                   <h3 style={{ fontSize: '16px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
                     {stepTitles[step]}
