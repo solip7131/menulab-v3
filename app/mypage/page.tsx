@@ -551,9 +551,9 @@ function MyPageContent() {
     if (!sessionToken || !sessionEmail) return
     try {
       if (localStorage.getItem(PHONE_OK_KEY(sessionEmail)) === '1') return
-      // 오늘 이미 스킵한 경우 재노출 안 함
-      const skipVal = localStorage.getItem(PHONE_SKIP_KEY(sessionEmail))
-      if (skipVal === new Date().toISOString().slice(0, 10)) return
+      // 스킵 유효 기간(30일) 내이면 재노출 안 함
+      const skipUntil = Number(localStorage.getItem(PHONE_SKIP_KEY(sessionEmail)) ?? 0)
+      if (Date.now() < skipUntil) return
     } catch {}
     fetch('/api/auth/phone-status', { headers: { Authorization: `Bearer ${sessionToken}` } })
       .then(r => r.json())
@@ -1382,7 +1382,7 @@ function MyPageContent() {
             setShowPhoneVerify(false)
           }}
           onSkip={() => {
-            try { if (sessionEmail) localStorage.setItem(PHONE_SKIP_KEY(sessionEmail), new Date().toISOString().slice(0, 10)) } catch {}
+            try { if (sessionEmail) localStorage.setItem(PHONE_SKIP_KEY(sessionEmail), String(Date.now() + 30 * 24 * 60 * 60 * 1000)) } catch {}
             setShowPhoneVerify(false)
           }}
         />
