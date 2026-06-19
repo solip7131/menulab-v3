@@ -97,8 +97,8 @@ const PROMPT_COMPOSE_BG_IMAGE = `Image 1: Food photo (already professionally sho
 Image 2: Background texture reference
 CAMERA: {ANGLE_INSTRUCTION} — do NOT change the viewpoint.
 TASK: Place the food from Image 1 naturally onto the background surface from Image 2.
-FRAMING: Dish occupies 50–60% of image height. Centered horizontally and vertically.
-Show plenty of background — at least 15% margin on all sides.
+FRAMING: Dish occupies 50% of image height. Centered.
+Show plenty of background — 20% margin top, 15% bottom, 15% each side.
 Never crop the dish.
 Match lighting direction from Image 1.
 OUTPUT: Final composited image only.`
@@ -106,8 +106,8 @@ OUTPUT: Final composited image only.`
 const PROMPT_COMPOSE_TEXT_BG = `Image 1: Food photo (already professionally shot)
 CAMERA: {ANGLE_INSTRUCTION} — do NOT change the viewpoint.
 TASK: Place the food from Image 1 onto a {BG_NAME} background.
-FRAMING: Dish occupies 50–60% of image height. Centered horizontally and vertically.
-Show plenty of background — at least 15% margin on all sides.
+FRAMING: Dish occupies 50% of image height. Centered.
+Show plenty of background — 20% margin top, 15% bottom, 15% each side.
 Never crop the dish.
 Match lighting direction from Image 1.
 OUTPUT: Final composited image only.`
