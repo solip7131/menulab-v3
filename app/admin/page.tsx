@@ -87,18 +87,7 @@ export default function V2AdminPage() {
 
   // ── AI 테스트 패널 ──
   const [testMode, setTestMode]               = useState(false)
-  const [testSubMode, setTestSubMode]         = useState<'two-stage' | 'single'>('two-stage')
-  const [testPhotos, setTestPhotos]           = useState<File[]>([])
-  const [testAngle, setTestAngle]             = useState<'original' | 'side45' | 'topdown'>('original')
-  const [testBg, setTestBg]                   = useState<'black' | 'white'>('black')
-  const [testVesselId, setTestVesselId]       = useState('original')
-  const [testPrompt, setTestPrompt]           = useState('')
-  const [testStage1Urls, setTestStage1Urls]   = useState<string[]>([])
-  const [testStage2Urls, setTestStage2Urls]   = useState<string[]>([])
-  const [testOriginalUrls, setTestOriginalUrls] = useState<string[]>([])
-  const [testStage1Loading, setTestStage1Loading] = useState(false)
-  const [testStage2Loading, setTestStage2Loading] = useState(false)
-  const testInputRef = useRef<HTMLInputElement>(null)
+  const [testSubMode, setTestSubMode]         = useState<'single' | 'full'>('single')
 
   // ── 단일 호출 테스트 ──
   const [singlePhotos, setSinglePhotos]       = useState<File[]>([])
@@ -111,17 +100,51 @@ export default function V2AdminPage() {
   const [singleLoading, setSingleLoading]     = useState(false)
   const singleInputRef                        = useRef<HTMLInputElement>(null)
 
-  const TEST_VESSELS = [
-    { id: 'original',        label: '원본 그대로' },
-    { id: 'white-plate',     label: '흰색 접시' },
-    { id: 'black-plate',     label: '검정 접시' },
-    { id: 'ttukbaegi',       label: '뚝배기' },
-    { id: 'noodle-bowl',     label: '면기' },
-    { id: 'naengmyeon-bowl', label: '냉면기' },
-    { id: 'hotpot',          label: '전골냄비' },
-    { id: 'pasta-bowl',      label: '파스타 볼' },
-    { id: 'wood-board',      label: '우드 도마' },
+  // ── 풀 플로우 테스트 ──
+  type FullPlatResult = { platform: string; wmUrl: string; error?: string }
+  const FULL_PLATFORMS = [
+    { name: '배달의민족', width: 1280, height: 960  },
+    { name: '쿠팡이츠',   width: 1080, height: 660  },
+    { name: '요기요',     width: 1080, height: 640  },
+    { name: '땡겨요',     width: 1080, height: 660  },
+    { name: '먹깨비',     width: 800,  height: 533  },
   ]
+  const FULL_BG_PRESETS = [
+    { id: 'lightgray',          label: '라이트그레이',       src: '/backgrounds/lightgray.jpg',           promptSrc: null },
+    { id: 'ivory',              label: '아이보리',           src: '/backgrounds/ivory.jpg',               promptSrc: null },
+    { id: 'concrete',           label: '블랙 콘크리트',      src: '/backgrounds/concrete.jpg',            promptSrc: null },
+    { id: 'marble',             label: '화이트 대리석타일',  src: '/backgrounds/marble.jpg',              promptSrc: null },
+    { id: 'ivory-silk',         label: '아이보리 실크',      src: '/backgrounds/ivory-silk.jpg',          promptSrc: '/backgrounds/prompt/ivory-silk.png' },
+    { id: 'gray-concrete',      label: '그레이 콘크리트',    src: '/backgrounds/gray-concrete.jpg',       promptSrc: '/backgrounds/prompt/gray-concrete.png' },
+    { id: 'white-touched-paint',label: '화이트 터치드페인트',src: '/backgrounds/white-touched-paint.jpg', promptSrc: '/backgrounds/prompt/white-touched-paint.png' },
+    { id: 'beige-wood',         label: '베이지우드',         src: '/backgrounds/beige-wood.jpg',          promptSrc: '/backgrounds/prompt/beige-wood.png' },
+    { id: 'dark-brown-wood',    label: '다크브라운 우드',    src: '/backgrounds/dark-brown-wood.jpg',     promptSrc: '/backgrounds/prompt/dark-brown-wood.png' },
+    { id: 'dark-gray',          label: '다크그레이',         src: '/backgrounds/dark-gray.jpg',           promptSrc: '/backgrounds/prompt/dark-gray.png' },
+  ]
+  const FULL_VESSELS = [
+    { id: 'original',          label: '원본 그대로' },
+    { id: 'white-noodle-bowl', label: '흰색 면기' },
+    { id: 'black-noodle-bowl', label: '검정 면기' },
+    { id: 'white-plate',       label: '흰색 접시' },
+    { id: 'black-plate',       label: '검정 접시' },
+    { id: 'ttukbbaeki',        label: '뚝배기' },
+    { id: 'black-pot',         label: '전골냄비' },
+    { id: 'cold-noodle-bowl',  label: '스텐 냉면보울' },
+    { id: 'pasta-bowl',        label: '파스타볼' },
+  ]
+  const [fullPhoto, setFullPhoto]             = useState<File | null>(null)
+  const [fullServiceType, setFullServiceType] = useState<'retouch' | 'remake'>('retouch')
+  const [fullAngle, setFullAngle]             = useState<'original' | 'side45' | 'topdown'>('original')
+  const [fullVessel, setFullVessel]           = useState('original')
+  const [fullBgPresetId, setFullBgPresetId]   = useState<string | null>('lightgray')
+  const [fullBgPrompt, setFullBgPrompt]       = useState('')
+  const [fullBgMode, setFullBgMode]           = useState<'preset' | 'prompt'>('preset')
+  const [fullPlatSel, setFullPlatSel]         = useState<Set<string>>(new Set(['배달의민족']))
+  const [fullLoading, setFullLoading]         = useState(false)
+  const [fullResults, setFullResults]         = useState<FullPlatResult[]>([])
+  const [fullOrigUrl, setFullOrigUrl]         = useState<string | null>(null)
+  const [fullError, setFullError]             = useState<string | null>(null)
+  const fullInputRef                          = useRef<HTMLInputElement>(null)
 
   const SINGLE_VESSELS = [
     { id: 'original',          label: '원본 그대로' },
@@ -292,51 +315,6 @@ export default function V2AdminPage() {
     setExportLoading(false)
   }
 
-  const runTestStage1 = async () => {
-    if (!testPhotos.length) return
-    setTestStage1Loading(true)
-    setTestStage1Urls([])
-    setTestStage2Urls([])
-    setTestOriginalUrls(testPhotos.map(f => URL.createObjectURL(f)))
-    const results: string[] = []
-    for (const photo of testPhotos) {
-      try {
-        const fd = new FormData()
-        fd.append('stage', '1')
-        fd.append('photo', photo)
-        fd.append('angle', testAngle)
-        fd.append('background', testBg)
-        fd.append('customPrompt', testPrompt)
-        const res = await fetch('/api/v2/test-generate', { method: 'POST', body: fd })
-        const data = await res.json()
-        results.push(data.error ? '' : data.url)
-      } catch { results.push('') }
-      setTestStage1Urls([...results])
-    }
-    setTestStage1Loading(false)
-  }
-
-  const runTestStage2 = async () => {
-    if (!testStage1Urls.length || testVesselId === 'original') return
-    setTestStage2Loading(true)
-    setTestStage2Urls([])
-    const results: string[] = []
-    for (const s1url of testStage1Urls) {
-      if (!s1url) { results.push(''); setTestStage2Urls([...results]); continue }
-      try {
-        const fd = new FormData()
-        fd.append('stage', '2')
-        fd.append('stage1Url', s1url)
-        fd.append('vesselId', testVesselId)
-        const res = await fetch('/api/v2/test-generate', { method: 'POST', body: fd })
-        const data = await res.json()
-        results.push(data.error ? '' : data.url)
-      } catch { results.push('') }
-      setTestStage2Urls([...results])
-    }
-    setTestStage2Loading(false)
-  }
-
   const runSingleCallTest = async () => {
     if (!singlePhotos.length) return
     setSingleLoading(true)
@@ -502,7 +480,7 @@ export default function V2AdminPage() {
 
             {/* 탭 */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              {([['two-stage', '2단계 테스트'], ['single', '단일 호출 테스트']] as const).map(([v, l]) => (
+              {([['single', '단일 호출 테스트'], ['full', '풀 플로우 테스트']] as const).map(([v, l]) => (
                 <button key={v} onClick={() => setTestSubMode(v)} style={{ padding: '8px 18px', borderRadius: '100px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testSubMode === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
               ))}
             </div>
@@ -644,161 +622,9 @@ export default function V2AdminPage() {
                 )}
               </div>
             ) : (
-              /* ── 2단계 테스트 (기존) ── */
+              /* ── 풀 플로우 테스트 ── */
               <div>
-
-            {/* ── 설정 영역 ── */}
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-
-              {/* 사진 업로드 */}
-              <div
-                onClick={() => testInputRef.current?.click()}
-                style={{ border: `2px dashed ${testPhotos.length ? 'rgba(196,81,13,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '16px 20px', cursor: 'pointer', marginBottom: testPhotos.length ? '10px' : '16px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}
-              >
-                <p style={{ fontSize: '20px' }}>📷</p>
-                <p style={{ fontWeight: 700, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-                  {testPhotos.length ? `${testPhotos.length}장 선택됨 — 클릭해서 추가/변경` : '테스트할 사진 업로드 (여러 장 가능)'}
-                </p>
-                <input ref={testInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { if (e.target.files?.length) { setTestPhotos(Array.from(e.target.files)); setTestStage1Urls([]); setTestStage2Urls([]) } e.target.value = '' }} />
-              </div>
-              {testPhotos.length > 0 && (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                  {testPhotos.map((f, i) => (
-                    <div key={i} style={{ position: 'relative' }}>
-                      <img src={URL.createObjectURL(f)} alt="" style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
-                      <button onClick={e => { e.stopPropagation(); setTestPhotos(prev => prev.filter((_, j) => j !== i)); setTestStage1Urls([]); setTestStage2Urls([]) }} style={{ position: 'absolute', top: '-4px', right: '-4px', width: '18px', height: '18px', borderRadius: '50%', background: '#ff3b30', border: 'none', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 구도 + 배경 */}
-              <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <div>
-                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {([['original', '원본구도'], ['topdown', '항공뷰'], ['side45', '측면뷰']] as const).map(([v, l]) => (
-                      <button key={v} onClick={() => setTestAngle(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>배경</p>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {([['black', '🌑 어두운'], ['white', '☀️ 밝은']] as const).map(([v, l]) => (
-                      <button key={v} onClick={() => setTestBg(v)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testBg === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 커스텀 프롬프트 */}
-              <div>
-                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>커스텀 프롬프트 <span style={{ fontWeight: 400, opacity: 0.7 }}>(비워두면 위 옵션 기반 기본 프롬프트)</span></p>
-                <textarea
-                  value={testPrompt}
-                  onChange={e => setTestPrompt(e.target.value)}
-                  placeholder="비워두면 선택한 구도 + 배경으로 실제 주문과 동일한 프롬프트가 적용됩니다."
-                  rows={3}
-                  style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none', resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box', fontFamily: 'inherit' }}
-                />
-              </div>
-            </div>
-
-            {/* ── 1단계 ── */}
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: testStage1Urls.length ? '14px' : 0 }}>
-                <div>
-                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>① 1단계 — 음식 업그레이드</p>
-                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>원본 사진 → 각도 / 배경 기준으로 재촬영</p>
-                </div>
-                <button
-                  onClick={runTestStage1}
-                  disabled={testStage1Loading || !testPhotos.length}
-                  style={{ padding: '10px 22px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: (testStage1Loading || !testPhotos.length) ? 'not-allowed' : 'pointer', background: (testStage1Loading || !testPhotos.length) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #FFD600, #FF8C00)', color: (testStage1Loading || !testPhotos.length) ? 'rgba(255,255,255,0.3)' : '#000', flexShrink: 0 }}
-                >
-                  {testStage1Loading ? `처리 중... (${testStage1Urls.length}/${testPhotos.length})` : testStage1Urls.length ? '↺ 재실행' : '▶ 실행'}
-                </button>
-              </div>
-              {testStage1Urls.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {testPhotos.map((_, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '5px' }}>원본 {testPhotos.length > 1 ? i + 1 : ''}</p>
-                        <img src={testOriginalUrls[i]} alt="원본" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '5px' }}>1단계 결과 {testPhotos.length > 1 ? i + 1 : ''}</p>
-                        {testStage1Urls[i] ? (
-                          <a href={testStage1Urls[i]} download={`stage1_${i + 1}.jpg`} style={{ display: 'block' }}>
-                            <img src={testStage1Urls[i]} alt="1단계" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #FF8C00' }} />
-                          </a>
-                        ) : (
-                          <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{testStage1Loading ? '처리 중...' : '실패'}</p>
-                          </div>
-                        )}
-                        {testStage1Urls[i] && <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', textAlign: 'center' }}>클릭하면 다운로드</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ── 2단계 ── */}
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '18px', opacity: testStage1Urls.length ? 1 : 0.4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                <div>
-                  <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>② 2단계 — 그릇 교체</p>
-                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>1단계 결과 → 선택한 그릇으로 교체</p>
-                </div>
-                <button
-                  onClick={runTestStage2}
-                  disabled={testStage2Loading || !testStage1Urls.length || testVesselId === 'original'}
-                  style={{ padding: '10px 22px', borderRadius: '100px', fontSize: '13px', fontWeight: 800, border: 'none', cursor: (testStage2Loading || !testStage1Urls.length || testVesselId === 'original') ? 'not-allowed' : 'pointer', background: (testStage2Loading || !testStage1Urls.length || testVesselId === 'original') ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #5856D6, #007AFF)', color: (testStage2Loading || !testStage1Urls.length || testVesselId === 'original') ? 'rgba(255,255,255,0.3)' : '#fff', flexShrink: 0 }}
-                >
-                  {testStage2Loading ? `처리 중... (${testStage2Urls.length}/${testStage1Urls.length})` : testStage2Urls.length ? '↺ 재실행' : '▶ 실행'}
-                </button>
-              </div>
-
-              {/* 그릇 선택 */}
-              <div style={{ marginBottom: testStage2Urls.length ? '14px' : 0 }}>
-                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>그릇 선택</p>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {TEST_VESSELS.filter(v => v.id !== 'original').map(v => (
-                    <button key={v.id} onClick={() => setTestVesselId(v.id)} style={{ padding: '6px 13px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testVesselId === v.id ? '#5856D6' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v.label}</button>
-                  ))}
-                </div>
-              </div>
-
-              {testStage2Urls.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {testStage1Urls.map((s1url, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '5px' }}>1단계 {testStage1Urls.length > 1 ? i + 1 : ''}</p>
-                        <img src={s1url} alt="1단계" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block' }} />
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '11px', color: '#34C759', marginBottom: '5px' }}>2단계 결과 {testStage1Urls.length > 1 ? i + 1 : ''} ✨</p>
-                        {testStage2Urls[i] ? (
-                          <a href={testStage2Urls[i]} download={`stage2_${i + 1}.jpg`} style={{ display: 'block' }}>
-                            <img src={testStage2Urls[i]} alt="2단계" style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '8px', display: 'block', border: '2px solid #34C759' }} />
-                          </a>
-                        ) : (
-                          <div style={{ width: '100%', aspectRatio: '3/2', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{testStage2Loading ? '처리 중...' : '실패'}</p>
-                          </div>
-                        )}
-                        {testStage2Urls[i] && <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', textAlign: 'center' }}>클릭하면 다운로드</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '20px' }}>준비 중</p>
               </div>
             )}
           </div>
