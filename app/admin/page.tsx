@@ -354,9 +354,16 @@ export default function V2AdminPage() {
     setFullOrigUrl(URL.createObjectURL(fullPhoto))
 
     try {
-      // 사진 → base64
-      const ab = await fullPhoto.arrayBuffer()
-      const base64 = btoa(Array.from(new Uint8Array(ab), b => String.fromCharCode(b)).join(''))
+      // 사진 → base64 (FileReader — non-blocking)
+      const toBase64 = (file: File | Blob): Promise<string> =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve((reader.result as string).split(',')[1])
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+
+      const base64 = await toBase64(fullPhoto)
       const mime = fullPhoto.type || 'image/jpeg'
 
       // 배경 이미지 로드 (preset인 경우 promptSrc 우선)
@@ -372,9 +379,9 @@ export default function V2AdminPage() {
           const bgSrc = preset.promptSrc ?? preset.src
           try {
             const bgRes = await fetch(bgSrc)
-            const bgBuf = await bgRes.arrayBuffer()
-            bgImageBase64 = btoa(Array.from(new Uint8Array(bgBuf), b => String.fromCharCode(b)).join(''))
-            bgImageMime = bgRes.headers.get('content-type') || 'image/jpeg'
+            const bgBlob = await bgRes.blob()
+            bgImageBase64 = await toBase64(bgBlob)
+            bgImageMime = bgBlob.type || 'image/jpeg'
           } catch {}
         }
       } else if (fullBgMode === 'prompt') {
