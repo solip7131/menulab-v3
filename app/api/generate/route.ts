@@ -156,6 +156,7 @@ async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image-prev
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const result = await ai.interactions.create({
+        api_version: 'v1alpha',
         model: modelName,
         input: toInteractionInput(parts) as never,
         response_modalities: ['IMAGE', 'TEXT'] as never,

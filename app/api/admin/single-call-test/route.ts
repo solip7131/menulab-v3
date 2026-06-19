@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     ].filter(Boolean).join('\n')
 
     const result = await ai.interactions.create({
+      api_version: 'v1alpha',
       model: 'gemini-3-pro-image-preview',
       input: [{
         role: 'user',
