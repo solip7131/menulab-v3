@@ -139,19 +139,19 @@ async function buildLogoWm(targetW: number, targetH: number): Promise<Buffer | n
 
 // ── Platform config ───────────────────────────────────────────────────────────
 
-type PlatConfig = { aspectRatio: string; finalW: number; finalH: number }
+type PlatConfig = { aspectRatio: string }
 
 const PLATFORM_CONFIG: Record<string, PlatConfig> = {
-  '배달의민족': { aspectRatio: '4:3',  finalW: 1280, finalH: 960  },
-  '쿠팡이츠':   { aspectRatio: '16:9', finalW: 1080, finalH: 660  },
-  '요기요':     { aspectRatio: '16:9', finalW: 1080, finalH: 640  },
-  '땡겨요':     { aspectRatio: '16:9', finalW: 1080, finalH: 660  },
-  '먹깨비':     { aspectRatio: '3:2',  finalW: 800,  finalH: 533  },
-  '기본':       { aspectRatio: '4:3',  finalW: 1280, finalH: 960  },
+  '배달의민족': { aspectRatio: '4:3'  },
+  '쿠팡이츠':   { aspectRatio: '16:9' },
+  '요기요':     { aspectRatio: '16:9' },
+  '땡겨요':     { aspectRatio: '16:9' },
+  '먹깨비':     { aspectRatio: '3:2'  },
+  '기본':       { aspectRatio: '4:3'  },
 }
 
-function getPlatConfig(platName: string, w: number, h: number): PlatConfig {
-  return PLATFORM_CONFIG[platName] ?? { aspectRatio: '4:3', finalW: w, finalH: h }
+function getPlatConfig(platName: string): PlatConfig {
+  return PLATFORM_CONFIG[platName] ?? { aspectRatio: '4:3' }
 }
 
 const GEMINI_ASPECT_RATIOS = new Set(['1:1', '3:4', '4:3', '9:16', '16:9'])
@@ -179,7 +179,7 @@ async function callGemini(
         contents: contents as never,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          imageConfig: { aspectRatio: geminiAspect, imageSize: '2K' },
+          imageConfig: { aspectRatio: geminiAspect },
         } as never,
       })
       const resParts: unknown[] = (result as any).candidates?.[0]?.content?.parts ?? []
@@ -287,8 +287,8 @@ export async function POST(req: NextRequest) {
     // ── Single Gemini call per platform ───────────────────────────────────────
     const platResults = await Promise.all(
       platformList.map(async (plat) => {
-        const platCfg = getPlatConfig(plat.name, plat.width, plat.height)
-        console.log(`[generate] ${plat.name} — aspect:${platCfg.aspectRatio} ${platCfg.finalW}x${platCfg.finalH}`)
+        const platCfg = getPlatConfig(plat.name)
+        console.log(`[generate] ${plat.name} — aspect:${platCfg.aspectRatio}`)
 
         const parts: unknown[] = [
           { inlineData: { data: foodBase64, mimeType: foodMime } },
@@ -302,13 +302,12 @@ export async function POST(req: NextRequest) {
         try {
           const img = await callGemini(parts, platCfg.aspectRatio)
 
-          const resized = await sharp(Buffer.from(img.data, 'base64'))
-            .resize(platCfg.finalW, platCfg.finalH, { fit: 'fill' })
+          const jpegBuffer = await sharp(Buffer.from(img.data, 'base64'))
             .jpeg({ quality: 92 })
             .toBuffer()
-          const resizedB64 = resized.toString('base64')
+          const jpegB64 = jpegBuffer.toString('base64')
 
-          const upload = await uploadWithWatermark(resizedB64)
+          const upload = await uploadWithWatermark(jpegB64)
           if (!upload) return null
 
           try {
@@ -324,7 +323,7 @@ export async function POST(req: NextRequest) {
           console.log(`[generate] ${plat.name} done`)
           return {
             platform:    plat.name,
-            imageBase64: resizedB64,
+            imageBase64: jpegB64,
             imageMime:   'image/jpeg',
             wmUrl:       upload.wmUrl,
             origUrl:     upload.origUrl,
