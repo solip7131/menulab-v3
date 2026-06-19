@@ -126,7 +126,7 @@ function buildWmSvg(w: number, h: number): Buffer {
 
 // ── Gemini call with retry ────────────────────────────────────────────────────
 
-async function callGemini(parts: unknown[], modelName = 'gemini-3.1-flash-image'): Promise<{ data: string; mimeType: string }> {
+async function callGemini(parts: unknown[], modelName = 'gemini-3-pro-image'): Promise<{ data: string; mimeType: string }> {
   const model = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: { responseModalities: ['IMAGE', 'TEXT'] } as never,
