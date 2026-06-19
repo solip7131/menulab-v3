@@ -545,7 +545,16 @@ function MyPageContent() {
     if (!raw) return
     try {
       const { token, email: e, name, kakaoId: kid } = JSON.parse(raw)
-      setSessionEmail(e); setSessionName(name || ''); setSessionToken(token); setSessionKakaoId(kid ?? null)
+      // kakaoId가 localStorage에 없으면 JWT 페이로드에서 직접 추출 (구버전 세션 대응)
+      let resolvedKakaoId = kid
+      if (!resolvedKakaoId && token) {
+        try {
+          const [payload] = token.split('.')
+          const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+          resolvedKakaoId = decoded.kakaoId || null
+        } catch {}
+      }
+      setSessionEmail(e); setSessionName(name || ''); setSessionToken(token); setSessionKakaoId(resolvedKakaoId ?? null)
     } catch { localStorage.removeItem(SESSION_KEY) }
   }, [])
 
