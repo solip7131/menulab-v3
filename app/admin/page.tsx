@@ -368,12 +368,11 @@ export default function V2AdminPage() {
         })
 
       // 이미지 압축 (큰 사진 → request body 4.5MB 초과 방지)
-      const compressForUpload = async (file: File | Blob, quality = 0.85): Promise<Blob> => {
+      const compressForUpload = async (file: File | Blob, quality = 0.85, maxDim = 1400): Promise<Blob> => {
         const bitmap = await createImageBitmap(file)
-        const MAX_DIM = 1400
         let w = bitmap.width, h = bitmap.height
-        if (w > MAX_DIM || h > MAX_DIM) {
-          const ratio = Math.min(MAX_DIM / w, MAX_DIM / h)
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h)
           w = Math.round(w * ratio); h = Math.round(h * ratio)
         }
         const canvas = document.createElement('canvas')
@@ -400,7 +399,7 @@ export default function V2AdminPage() {
           try {
             const bgRes = await fetch(bgSrc)
             const bgBlob = await bgRes.blob()
-            const compressedBg = await compressForUpload(bgBlob)
+            const compressedBg = await compressForUpload(bgBlob, 0.7, 800)
             bgImageBase64 = await toBase64(compressedBg)
             bgImageMime = 'image/jpeg'
           } catch {}
