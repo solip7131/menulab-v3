@@ -151,6 +151,7 @@ export default function V2AdminPage() {
 
   // ── 2콜 테스트 ──
   const [twoCallPhoto, setTwoCallPhoto]           = useState<File | null>(null)
+  const [twoCallAngle, setTwoCallAngle]           = useState<'original' | 'side45' | 'topdown'>('original')
   const [twoCallBgMode, setTwoCallBgMode]         = useState<'preset' | 'prompt'>('preset')
   const [twoCallBgPresetId, setTwoCallBgPresetId] = useState<string | null>('lightgray')
   const [twoCallBgPrompt, setTwoCallBgPrompt]     = useState('')
@@ -496,6 +497,7 @@ export default function V2AdminPage() {
       const compressed = await compressImg(twoCallPhoto)
       fd.append('photo', new File([compressed], 'photo.jpg', { type: 'image/jpeg' }))
       fd.append('targetRatio', twoCallRatio)
+      fd.append('angle', twoCallAngle)
 
       if (twoCallBgMode === 'preset' && twoCallBgPresetId) {
         const preset = FULL_BG_PRESETS.find(p => p.id === twoCallBgPresetId)
@@ -687,6 +689,14 @@ export default function V2AdminPage() {
                     <p style={{ fontSize: '20px' }}>📷</p>
                     <p style={{ fontWeight: 700, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>{twoCallPhoto ? twoCallPhoto.name : '사진 1장 업로드'}</p>
                     <input ref={twoCallInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) { setTwoCallPhoto(e.target.files[0]); setTwoCallCall1Url(null); setTwoCallCall2Url(null); setTwoCallError(null) } e.target.value = '' }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {([['original', '원본구도'], ['side45', '측면45'], ['topdown', '탑다운']] as const).map(([v, l]) => (
+                        <button key={v} onClick={() => setTwoCallAngle(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: twoCallAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>배경</p>

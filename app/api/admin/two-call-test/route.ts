@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
     const backgroundName = formData.get('backgroundName') as string | undefined
     const bgPrompt       = formData.get('bgPrompt')       as string | undefined
     const targetRatio    = (formData.get('targetRatio') as string) || '4:3'
+    const angle          = (formData.get('angle') as string) || 'original'
 
     const arrayBuffer = await photo.arrayBuffer()
     const foodBase64  = Buffer.from(arrayBuffer).toString('base64')
@@ -136,8 +137,13 @@ export async function POST(req: NextRequest) {
     if (hasBgImage) {
       call1Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
     }
+    const ANGLE_INSTRUCTIONS: Record<string, string> = {
+      original: 'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
+      side45:   'Camera: 45-degree side angle, dish rim visible as ellipse, side of dish clearly visible.',
+      topdown:  'Camera: directly overhead (90-degree top-down view), food fills frame naturally.',
+    }
     call1Parts.push([
-      'Keep the ORIGINAL camera angle and composition as close as possible to the input photo.',
+      ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original,
       'Naturally enhance color, lighting, and food appearance while preserving the original viewpoint.',
       hasBgImage
         ? 'Image 2 is the background texture reference. Place the food naturally onto that background surface.'
