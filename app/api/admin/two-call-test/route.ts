@@ -187,11 +187,14 @@ export async function POST(req: NextRequest) {
       topdown:  '구도는 top down view.',
     }
 
-    // ── Call 1: 음식 퀄리티 극대화 (최소 프롬프트) ──────────────────────────────
-    // 포맷: "음식사진 업그레이드 해줘.\n구도는 top down view. 어두운 surface"
-    const angleKo   = ANGLE_KO[angle]
-    const line2Parts = [angleKo, `${call1BgColor} surface`].filter(Boolean)
-    const call1Lines = ['음식사진 업그레이드 해줘.', line2Parts.join(' ')]
+    // ── Call 1: 음식 퀄리티 극대화 (최소 프롬프트, 3줄 고정) ────────────────────
+    // 포맷: "음식사진 업그레이드 해줘\n구도는 top down view\nwhite surface"
+    const angleKo    = ANGLE_KO[angle]
+    const call1Lines = [
+      '음식사진 업그레이드 해줘',
+      angleKo,
+      `${call1BgColor} surface`,
+    ].filter(Boolean)
 
     const call1Parts: unknown[] = [
       { inlineData: { data: foodBase64, mimeType: foodMime } },
