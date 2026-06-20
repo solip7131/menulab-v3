@@ -152,7 +152,7 @@ export default function V2AdminPage() {
 
   // ── 2콜 테스트 ──
   const [twoCallPhoto, setTwoCallPhoto]           = useState<File | null>(null)
-  const [twoCallAngle, setTwoCallAngle]           = useState<'original' | 'side45' | 'heroshot' | 'topdown'>('original')
+  const [twoCallAngle, setTwoCallAngle]           = useState<'original' | 'side45' | 'topdown'>('original')
   const [twoCallBgMode, setTwoCallBgMode]         = useState<'preset' | 'prompt'>('preset')
   const [twoCallBgPresetId, setTwoCallBgPresetId] = useState<string | null>('lightgray')
   const [twoCallBgPrompt, setTwoCallBgPrompt]     = useState('')
@@ -711,7 +711,7 @@ export default function V2AdminPage() {
                   <div>
                     <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>구도</p>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      {([['original', '원본구도'], ['side45', '측면샷'], ['heroshot', '측면샷2'], ['topdown', '탑다운']] as const).map(([v, l]) => (
+                      {([['original', '원본구도'], ['side45', '측면샷'], ['topdown', '탑다운']] as const).map(([v, l]) => (
                         <button key={v} onClick={() => setTwoCallAngle(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: twoCallAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
                       ))}
                     </div>
