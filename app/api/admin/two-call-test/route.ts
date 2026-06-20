@@ -21,6 +21,7 @@ const VESSEL_LABELS: Record<string, string> = {
   'black-pot':         'black cast iron hot pot',
   'cold-noodle-bowl':  'stainless steel cold noodle bowl',
   'pasta-bowl':        'wide rimmed white pasta bowl',
+  'wood-bowl':         'round wooden salad bowl',
 }
 
 const BG_SURFACE: Record<string, string> = {

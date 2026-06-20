@@ -1045,6 +1045,7 @@ export default function BasicPlanModal({ onClose, onGenerate, initialPlatNames, 
                   { id: 'black-pot',         img: '/bowls/07-black-pot.png',         label: '전골냄비',      desc: '전골, 찜 등' },
                   { id: 'cold-noodle-bowl',  img: '/bowls/08-cold-noodle-bowl.png',  label: '스텐 냉면보울', desc: '냉면류' },
                   { id: 'pasta-bowl',        img: '/bowls/09-pasta-bowl.png',        label: '파스타볼',      desc: '파스타, 리조또 등' },
+                  { id: 'wood-bowl',         img: '/bowls/10-wood-bowl.png',         label: '우드볼',        desc: '샐러드, 덮밥 등' },
                 ].map(opt => (
                   <button
                     key={opt.id}

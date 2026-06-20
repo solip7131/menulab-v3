@@ -134,6 +134,7 @@ export default function V2AdminPage() {
     { id: 'black-pot',         label: '전골냄비' },
     { id: 'cold-noodle-bowl',  label: '스텐 냉면보울' },
     { id: 'pasta-bowl',        label: '파스타볼' },
+    { id: 'wood-bowl',         label: '우드볼(샐러드)' },
   ]
   const [fullPhoto, setFullPhoto]             = useState<File | null>(null)
   const [fullServiceType, setFullServiceType] = useState<'remake' | 'collection'>('remake')
@@ -173,6 +174,7 @@ export default function V2AdminPage() {
     { id: 'black-pot',         label: '전골냄비' },
     { id: 'cold-noodle-bowl',  label: '스텐 냉면보울' },
     { id: 'pasta-bowl',        label: '파스타볼' },
+    { id: 'wood-bowl',         label: '우드볼(샐러드)' },
   ]
 
   useEffect(() => { if (authed) fetchOrders() }, [authed])
