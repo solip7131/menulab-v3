@@ -28,7 +28,7 @@ const PF_TABS = [
 const FAQ = [
   { q: '메뉴랩은 어떤 서비스인가요?', a: '메뉴랩은 사장님이 직접 찍은 음식 사진을 AI로 스튜디오급으로 바꿔주는 서비스예요. 카카오 로그인 후 젬을 충전하고, 사진을 업로드하면 30초 만에 전문가 수준의 메뉴 사진이 완성됩니다. 촬영도, 포토그래퍼도 필요 없어요.' },
   { q: '젬(💎)이 뭔가요?', a: '젬은 메뉴랩에서 사진을 제작할 때 사용하는 포인트예요. 구독 플랜을 선택하면 매월 젬이 자동 지급되고, 추가로 필요할 땐 일회성 패키지로도 충전할 수 있어요. 메뉴샷 1장에 20젬이 필요합니다.' },
-  { q: '어떤 서비스 종류가 있나요?', a: '두 가지 서비스가 있어요. ① 메뉴샷(20젬): 배경·그릇·분위기까지 원하는 스타일로 완전히 변경 ② 메뉴 모음컷: 여러 메뉴를 하나의 고급 이미지로 구성.' },
+  { q: '어떤 서비스 종류가 있나요?', a: '두 가지 서비스가 있어요. ① 메뉴샷(20젬): 배경·그릇·분위기까지 원하는 스타일로 완전히 변경 ② 모음컷: 여러 메뉴를 하나의 고급 이미지로 구성.' },
   { q: '사진을 잘 찍는 방법이 있나요?', a: '두 가지만 지켜주세요. ① 밝은 곳에서 흔들리지 않게 ② 음식이 화면 가득 차도록 가까이서 촬영. 배달앱 리뷰 사진을 업로드하셔도 됩니다.' },
   { q: '결과물은 얼마나 걸리나요?', a: 'AI가 자동으로 생성하기 때문에 보통 30초~2분 이내로 완성돼요. 완성된 결과물은 마이페이지에서 바로 확인하고 다운로드할 수 있습니다.' },
   { q: '"사진 사기" 리뷰가 생기지 않을까요?', a: '없는 재료를 만들어내거나 실제 제공량을 과장하지 않아요. 실제 음식의 색감·질감·구도를 자연스럽게 개선하는 수준으로만 작업하기 때문에 "올려도 안전한" 보정입니다.' },
@@ -50,7 +50,7 @@ const REVIEWS = [
 
 const SERVICES = [
   { gem: '💎 20젬 / 장', name: '메뉴샷',     desc: '업그레이드된 음식에 배경과 그릇까지 직접 선택하세요.' },
-  { gem: '💎 40젬~',     name: '메뉴 모음컷', desc: '일반 모음컷부터 브랜딩용 모음컷까지 한 번에 완성해요.' },
+  { gem: '💎 40젬~',     name: '모음컷', desc: '일반 모음컷부터 브랜딩용 모음컷까지 한 번에 완성해요.' },
 ]
 
 const PLATFORMS = [
@@ -844,7 +844,7 @@ export default function HomePage() {
           </div>
           <div className="sv-grid">
             {SERVICES.map((s, i) => {
-              const disabled = s.name === '메뉴 모음컷'
+              const disabled = s.name === '모음컷'
               return (
                 <div
                   key={i}
@@ -942,7 +942,7 @@ export default function HomePage() {
             <div style={{ display: 'flex', gap: '48px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.05em', marginBottom: '4px' }}>서비스</h4>
-                {['메뉴샷', '메뉴 모음컷'].map(item => (
+                {['메뉴샷', '모음컷'].map(item => (
                   <span key={item} onClick={handleOpenBasic} style={{ fontSize: '14px', color: 'rgba(255,255,255,0.38)', cursor: 'pointer', transition: 'color 0.2s' }}
                     onMouseEnter={e => (e.target as HTMLElement).style.color = 'rgba(255,255,255,0.7)'}
                     onMouseLeave={e => (e.target as HTMLElement).style.color = 'rgba(255,255,255,0.38)'}
