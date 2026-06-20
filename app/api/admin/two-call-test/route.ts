@@ -45,37 +45,37 @@ const BG_SURFACE: Record<string, string> = {
 }
 
 const BG_TONE: Record<string, string> = {
-  '라이트그레이':         '라이트그레이',
+  '라이트그레이':         '밝은',
   '아이보리':             '아이보리',
-  '화이트 대리석타일':    '화이트',
-  '블랙 콘크리트':        '블랙',
+  '화이트 대리석타일':    '밝은',
+  '블랙 콘크리트':        '어두운',
   '아이보리 실크':        '아이보리',
   '아이보리 페이퍼':      '아이보리',
   '그레이 콘크리트':      '그레이',
   '거친 그레이 콘크리트': '그레이',
-  '화이트 터치드페인트':  '화이트',
-  '화이트우드':           '화이트',
+  '화이트 터치드페인트':  '밝은',
+  '화이트우드':           '밝은',
   '아이보리 우드':        '아이보리',
   '베이지우드':           '베이지',
   '브라운우드':           '브라운',
-  '다크브라운 우드':      '다크브라운',
-  '블랙 우드':            '블랙',
-  '다크그레이':           '다크그레이',
-  '레몬':                 '레몬옐로우',
-  '베이비핑크':           '베이비핑크',
+  '다크브라운 우드':      '어두운',
+  '블랙 우드':            '어두운',
+  '다크그레이':           '어두운',
+  '레몬':                 '밝은',
+  '베이비핑크':           '밝은',
 }
 
 function getCall1BgTone(backgroundName?: string, bgPrompt?: string): string {
   if (backgroundName && BG_TONE[backgroundName]) return BG_TONE[backgroundName]
   if (bgPrompt) {
     const p = bgPrompt.toLowerCase()
-    if (p.includes('블랙') || p.includes('black') || p.includes('검')) return '블랙'
-    if (p.includes('다크') || p.includes('dark'))                       return '다크그레이'
-    if (p.includes('화이트') || p.includes('white') || p.includes('흰')) return '화이트'
+    if (p.includes('블랙') || p.includes('black') || p.includes('검')) return '어두운'
+    if (p.includes('다크') || p.includes('dark'))                       return '어두운'
+    if (p.includes('화이트') || p.includes('white') || p.includes('흰')) return '밝은'
     if (p.includes('아이보리') || p.includes('ivory'))                   return '아이보리'
     if (p.includes('그레이') || p.includes('gray') || p.includes('회색'))return '그레이'
   }
-  return '그레이'
+  return '밝은'
 }
 
 function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
@@ -179,15 +179,15 @@ export async function POST(req: NextRequest) {
 
     const ANGLE_KO: Record<string, string> = {
       original: '',
-      side45:   '구도는 45도 사이드뷰',
-      topdown:  '구도는 top down view',
+      side45:   '구도는 45도 사이드뷰.',
+      topdown:  '구도는 top down view.',
     }
 
     // ── Call 1: 음식 퀄리티 극대화 (최소 프롬프트) ──────────────────────────────
-    const call1Lines = ['음식사진 업그레이드 해줘']
-    const angleKo = ANGLE_KO[angle]
-    if (angleKo) call1Lines.push(angleKo)
-    call1Lines.push(`배경 ${call1BgColor}`)
+    // 포맷: "음식사진 업그레이드 해줘.\n구도는 top down view. 어두운 surface"
+    const angleKo   = ANGLE_KO[angle]
+    const line2Parts = [angleKo, `${call1BgColor} surface`].filter(Boolean)
+    const call1Lines = ['음식사진 업그레이드 해줘.', line2Parts.join(' ')]
 
     const call1Parts: unknown[] = [
       { inlineData: { data: foodBase64, mimeType: foodMime } },
