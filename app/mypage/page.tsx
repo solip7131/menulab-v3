@@ -1259,7 +1259,7 @@ function MyPageContent() {
                 {/* CTA */}
                 <div style={{ padding: '8px 20px 20px' }}>
                   <button
-                    onClick={() => { setSelectedService(null); window.location.href = '/create/collage' }}
+                    onClick={() => { setSelectedService(null); setShowCollageModal(true) }}
                     style={{ width: '100%', padding: '16px', borderRadius: '100px', background: '#FF5722', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer' }}
                   >모음컷 만들러 가기 →</button>
                 </div>
