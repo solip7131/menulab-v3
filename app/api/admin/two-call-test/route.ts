@@ -33,6 +33,40 @@ const BG_SURFACE: Record<string, string> = {
   '베이비핑크':           'baby pink',
 }
 
+const BG_TONE: Record<string, string> = {
+  '라이트그레이':         'light gray',
+  '아이보리':             'ivory',
+  '화이트 대리석타일':    'white',
+  '블랙 콘크리트':        'black',
+  '아이보리 실크':        'ivory',
+  '아이보리 페이퍼':      'ivory',
+  '그레이 콘크리트':      'light gray',
+  '거친 그레이 콘크리트': 'light gray',
+  '화이트 터치드페인트':  'white',
+  '화이트우드':           'white',
+  '아이보리 우드':        'ivory',
+  '베이지우드':           'beige',
+  '브라운우드':           'brown',
+  '다크브라운 우드':      'dark brown',
+  '블랙 우드':            'black',
+  '다크그레이':           'dark gray',
+  '레몬':                 'light yellow',
+  '베이비핑크':           'light pink',
+}
+
+function getCall1BgTone(backgroundName?: string, bgPrompt?: string): string {
+  if (backgroundName && BG_TONE[backgroundName]) return BG_TONE[backgroundName]
+  if (bgPrompt) {
+    const p = bgPrompt.toLowerCase()
+    if (p.includes('블랙') || p.includes('black') || p.includes('검')) return 'black'
+    if (p.includes('다크') || p.includes('dark'))                       return 'dark gray'
+    if (p.includes('화이트') || p.includes('white') || p.includes('흰')) return 'white'
+    if (p.includes('아이보리') || p.includes('ivory'))                   return 'ivory'
+    if (p.includes('그레이') || p.includes('gray') || p.includes('회색'))return 'light gray'
+  }
+  return 'light gray'
+}
+
 function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
   if (backgroundName && BG_SURFACE[backgroundName]) return BG_SURFACE[backgroundName]
   if (bgPrompt) {
@@ -129,7 +163,7 @@ export async function POST(req: NextRequest) {
     const hasBgImage   = !!(bgImageBase64 && bgImageMime)
     const surfaceColor = getSurfaceColor(backgroundName, bgPrompt)
     const bgName       = backgroundName?.trim() || bgPrompt?.trim() || ''
-    const call1BgColor = surfaceColor
+    const call1BgColor = getCall1BgTone(backgroundName, bgPrompt)
 
     const ANGLE_KO: Record<string, string> = {
       original: '',
