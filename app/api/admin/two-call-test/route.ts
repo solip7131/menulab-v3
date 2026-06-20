@@ -211,26 +211,65 @@ export async function POST(req: NextRequest) {
           console.log('[two-call-test] Call 1 완료')
           send({ type: 'call1', url: call1Url })
 
-          // ── Call 2: 배경 합성 + 비율 확장 ────────────────────────────────────
-          const directionHint = (targetRatio === '9:16' || targetRatio === '3:4')
-            ? 'top and bottom'
-            : 'left and right'
+          // ── Call 2: Sharp 캔버스 확장 → Gemini 배경 합성 ────────────────────────
+          const isWide = !['9:16', '3:4'].includes(targetRatio)
+          const directionHint = isWide ? 'left and right' : 'top and bottom'
 
-          console.log(`[two-call-test] Call 2 hasBgImage: ${hasBgImage}, bgName: ${bgName}, surfaceColor: ${surfaceColor}`)
+          // 1. Call 1 이미지를 sharp로 타겟 비율 캔버스에 중앙 배치
+          const call1Buffer = Buffer.from(call1.data, 'base64')
+          const meta = await sharp(call1Buffer).metadata()
+          const srcW = meta.width  ?? 1024
+          const srcH = meta.height ?? 1024
 
+          const RATIO_MUL: Record<string, [number, number]> = {
+            '4:3': [4,3], '16:9': [16,9], '3:4': [3,4], '9:16': [9,16],
+          }
+          const [rw, rh] = RATIO_MUL[targetRatio] ?? [4, 3]
+          let canvasW: number, canvasH: number, offsetL: number, offsetT: number
+          if (isWide) {
+            canvasH = srcH; canvasW = Math.round(srcH * rw / rh)
+            offsetL = Math.round((canvasW - srcW) / 2); offsetT = 0
+          } else {
+            canvasW = srcW; canvasH = Math.round(srcW * rh / rw)
+            offsetL = 0; offsetT = Math.round((canvasH - srcH) / 2)
+          }
+
+          // 2. 빈 영역을 배경 톤 단색으로 채운 캔버스 생성
+          const BG_RGB: Record<string, {r:number;g:number;b:number}> = {
+            'black':      {r:15,  g:15,  b:15 },
+            'dark gray':  {r:50,  g:50,  b:50 },
+            'dark brown': {r:40,  g:25,  b:15 },
+            'gray':       {r:130, g:130, b:130},
+            'light gray': {r:210, g:210, b:210},
+            'white':      {r:245, g:245, b:245},
+            'ivory':      {r:245, g:240, b:220},
+            'beige':      {r:220, g:200, b:175},
+            'brown':      {r:100, g:65,  b:40 },
+            'yellow':     {r:240, g:230, b:100},
+            'pink':       {r:255, g:200, b:210},
+          }
+          const fillRgb = BG_RGB[call1BgColor] ?? {r:200, g:200, b:200}
+
+          const canvasBuffer = await sharp({
+            create: { width: canvasW, height: canvasH, channels: 3, background: fillRgb },
+          })
+            .composite([{ input: call1Buffer, left: offsetL, top: offsetT }])
+            .jpeg({ quality: 92 })
+            .toBuffer()
+
+          console.log(`[two-call-test] Call 2 캔버스: ${canvasW}x${canvasH}, food at left:${offsetL} top:${offsetT}, hasBgImage:${hasBgImage}`)
+
+          // 3. Gemini: 빈 영역만 배경 텍스처로 채우기
           const call2Parts: unknown[] = [
-            { inlineData: { data: call1.data, mimeType: call1.mimeType } },
+            { inlineData: { data: canvasBuffer.toString('base64'), mimeType: 'image/jpeg' } },
           ]
           if (hasBgImage) {
             call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
           }
 
-          const bgTextureRef = hasBgImage
-            ? 'Image 2 is the background texture reference.'
-            : ''
           const bgFillDesc = hasBgImage
-            ? 'Replace the solid background AND fill extended areas with the Image 2 texture.'
-            : `Replace the solid background AND fill extended areas with: ${surfaceColor}${bgName ? ` (${bgName})` : ''} texture.`
+            ? `Fill the solid ${call1BgColor} areas on the ${directionHint} with the Image 2 background texture naturally.`
+            : `Fill the solid ${call1BgColor} areas on the ${directionHint} with ${surfaceColor}${bgName ? ` (${bgName})` : ''} texture naturally.`
 
           const vesselLabel = VESSEL_LABELS[vessel]
           const vesselLine  = vesselLabel
@@ -238,13 +277,13 @@ export async function POST(req: NextRequest) {
             : ''
 
           call2Parts.push([
-            `This is a 1:1 food photo on a solid ${call1BgColor} background.${bgTextureRef ? ' ' + bgTextureRef : ''}`,
+            `This image has food centered on a ${call1BgColor} background with solid ${call1BgColor} areas on the ${directionHint}.`,
+            bgFillDesc,
             vesselLine,
-            `${bgFillDesc} The background must change — the solid color becomes a textured surface.`,
-            `Extend the canvas to ${targetRatio} by expanding the background on the ${directionHint} only.`,
-            'CRITICAL: The food must stay at the EXACT same size, position, and scale. Do NOT shrink or reposition the food.',
+            'Remove any props, chopsticks, napkins, or accessories that do not belong to the dish.',
+            'The food position and size are FIXED — do not move, resize, or alter the food in any way.',
             'Never crop the dish.',
-            'OUTPUT: Food photo with updated dish (if changed), textured background, and extended ratio.',
+            'OUTPUT: Food photo with textured background seamlessly filling the side areas.',
           ].filter(Boolean).join('\n'))
 
           console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
