@@ -172,7 +172,9 @@ export async function POST(req: NextRequest) {
     call2Parts.push([
       `Composite this food photo onto a new background and extend to ${targetRatio} aspect ratio.`,
       bgInstruction,
-      'Keep the food and dish in the center EXACTLY as-is — same composition, same angle, same colors.',
+      `CRITICAL — Camera angle: ${ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original}`,
+      'Preserve the EXACT camera angle and dish composition from the input image. Do NOT alter the viewpoint.',
+      'Keep the food and dish EXACTLY as-is — same position, same angle, same colors, same details.',
       'Extend the background naturally to fill the full frame.',
       'Lighting: soft overhead studio light with gentle natural shadow beneath the dish.',
       'Never crop the dish.',
