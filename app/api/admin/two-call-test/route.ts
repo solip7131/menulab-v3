@@ -182,9 +182,10 @@ export async function POST(req: NextRequest) {
     const call1BgColor = getCall1BgTone(backgroundName, bgPrompt)
 
     const ANGLE_KO: Record<string, string> = {
-      original: '',
-      side45:   '2/3 hero shot',
-      topdown:  '구도는 top down view',
+      original:  '',
+      side45:    '2/3 hero shot',
+      heroshot:  'hero shot',
+      topdown:   '구도는 top down view',
     }
 
     // ── Call 1: 음식 퀄리티 극대화 (최소 프롬프트, 3줄 고정) ────────────────────
