@@ -510,7 +510,10 @@ export default function V2AdminPage() {
             const compBg = await compressImg(bgBlob, 0.7, 800)
             fd.append('bgImageBase64', await toBase64(compBg))
             fd.append('bgImageMime', 'image/jpeg')
-          } catch {}
+            console.log('[2call] 배경 이미지 fetch 성공:', bgSrc)
+          } catch (e) {
+            console.error('[2call] 배경 이미지 fetch 실패:', bgSrc, e)
+          }
         }
       } else if (twoCallBgMode === 'prompt') {
         fd.append('bgPrompt', twoCallBgPrompt.trim())
