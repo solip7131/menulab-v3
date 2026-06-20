@@ -268,8 +268,8 @@ export async function POST(req: NextRequest) {
           }
 
           const bgFillDesc = hasBgImage
-            ? `Fill the solid ${call1BgColor} areas on the ${directionHint} with the Image 2 background texture naturally.`
-            : `Fill the solid ${call1BgColor} areas on the ${directionHint} with ${surfaceColor}${bgName ? ` (${bgName})` : ''} texture naturally.`
+            ? `Replace ALL solid ${call1BgColor} background areas (center AND the ${directionHint} extensions) with the Image 2 texture. The entire background must become the textured surface.`
+            : `Replace ALL solid ${call1BgColor} background areas (center AND the ${directionHint} extensions) with ${surfaceColor}${bgName ? ` (${bgName})` : ''} texture. The entire background must become the textured surface.`
 
           const vesselLabel = VESSEL_LABELS[vessel]
           const vesselLine  = vesselLabel
@@ -277,13 +277,13 @@ export async function POST(req: NextRequest) {
             : ''
 
           call2Parts.push([
-            `This image has food centered on a ${call1BgColor} background with solid ${call1BgColor} areas on the ${directionHint}.`,
+            `This image has food centered on a solid ${call1BgColor} background, with extra solid ${call1BgColor} areas added on the ${directionHint}.`,
             bgFillDesc,
             vesselLine,
             'Remove any props, chopsticks, napkins, or accessories that do not belong to the dish.',
             'The food position and size are FIXED — do not move, resize, or alter the food in any way.',
             'Never crop the dish.',
-            'OUTPUT: Food photo with textured background seamlessly filling the side areas.',
+            'OUTPUT: Food photo with the full background replaced by texture.',
           ].filter(Boolean).join('\n'))
 
           console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
