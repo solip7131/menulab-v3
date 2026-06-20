@@ -136,50 +136,48 @@ export async function POST(req: NextRequest) {
       topdown:  'Camera: directly overhead (90-degree top-down view), food fills frame naturally.',
     }
 
-    // ── Call 1: 음식만 (배경 없이) 1:1 업그레이드 ──────────────────────────────
+    // ── Call 1: 음식+배경 전부 1:1로 ───────────────────────────────────────────
     const call1Parts: unknown[] = [
       { inlineData: { data: foodBase64, mimeType: foodMime } },
-      [
-        ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original,
-        'Enhance the food and dish quality: improve color vibrancy, texture, and lighting.',
-        'Keep the dish and all food ingredients exactly as they are — do not add or remove anything.',
-        'Background: clean neutral light gray studio background. No texture, no props.',
-        'FRAMING: Dish occupies 50% of image height. Centered.',
-        'Show plenty of background — 20% margin top, 15% bottom, 15% each side.',
-        'Never crop the dish.',
-        'Lighting: soft overhead studio light, bright but not harsh. Gentle natural shadow beneath the dish.',
-        '소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것',
-        'OUTPUT: Upgraded food photo on neutral background only.',
-      ].join('\n'),
     ]
+    if (hasBgImage) {
+      call1Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
+    }
+    call1Parts.push([
+      ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original,
+      'Naturally enhance color, lighting, and food appearance while preserving the original viewpoint.',
+      hasBgImage
+        ? 'Image 2 is the background texture reference. Place the food naturally onto that background surface.'
+        : `배경: ${surfaceColor} 단색 스튜디오 배경${bgName !== 'clean professional studio' ? `\nBackground style: ${bgName}` : ''}`,
+      'FRAMING: Dish occupies 50% of image height. Centered.',
+      'Show plenty of background — 20% margin top, 15% bottom, 15% each side.',
+      'Never crop the dish.',
+      'Lighting: soft overhead studio light, bright but not harsh. Gentle natural shadow beneath the dish. Keep lighting consistent regardless of background texture.',
+      '소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것',
+      'OUTPUT: Final composited food photo only.',
+    ].join('\n'))
 
-    console.log('[two-call-test] Call 1 시작 (1:1, 뉴트럴 배경)')
+    console.log('[two-call-test] Call 1 시작 (1:1, 전체 합성)')
     const call1 = await callGemini(call1Parts, '1:1')
     const call1Url = await uploadBase64(call1.data, 'ai_results/2call-test/call1')
     console.log('[two-call-test] Call 1 완료')
 
-    // ── Call 2: 배경 합성 + 비율 확장 ───────────────────────────────────────────
+    // ── Call 2: 비율만 확장 (배경/음식 유지) ────────────────────────────────────
+    const directionHint = (targetRatio === '9:16' || targetRatio === '3:4')
+      ? 'top and bottom'
+      : 'left and right'
+
     const call2Parts: unknown[] = [
       { inlineData: { data: call1.data, mimeType: call1.mimeType } },
+      [
+        `This is a perfectly composed 1:1 food photo. Extend it to ${targetRatio} aspect ratio.`,
+        `Extend ONLY the background on the ${directionHint} — the background must continue seamlessly.`,
+        `CRITICAL — Camera angle: ${ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original}`,
+        'Keep the food, dish, and entire center composition EXACTLY as-is. Do NOT modify anything in the center.',
+        'Never crop the dish.',
+        'OUTPUT: Extended food photo only.',
+      ].join('\n'),
     ]
-    if (hasBgImage) {
-      call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
-    }
-    const bgInstruction = hasBgImage
-      ? 'Image 2 is the background reference. Replace the neutral background with this texture, placing the food naturally onto it.'
-      : `Replace the neutral background with: ${surfaceColor} studio background.${bgName !== 'clean professional studio' ? ` Style: ${bgName}.` : ''}`
-
-    call2Parts.push([
-      `Composite this food photo onto a new background and extend to ${targetRatio} aspect ratio.`,
-      bgInstruction,
-      `CRITICAL — Camera angle: ${ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original}`,
-      'Preserve the EXACT camera angle and dish composition from the input image. Do NOT alter the viewpoint.',
-      'Keep the food and dish EXACTLY as-is — same position, same angle, same colors, same details.',
-      'Extend the background naturally to fill the full frame.',
-      'Lighting: soft overhead studio light with gentle natural shadow beneath the dish.',
-      'Never crop the dish.',
-      'OUTPUT: Final composited food photo only.',
-    ].join('\n'))
 
     console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
     const call2 = await callGemini(call2Parts, targetRatio)
