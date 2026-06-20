@@ -131,25 +131,21 @@ export async function POST(req: NextRequest) {
     const bgName       = backgroundName?.trim() || bgPrompt?.trim() || ''
     const call1BgColor = surfaceColor
 
-    const ANGLE_INSTRUCTIONS: Record<string, string> = {
-      original: 'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
-      side45:   'Camera: 45-degree side angle, dish rim visible as ellipse, side of dish clearly visible.',
-      topdown:  'Camera: directly overhead (90-degree top-down view), food fills frame naturally.',
+    const ANGLE_KO: Record<string, string> = {
+      original: '',
+      side45:   '구도는 45도 사이드뷰',
+      topdown:  '구도는 top down view',
     }
 
-    // ── Call 1: 음식 퀄리티 극대화 + 단순 솔리드 배경 ───────────────────────────
+    // ── Call 1: 음식 퀄리티 극대화 (최소 프롬프트) ──────────────────────────────
+    const call1Lines = ['음식사진 업그레이드 해줘']
+    const angleKo = ANGLE_KO[angle]
+    if (angleKo) call1Lines.push(angleKo)
+    call1Lines.push(`배경: ${call1BgColor}`)
+
     const call1Parts: unknown[] = [
       { inlineData: { data: foodBase64, mimeType: foodMime } },
-      [
-        ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original,
-        '이 음식 사진을 최고급 상업용 음식 사진으로 드라마틱하게 업그레이드해줘.',
-        '음식의 색감, 질감, 광택, 신선도, 디테일을 극적으로 향상시켜줘.',
-        '원본에 없는 재료, 소품, 그릇은 절대 추가하지 말 것. 음식과 그릇은 원본 그대로 유지.',
-        `배경: solid ${call1BgColor} only — no texture, no gradient, no shadow on background.`,
-        'Lighting: soft studio light from above. Gentle natural shadow directly beneath the dish only.',
-        'FRAMING: Dish centered, occupies about 60% of frame. Never crop the dish.',
-        'OUTPUT: Enhanced food photo on solid background only.',
-      ].join('\n'),
+      call1Lines.join('\n'),
     ]
 
     console.log(`[two-call-test] Call 1 시작 (1:1, 음식퀄리티, ${call1BgColor} 배경)`)
