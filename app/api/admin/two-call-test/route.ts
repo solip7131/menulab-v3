@@ -183,8 +183,8 @@ export async function POST(req: NextRequest) {
 
     const ANGLE_KO: Record<string, string> = {
       original: '',
-      side45:   '구도는 45도 사이드뷰.',
-      topdown:  '구도는 top down view.',
+      side45:   '2/3 hero shot',
+      topdown:  '구도는 top down view',
     }
 
     // ── Call 1: 음식 퀄리티 극대화 (최소 프롬프트, 3줄 고정) ────────────────────
