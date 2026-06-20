@@ -33,18 +33,6 @@ const BG_SURFACE: Record<string, string> = {
   '베이비핑크':           'baby pink',
 }
 
-const DARK_BACKGROUNDS = new Set(['블랙 콘크리트', '블랙 우드', '다크브라운 우드', '다크그레이'])
-
-function isDarkBackground(backgroundName?: string, bgPrompt?: string): boolean {
-  if (backgroundName) return DARK_BACKGROUNDS.has(backgroundName)
-  if (bgPrompt) {
-    const p = bgPrompt.toLowerCase()
-    return p.includes('블랙') || p.includes('black') || p.includes('검') ||
-           p.includes('다크') || p.includes('dark')
-  }
-  return false
-}
-
 function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
   if (backgroundName && BG_SURFACE[backgroundName]) return BG_SURFACE[backgroundName]
   if (bgPrompt) {
@@ -141,8 +129,7 @@ export async function POST(req: NextRequest) {
     const hasBgImage   = !!(bgImageBase64 && bgImageMime)
     const surfaceColor = getSurfaceColor(backgroundName, bgPrompt)
     const bgName       = backgroundName?.trim() || bgPrompt?.trim() || ''
-    const darkBg       = isDarkBackground(backgroundName, bgPrompt)
-    const call1BgColor = darkBg ? 'pure black' : 'pure white'
+    const call1BgColor = surfaceColor
 
     const ANGLE_INSTRUCTIONS: Record<string, string> = {
       original: 'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
