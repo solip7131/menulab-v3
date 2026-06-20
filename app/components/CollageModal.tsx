@@ -299,9 +299,9 @@ export default function CollageModal({ onClose }: Props) {
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-      style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', padding: '16px' }}
     >
-      <div style={{ width: '100%', maxWidth: '560px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: '#f0eeeb', borderRadius: '24px 24px 0 0', overflow: 'hidden' }}>
+      <div style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '560px', maxHeight: '94vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.35)' }}>
       <style>{`@keyframes collage-spin { to { transform: rotate(360deg) } }`}</style>
 
       {/* Header */}
