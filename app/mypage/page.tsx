@@ -36,7 +36,7 @@ const BG_ID_BY_LABEL: Record<string, string> = {
 
 
 const SIDEBAR_SERVICES = [
-  { id: 'remake',     name: '메뉴샷',      gems: '20젬/장',  subtitle: '업그레이드된 음식에 원하는 배경과 그릇까지 선택!' },
+  { id: 'remake',     name: '메뉴샷',      gems: '💎 20장',  subtitle: '업그레이드된 음식에 원하는 배경과 그릇까지 선택!' },
   { id: 'collection', name: '메뉴 모음컷', gems: '💎 40젬~', subtitle: '일반 모음컷과 브랜딩용 모음컷 (프랜차이즈 본사 추천)' },
 ]
 
