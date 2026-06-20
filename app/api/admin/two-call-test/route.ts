@@ -183,8 +183,8 @@ export async function POST(req: NextRequest) {
 
     const ANGLE_KO: Record<string, string> = {
       original:  '',
-      side45:    '2/3 hero shot',
-      heroshot:  'hero shot',
+      side45:    'side 45 degree shot',
+      heroshot:  '2/3 hero shot',
       topdown:   '구도는 top down view',
     }
 
