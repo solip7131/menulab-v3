@@ -209,17 +209,16 @@ export async function POST(req: NextRequest) {
             call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
           }
 
-          const bgReplaceInstruction = hasBgImage
-            ? `Image 2 is the new background texture. REPLACE the solid ${call1BgColor} background in Image 1 with this texture.`
-            : `REPLACE the solid ${call1BgColor} background with: ${surfaceColor}${bgName ? ` (${bgName})` : ''} textured surface.`
+          const bgTextureHint = hasBgImage
+            ? 'Use Image 2 as the texture reference for the extended background areas.'
+            : `Fill extended areas with ${surfaceColor}${bgName ? ` (${bgName})` : ''} surface texture.`
 
           call2Parts.push([
-            `Image 1 is a food photo with a plain solid ${call1BgColor} background.`,
-            `TASK 1 — BACKGROUND REPLACEMENT (mandatory): ${bgReplaceInstruction} The background MUST visually change.`,
-            `TASK 2 — RATIO EXTENSION: Extend the canvas to ${targetRatio} by seamlessly expanding the new background on the ${directionHint}.`,
-            'CONSTRAINT: Food and dish pixels are frozen — do not touch, alter, or reimagine them.',
+            `This is a 1:1 food photo. Extend it to ${targetRatio} by adding background ONLY on the ${directionHint}.`,
+            'The food, dish, position, and size must remain PIXEL-PERFECT identical — do NOT shrink, move, or alter the food in any way.',
+            `${bgTextureHint} The extended background must blend seamlessly with the existing background.`,
             'Never crop the dish.',
-            'OUTPUT: Food photo with new background and correct aspect ratio.',
+            'OUTPUT: Same food photo with background extended to fill the new ratio.',
           ].join('\n'))
 
           console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
