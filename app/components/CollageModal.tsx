@@ -297,7 +297,11 @@ export default function CollageModal({ onClose }: Props) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', flexDirection: 'column', background: '#f0eeeb' }}>
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}
+    >
+      <div style={{ width: '100%', maxWidth: '560px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: '#f0eeeb', borderRadius: '24px 24px 0 0', overflow: 'hidden' }}>
       <style>{`@keyframes collage-spin { to { transform: rotate(360deg) } }`}</style>
 
       {/* Header */}
@@ -538,6 +542,7 @@ export default function CollageModal({ onClose }: Props) {
           onClose={() => setShowChargeModal(false)}
         />
       )}
+      </div>
     </div>
   )
 }
