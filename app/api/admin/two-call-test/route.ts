@@ -33,6 +33,18 @@ const BG_SURFACE: Record<string, string> = {
   '베이비핑크':           'baby pink',
 }
 
+const DARK_BACKGROUNDS = new Set(['블랙 콘크리트', '블랙 우드', '다크브라운 우드', '다크그레이'])
+
+function isDarkBackground(backgroundName?: string, bgPrompt?: string): boolean {
+  if (backgroundName) return DARK_BACKGROUNDS.has(backgroundName)
+  if (bgPrompt) {
+    const p = bgPrompt.toLowerCase()
+    return p.includes('블랙') || p.includes('black') || p.includes('검') ||
+           p.includes('다크') || p.includes('dark')
+  }
+  return false
+}
+
 function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
   if (backgroundName && BG_SURFACE[backgroundName]) return BG_SURFACE[backgroundName]
   if (bgPrompt) {
@@ -128,7 +140,9 @@ export async function POST(req: NextRequest) {
 
     const hasBgImage   = !!(bgImageBase64 && bgImageMime)
     const surfaceColor = getSurfaceColor(backgroundName, bgPrompt)
-    const bgName       = backgroundName?.trim() || bgPrompt?.trim() || 'clean professional studio'
+    const bgName       = backgroundName?.trim() || bgPrompt?.trim() || ''
+    const darkBg       = isDarkBackground(backgroundName, bgPrompt)
+    const call1BgColor = darkBg ? 'pure black' : 'pure white'
 
     const ANGLE_INSTRUCTIONS: Record<string, string> = {
       original: 'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
@@ -136,50 +150,53 @@ export async function POST(req: NextRequest) {
       topdown:  'Camera: directly overhead (90-degree top-down view), food fills frame naturally.',
     }
 
-    // ── Call 1: 음식+배경 전부 1:1로 ───────────────────────────────────────────
+    // ── Call 1: 음식 퀄리티 극대화 + 단순 솔리드 배경 ───────────────────────────
     const call1Parts: unknown[] = [
       { inlineData: { data: foodBase64, mimeType: foodMime } },
+      [
+        ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original,
+        '이 음식 사진을 최고급 상업용 음식 사진으로 드라마틱하게 업그레이드해줘.',
+        '음식의 색감, 질감, 광택, 신선도, 디테일을 극적으로 향상시켜줘.',
+        '원본에 없는 재료, 소품, 그릇은 절대 추가하지 말 것. 음식과 그릇은 원본 그대로 유지.',
+        `배경: solid ${call1BgColor} only — no texture, no gradient, no shadow on background.`,
+        'Lighting: soft studio light from above. Gentle natural shadow directly beneath the dish only.',
+        'FRAMING: Dish centered, occupies about 60% of frame. Never crop the dish.',
+        'OUTPUT: Enhanced food photo on solid background only.',
+      ].join('\n'),
     ]
-    if (hasBgImage) {
-      call1Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
-    }
-    call1Parts.push([
-      ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original,
-      'Naturally enhance color, lighting, and food appearance while preserving the original viewpoint.',
-      hasBgImage
-        ? 'Image 2 is the background texture reference. Place the food naturally onto that background surface.'
-        : `배경: ${surfaceColor} 단색 스튜디오 배경${bgName !== 'clean professional studio' ? `\nBackground style: ${bgName}` : ''}`,
-      'FRAMING: Dish occupies 50% of image height. Centered.',
-      'Show plenty of background — 20% margin top, 15% bottom, 15% each side.',
-      'Never crop the dish.',
-      'Lighting: soft overhead studio light, bright but not harsh. Gentle natural shadow beneath the dish. Keep lighting consistent regardless of background texture.',
-      '소품 금지: 음식 외 젓가락·냅킨 등 추가 소품 넣지 말 것',
-      'OUTPUT: Final composited food photo only.',
-    ].join('\n'))
 
-    console.log('[two-call-test] Call 1 시작 (1:1, 전체 합성)')
+    console.log(`[two-call-test] Call 1 시작 (1:1, 음식퀄리티, ${call1BgColor} 배경)`)
     const call1 = await callGemini(call1Parts, '1:1')
     const call1Url = await uploadBase64(call1.data, 'ai_results/2call-test/call1')
     console.log('[two-call-test] Call 1 완료')
 
-    // ── Call 2: 비율만 확장 (배경/음식 유지) ────────────────────────────────────
+    // ── Call 2: 실제 배경 합성 + 비율 확장 ──────────────────────────────────────
     const directionHint = (targetRatio === '9:16' || targetRatio === '3:4')
       ? 'top and bottom'
       : 'left and right'
 
     const call2Parts: unknown[] = [
       { inlineData: { data: call1.data, mimeType: call1.mimeType } },
-      [
-        `This is a perfectly composed 1:1 food photo. Extend it to ${targetRatio} aspect ratio.`,
-        `Extend ONLY the background on the ${directionHint} — the background must continue seamlessly.`,
-        `CRITICAL — Camera angle: ${ANGLE_INSTRUCTIONS[angle] ?? ANGLE_INSTRUCTIONS.original}`,
-        'Keep the food, dish, and entire center composition EXACTLY as-is. Do NOT modify anything in the center.',
-        'Never crop the dish.',
-        'OUTPUT: Extended food photo only.',
-      ].join('\n'),
     ]
+    if (hasBgImage) {
+      call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
+    }
 
-    console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
+    const bgInstruction = hasBgImage
+      ? 'Last image is the background texture reference. Replace the solid background with that texture naturally.'
+      : `Replace the solid background with: ${surfaceColor} surface${bgName ? ` (${bgName})` : ''}.`
+
+    call2Parts.push([
+      `This food photo has a solid ${call1BgColor} background. Do the following:`,
+      `1. ${bgInstruction}`,
+      `2. Extend the image to ${targetRatio} aspect ratio by expanding the background on the ${directionHint}. Background must continue seamlessly.`,
+      'CRITICAL: Keep the food, dish, and composition EXACTLY as-is. Do NOT alter the food in any way.',
+      'Never crop the dish.',
+      'Lighting on food must remain unchanged.',
+      'OUTPUT: Final food photo with background and correct aspect ratio.',
+    ].join('\n'))
+
+    console.log(`[two-call-test] Call 2 시작 (${targetRatio}, 배경합성+확장)`)
     const call2 = await callGemini(call2Parts, targetRatio)
     const call2Url = await uploadBase64(call2.data, 'ai_results/2call-test/call2')
     console.log('[two-call-test] Call 2 완료')
