@@ -200,6 +200,8 @@ export async function POST(req: NextRequest) {
             ? 'top and bottom'
             : 'left and right'
 
+          console.log(`[two-call-test] Call 2 hasBgImage: ${hasBgImage}, bgName: ${bgName}, surfaceColor: ${surfaceColor}`)
+
           const call2Parts: unknown[] = [
             { inlineData: { data: call1.data, mimeType: call1.mimeType } },
           ]
@@ -207,18 +209,17 @@ export async function POST(req: NextRequest) {
             call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
           }
 
-          const bgInstruction = hasBgImage
-            ? 'Last image is the background texture reference. Replace the solid background with that texture naturally.'
-            : `Replace the solid background with: ${surfaceColor} surface${bgName ? ` (${bgName})` : ''}.`
+          const bgReplaceInstruction = hasBgImage
+            ? `Image 2 is the new background texture. REPLACE the solid ${call1BgColor} background in Image 1 with this texture.`
+            : `REPLACE the solid ${call1BgColor} background with: ${surfaceColor}${bgName ? ` (${bgName})` : ''} textured surface.`
 
           call2Parts.push([
-            `This food photo has a solid ${call1BgColor} background. Do the following:`,
-            `1. ${bgInstruction}`,
-            `2. Extend the image to ${targetRatio} aspect ratio by expanding the background on the ${directionHint}. Background must continue seamlessly.`,
-            'CRITICAL: Keep the food, dish, and composition EXACTLY as-is. Do NOT alter the food in any way.',
+            `Image 1 is a food photo with a plain solid ${call1BgColor} background.`,
+            `TASK 1 — BACKGROUND REPLACEMENT (mandatory): ${bgReplaceInstruction} The background MUST visually change.`,
+            `TASK 2 — RATIO EXTENSION: Extend the canvas to ${targetRatio} by seamlessly expanding the new background on the ${directionHint}.`,
+            'CONSTRAINT: Food and dish pixels are frozen — do not touch, alter, or reimagine them.',
             'Never crop the dish.',
-            'Lighting on food must remain unchanged.',
-            'OUTPUT: Final food photo with background and correct aspect ratio.',
+            'OUTPUT: Food photo with new background and correct aspect ratio.',
           ].join('\n'))
 
           console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
