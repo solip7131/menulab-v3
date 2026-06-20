@@ -36,8 +36,8 @@ const BG_ID_BY_LABEL: Record<string, string> = {
 
 
 const SIDEBAR_SERVICES = [
-  { id: 'remake',     name: '메뉴샷',      gems: '💎 20장',  subtitle: '업그레이드된 음식에 원하는 배경과 그릇까지 선택!' },
-  { id: 'collection', name: '모음컷', gems: '💎 40젬~', subtitle: '일반 모음컷과 브랜딩용 모음컷 (프랜차이즈 본사 추천)' },
+  { id: 'remake',     name: '메뉴샷',      gems: '💎 20젬',  subtitle: '업그레이드된 음식에 원하는 배경과 그릇까지 선택!' },
+  { id: 'collection', name: '모음컷', gems: '💎 40젬',  subtitle: '일반 모음컷과 브랜딩용 모음컷 (프랜차이즈 본사 추천)' },
 ]
 
 const SIDEBAR_SECTIONS = [
@@ -1235,7 +1235,7 @@ function MyPageContent() {
                 {/* 텍스트 콘텐츠 */}
                 <div style={{ padding: '20px 20px 16px' }}>
                   <span style={{ display: 'inline-block', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', marginBottom: '12px' }}>💎 40젬 / 장</span>
-                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>메뉴 사진을<br/>모음컷으로</h2>
+                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>스마트폰 사진을<br/>배달앱 모음컷으로</h2>
                   <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>여러 메뉴를 한 장에 자연스럽게 담아<br/>AI가 스튜디오급 모음컷을 만들어드려요.</p>
 
                   {/* 옵션 카드 3개 */}
