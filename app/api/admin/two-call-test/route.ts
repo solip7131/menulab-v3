@@ -12,6 +12,17 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
+const VESSEL_LABELS: Record<string, string> = {
+  'white-noodle-bowl': 'white ceramic noodle bowl',
+  'black-noodle-bowl': 'dark matte black noodle bowl',
+  'white-plate':       'round white ceramic plate',
+  'black-plate':       'round black ceramic plate',
+  'ttukbbaeki':        'Korean earthenware ttukbaegi pot',
+  'black-pot':         'black cast iron hot pot',
+  'cold-noodle-bowl':  'stainless steel cold noodle bowl',
+  'pasta-bowl':        'wide rimmed white pasta bowl',
+}
+
 const BG_SURFACE: Record<string, string> = {
   '라이트그레이':         'light gray',
   '아이보리':             'warm ivory',
@@ -155,6 +166,7 @@ export async function POST(req: NextRequest) {
     const bgPrompt       = formData.get('bgPrompt')       as string | undefined
     const targetRatio    = (formData.get('targetRatio') as string) || '4:3'
     const angle          = (formData.get('angle') as string) || 'original'
+    const vessel         = (formData.get('vessel') as string) || 'original'
 
     const arrayBuffer = await photo.arrayBuffer()
     const foodBase64  = Buffer.from(arrayBuffer).toString('base64')
@@ -216,14 +228,20 @@ export async function POST(req: NextRequest) {
             ? 'Replace the solid background AND fill extended areas with the Image 2 texture.'
             : `Replace the solid background AND fill extended areas with: ${surfaceColor}${bgName ? ` (${bgName})` : ''} texture.`
 
+          const vesselLabel = VESSEL_LABELS[vessel]
+          const vesselLine  = vesselLabel
+            ? `Change the bowl/dish to ${vesselLabel}. Keep ALL food ingredients exactly the same.`
+            : ''
+
           call2Parts.push([
             `This is a 1:1 food photo on a solid ${call1BgColor} background.${bgTextureRef ? ' ' + bgTextureRef : ''}`,
+            vesselLine,
             `${bgFillDesc} The background must change — the solid color becomes a textured surface.`,
             `Extend the canvas to ${targetRatio} by expanding the background on the ${directionHint} only.`,
-            'CRITICAL: The food and dish must stay at the EXACT same size, position, and scale as in the original image. Do NOT shrink or reposition the food.',
+            'CRITICAL: The food must stay at the EXACT same size, position, and scale. Do NOT shrink or reposition the food.',
             'Never crop the dish.',
-            'OUTPUT: Food photo with textured background and extended ratio.',
-          ].join('\n'))
+            'OUTPUT: Food photo with updated dish (if changed), textured background, and extended ratio.',
+          ].filter(Boolean).join('\n'))
 
           console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
           const call2 = await callGemini(call2Parts, targetRatio)

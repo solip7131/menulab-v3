@@ -155,6 +155,7 @@ export default function V2AdminPage() {
   const [twoCallBgMode, setTwoCallBgMode]         = useState<'preset' | 'prompt'>('preset')
   const [twoCallBgPresetId, setTwoCallBgPresetId] = useState<string | null>('lightgray')
   const [twoCallBgPrompt, setTwoCallBgPrompt]     = useState('')
+  const [twoCallVessel, setTwoCallVessel]         = useState('original')
   const [twoCallRatio, setTwoCallRatio]           = useState('4:3')
   const [twoCallPhase, setTwoCallPhase]           = useState<'idle' | 'call1' | 'call2'>('idle')
   const [twoCallCall1Url, setTwoCallCall1Url]     = useState<string | null>(null)
@@ -498,6 +499,7 @@ export default function V2AdminPage() {
       fd.append('photo', new File([compressed], 'photo.jpg', { type: 'image/jpeg' }))
       fd.append('targetRatio', twoCallRatio)
       fd.append('angle', twoCallAngle)
+      fd.append('vessel', twoCallVessel)
 
       if (twoCallBgMode === 'preset' && twoCallBgPresetId) {
         const preset = FULL_BG_PRESETS.find(p => p.id === twoCallBgPresetId)
@@ -709,6 +711,14 @@ export default function V2AdminPage() {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {([['original', '원본구도'], ['side45', '측면45'], ['topdown', '탑다운']] as const).map(([v, l]) => (
                         <button key={v} onClick={() => setTwoCallAngle(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: twoCallAngle === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>그릇 (Call 2 적용)</p>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {FULL_VESSELS.map(v => (
+                        <button key={v.id} onClick={() => setTwoCallVessel(v.id)} style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: twoCallVessel === v.id ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{v.label}</button>
                       ))}
                     </div>
                   </div>
