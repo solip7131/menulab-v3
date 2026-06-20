@@ -45,37 +45,41 @@ const BG_SURFACE: Record<string, string> = {
 }
 
 const BG_TONE: Record<string, string> = {
-  '라이트그레이':         '밝은',
-  '아이보리':             '아이보리',
-  '화이트 대리석타일':    '밝은',
-  '블랙 콘크리트':        '어두운',
-  '아이보리 실크':        '아이보리',
-  '아이보리 페이퍼':      '아이보리',
-  '그레이 콘크리트':      '그레이',
-  '거친 그레이 콘크리트': '그레이',
-  '화이트 터치드페인트':  '밝은',
-  '화이트우드':           '밝은',
-  '아이보리 우드':        '아이보리',
-  '베이지우드':           '베이지',
-  '브라운우드':           '브라운',
-  '다크브라운 우드':      '어두운',
-  '블랙 우드':            '어두운',
-  '다크그레이':           '어두운',
-  '레몬':                 '밝은',
-  '베이비핑크':           '밝은',
+  '라이트그레이':         'light gray',
+  '아이보리':             'ivory',
+  '화이트 대리석타일':    'white',
+  '블랙 콘크리트':        'black',
+  '아이보리 실크':        'ivory',
+  '아이보리 페이퍼':      'ivory',
+  '그레이 콘크리트':      'gray',
+  '거친 그레이 콘크리트': 'gray',
+  '화이트 터치드페인트':  'white',
+  '화이트우드':           'white',
+  '아이보리 우드':        'ivory',
+  '베이지우드':           'beige',
+  '브라운우드':           'brown',
+  '다크브라운 우드':      'dark brown',
+  '블랙 우드':            'black',
+  '다크그레이':           'dark gray',
+  '레몬':                 'yellow',
+  '베이비핑크':           'pink',
 }
 
 function getCall1BgTone(backgroundName?: string, bgPrompt?: string): string {
   if (backgroundName && BG_TONE[backgroundName]) return BG_TONE[backgroundName]
   if (bgPrompt) {
     const p = bgPrompt.toLowerCase()
-    if (p.includes('블랙') || p.includes('black') || p.includes('검')) return '어두운'
-    if (p.includes('다크') || p.includes('dark'))                       return '어두운'
-    if (p.includes('화이트') || p.includes('white') || p.includes('흰')) return '밝은'
-    if (p.includes('아이보리') || p.includes('ivory'))                   return '아이보리'
-    if (p.includes('그레이') || p.includes('gray') || p.includes('회색'))return '그레이'
+    if (p.includes('블랙') || p.includes('black') || p.includes('검')) return 'black'
+    if (p.includes('다크브라운') || p.includes('dark brown'))           return 'dark brown'
+    if (p.includes('다크') || p.includes('dark'))                       return 'dark gray'
+    if (p.includes('화이트') || p.includes('white') || p.includes('흰')) return 'white'
+    if (p.includes('아이보리') || p.includes('ivory'))                   return 'ivory'
+    if (p.includes('그레이') || p.includes('gray') || p.includes('회색'))return 'gray'
+    if (p.includes('브라운') || p.includes('brown'))                     return 'brown'
+    if (p.includes('베이지') || p.includes('beige'))                     return 'beige'
+    if (p.includes('핑크') || p.includes('pink'))                        return 'pink'
   }
-  return '밝은'
+  return 'white'
 }
 
 function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
