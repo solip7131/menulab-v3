@@ -90,7 +90,7 @@ export default function V2AdminPage() {
 
   // ── AI 테스트 패널 ──
   const [testMode, setTestMode]               = useState(false)
-  const [testSubMode, setTestSubMode]         = useState<'single' | 'full'>('single')
+  const [testSubMode, setTestSubMode]         = useState<'single' | 'full' | '2call'>('single')
 
   // ── 단일 호출 테스트 ──
   const [singlePhotos, setSinglePhotos]       = useState<File[]>([])
@@ -148,6 +148,18 @@ export default function V2AdminPage() {
   const [fullOrigUrl, setFullOrigUrl]         = useState<string | null>(null)
   const [fullError, setFullError]             = useState<string | null>(null)
   const fullInputRef                          = useRef<HTMLInputElement>(null)
+
+  // ── 2콜 테스트 ──
+  const [twoCallPhoto, setTwoCallPhoto]           = useState<File | null>(null)
+  const [twoCallBgMode, setTwoCallBgMode]         = useState<'preset' | 'prompt'>('preset')
+  const [twoCallBgPresetId, setTwoCallBgPresetId] = useState<string | null>('lightgray')
+  const [twoCallBgPrompt, setTwoCallBgPrompt]     = useState('')
+  const [twoCallRatio, setTwoCallRatio]           = useState('4:3')
+  const [twoCallLoading, setTwoCallLoading]       = useState(false)
+  const [twoCallCall1Url, setTwoCallCall1Url]     = useState<string | null>(null)
+  const [twoCallCall2Url, setTwoCallCall2Url]     = useState<string | null>(null)
+  const [twoCallError, setTwoCallError]           = useState<string | null>(null)
+  const twoCallInputRef                           = useRef<HTMLInputElement>(null)
 
   const SINGLE_VESSELS = [
     { id: 'original',          label: '원본 그대로' },
@@ -453,6 +465,79 @@ export default function V2AdminPage() {
     setFullLoading(false)
   }
 
+  const runTwoCallTest = async () => {
+    if (!twoCallPhoto) return
+    setTwoCallLoading(true)
+    setTwoCallCall1Url(null)
+    setTwoCallCall2Url(null)
+    setTwoCallError(null)
+    try {
+      const toBase64 = (file: File | Blob): Promise<string> =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve((reader.result as string).split(',')[1])
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+      const compressImg = async (file: File | Blob, quality = 0.85, maxDim = 1400): Promise<Blob> => {
+        const bitmap = await createImageBitmap(file)
+        let w = bitmap.width, h = bitmap.height
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h)
+          w = Math.round(w * ratio); h = Math.round(h * ratio)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h)
+        return new Promise<Blob>(res => canvas.toBlob(blob => res(blob!), 'image/jpeg', quality))
+      }
+
+      const fd = new FormData()
+      const compressed = await compressImg(twoCallPhoto)
+      fd.append('photo', new File([compressed], 'photo.jpg', { type: 'image/jpeg' }))
+      fd.append('targetRatio', twoCallRatio)
+
+      if (twoCallBgMode === 'preset' && twoCallBgPresetId) {
+        const preset = FULL_BG_PRESETS.find(p => p.id === twoCallBgPresetId)
+        if (preset) {
+          fd.append('backgroundName', preset.label)
+          const bgSrc = preset.promptSrc ?? preset.src
+          try {
+            const bgRes  = await fetch(bgSrc)
+            const bgBlob = await bgRes.blob()
+            const compBg = await compressImg(bgBlob, 0.7, 800)
+            fd.append('bgImageBase64', await toBase64(compBg))
+            fd.append('bgImageMime', 'image/jpeg')
+          } catch {}
+        }
+      } else if (twoCallBgMode === 'prompt') {
+        fd.append('bgPrompt', twoCallBgPrompt.trim())
+      }
+
+      const res = await fetch('/api/admin/two-call-test', {
+        method: 'POST',
+        headers: { 'x-admin-password': password },
+        body: fd,
+      })
+      const rawText = await res.text()
+      let data: any
+      try { data = JSON.parse(rawText) } catch {
+        setTwoCallError(`서버 오류 (HTTP ${res.status}): ${rawText.slice(0, 300)}`)
+        setTwoCallLoading(false)
+        return
+      }
+      if (!res.ok || data.error) {
+        setTwoCallError(data.error ?? `HTTP ${res.status}`)
+      } else {
+        setTwoCallCall1Url(data.call1Url)
+        setTwoCallCall2Url(data.call2Url)
+      }
+    } catch (e: any) {
+      setTwoCallError(String(e))
+    }
+    setTwoCallLoading(false)
+  }
+
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 
   const planLabel = (order: Order) => {
@@ -588,12 +673,87 @@ export default function V2AdminPage() {
 
             {/* 탭 */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              {([['single', '단일 호출 테스트'], ['full', '풀 플로우 테스트']] as const).map(([v, l]) => (
+              {([['single', '단일 호출 테스트'], ['full', '풀 플로우 테스트'], ['2call', '2콜 테스트']] as const).map(([v, l]) => (
                 <button key={v} onClick={() => setTestSubMode(v)} style={{ padding: '8px 18px', borderRadius: '100px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', background: testSubMode === v ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
               ))}
             </div>
 
-            {testSubMode === 'single' ? (
+            {testSubMode === '2call' ? (
+              /* ── 2콜 테스트 ── */
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '20px' }}>Call 1: 1:1 완벽 생성 → Call 2: 플랫폼 비율로 배경만 자연스럽게 확장</p>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '16px', padding: '20px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div onClick={() => twoCallInputRef.current?.click()} style={{ border: `2px dashed ${twoCallPhoto ? 'rgba(196,81,13,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
+                    <p style={{ fontSize: '20px' }}>📷</p>
+                    <p style={{ fontWeight: 700, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>{twoCallPhoto ? twoCallPhoto.name : '사진 1장 업로드'}</p>
+                    <input ref={twoCallInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) { setTwoCallPhoto(e.target.files[0]); setTwoCallCall1Url(null); setTwoCallCall2Url(null); setTwoCallError(null) } e.target.value = '' }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>배경</p>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                      {([['preset', '프리셋'], ['prompt', '텍스트']] as const).map(([v, l]) => (
+                        <button key={v} onClick={() => setTwoCallBgMode(v)} style={{ padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: twoCallBgMode === v ? '#34C759' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{l}</button>
+                      ))}
+                    </div>
+                    {twoCallBgMode === 'preset' ? (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {FULL_BG_PRESETS.map(p => (
+                          <button key={p.id} onClick={() => setTwoCallBgPresetId(p.id)} style={{ padding: '6px 12px', borderRadius: '100px', fontSize: '11px', fontWeight: 700, border: `2px solid ${twoCallBgPresetId === p.id ? '#34C759' : 'transparent'}`, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', color: '#fff' }}>{p.label}</button>
+                        ))}
+                      </div>
+                    ) : (
+                      <input value={twoCallBgPrompt} onChange={e => setTwoCallBgPrompt(e.target.value)} placeholder="배경 설명 (예: dark wooden table)" style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    )}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '7px', fontWeight: 600 }}>Call 2 확장 비율</p>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {(['4:3', '16:9'] as const).map(r => (
+                        <button key={r} onClick={() => setTwoCallRatio(r)} style={{ padding: '7px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: twoCallRatio === r ? '#C4510D' : 'rgba(255,255,255,0.1)', color: '#fff' }}>{r}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                  <button onClick={runTwoCallTest} disabled={twoCallLoading || !twoCallPhoto} style={{ padding: '12px 28px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: (twoCallLoading || !twoCallPhoto) ? 'not-allowed' : 'pointer', background: (twoCallLoading || !twoCallPhoto) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #C4510D, #FF8C00)', color: (twoCallLoading || !twoCallPhoto) ? 'rgba(255,255,255,0.3)' : '#fff' }}>
+                    {twoCallLoading ? 'Call 1 → Call 2 처리 중...' : '▶ 2콜 테스트 실행'}
+                  </button>
+                </div>
+                {twoCallError && (
+                  <div style={{ background: 'rgba(255,0,0,0.08)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
+                    <p style={{ fontSize: '12px', color: '#ff6b6b', wordBreak: 'break-all' }}>{twoCallError}</p>
+                  </div>
+                )}
+                {(twoCallLoading || twoCallCall1Url || twoCallCall2Url) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '6px', fontWeight: 700 }}>Call 1 — 1:1 생성</p>
+                      {twoCallCall1Url ? (
+                        <a href={twoCallCall1Url} target="_blank" rel="noopener noreferrer">
+                          <img src={twoCallCall1Url} alt="call1" style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '10px', border: '2px solid #FF8C00', display: 'block' }} />
+                        </a>
+                      ) : (
+                        <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>생성 중...</p>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '11px', color: '#C4510D', marginBottom: '6px', fontWeight: 700 }}>Call 2 — {twoCallRatio} 확장</p>
+                      {twoCallCall2Url ? (
+                        <a href={twoCallCall2Url} target="_blank" rel="noopener noreferrer">
+                          <img src={twoCallCall2Url} alt="call2" style={{ width: '100%', aspectRatio: twoCallRatio === '16:9' ? '16/9' : '4/3', objectFit: 'cover', borderRadius: '10px', border: '2px solid #C4510D', display: 'block' }} />
+                        </a>
+                      ) : (
+                        <div style={{ width: '100%', aspectRatio: twoCallRatio === '16:9' ? '16/9' : '4/3', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>생성 중...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : testSubMode === 'single' ? (
               /* ── 단일 호출 테스트 ── */
               <div>
                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '20px' }}>gemini-3-pro-image 1회 호출로 구도 + 배경 + 그릇을 한 번에 처리한 결과를 확인합니다.</p>
