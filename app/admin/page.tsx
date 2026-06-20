@@ -156,7 +156,7 @@ export default function V2AdminPage() {
   const [twoCallBgPresetId, setTwoCallBgPresetId] = useState<string | null>('lightgray')
   const [twoCallBgPrompt, setTwoCallBgPrompt]     = useState('')
   const [twoCallRatio, setTwoCallRatio]           = useState('4:3')
-  const [twoCallLoading, setTwoCallLoading]       = useState(false)
+  const [twoCallPhase, setTwoCallPhase]           = useState<'idle' | 'call1' | 'call2'>('idle')
   const [twoCallCall1Url, setTwoCallCall1Url]     = useState<string | null>(null)
   const [twoCallCall2Url, setTwoCallCall2Url]     = useState<string | null>(null)
   const [twoCallError, setTwoCallError]           = useState<string | null>(null)
@@ -468,7 +468,7 @@ export default function V2AdminPage() {
 
   const runTwoCallTest = async () => {
     if (!twoCallPhoto) return
-    setTwoCallLoading(true)
+    setTwoCallPhase('call1')
     setTwoCallCall1Url(null)
     setTwoCallCall2Url(null)
     setTwoCallError(null)
@@ -521,23 +521,34 @@ export default function V2AdminPage() {
         headers: { 'x-admin-password': password },
         body: fd,
       })
-      const rawText = await res.text()
-      let data: any
-      try { data = JSON.parse(rawText) } catch {
-        setTwoCallError(`서버 오류 (HTTP ${res.status}): ${rawText.slice(0, 300)}`)
-        setTwoCallLoading(false)
+      if (!res.ok || !res.body) {
+        const text = await res.text()
+        setTwoCallError(`서버 오류 (HTTP ${res.status}): ${text.slice(0, 300)}`)
+        setTwoCallPhase('idle')
         return
       }
-      if (!res.ok || data.error) {
-        setTwoCallError(data.error ?? `HTTP ${res.status}`)
-      } else {
-        setTwoCallCall1Url(data.call1Url)
-        setTwoCallCall2Url(data.call2Url)
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop()!
+        for (const line of lines) {
+          if (!line.trim()) continue
+          const msg = JSON.parse(line)
+          if (msg.type === 'call1') { setTwoCallCall1Url(msg.url); setTwoCallPhase('call2') }
+          if (msg.type === 'call2') { setTwoCallCall2Url(msg.url) }
+          if (msg.type === 'error') { setTwoCallError(msg.message) }
+        }
       }
     } catch (e: any) {
       setTwoCallError(String(e))
     }
-    setTwoCallLoading(false)
+    setTwoCallPhase('idle')
   }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
@@ -725,8 +736,8 @@ export default function V2AdminPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-                  <button onClick={runTwoCallTest} disabled={twoCallLoading || !twoCallPhoto} style={{ padding: '12px 28px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: (twoCallLoading || !twoCallPhoto) ? 'not-allowed' : 'pointer', background: (twoCallLoading || !twoCallPhoto) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #C4510D, #FF8C00)', color: (twoCallLoading || !twoCallPhoto) ? 'rgba(255,255,255,0.3)' : '#fff' }}>
-                    {twoCallLoading ? 'Call 1 → Call 2 처리 중...' : '▶ 2콜 테스트 실행'}
+                  <button onClick={runTwoCallTest} disabled={twoCallPhase !== 'idle' || !twoCallPhoto} style={{ padding: '12px 28px', borderRadius: '100px', fontSize: '14px', fontWeight: 800, border: 'none', cursor: (twoCallPhase !== 'idle' || !twoCallPhoto) ? 'not-allowed' : 'pointer', background: (twoCallPhase !== 'idle' || !twoCallPhoto) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #C4510D, #FF8C00)', color: (twoCallPhase !== 'idle' || !twoCallPhoto) ? 'rgba(255,255,255,0.3)' : '#fff' }}>
+                    {twoCallPhase === 'call1' ? 'Call 1 생성 중...' : twoCallPhase === 'call2' ? 'Call 2 생성 중...' : '▶ 2콜 테스트 실행'}
                   </button>
                 </div>
                 {twoCallError && (
@@ -734,7 +745,7 @@ export default function V2AdminPage() {
                     <p style={{ fontSize: '12px', color: '#ff6b6b', wordBreak: 'break-all' }}>{twoCallError}</p>
                   </div>
                 )}
-                {(twoCallLoading || twoCallCall1Url || twoCallCall2Url) && (
+                {(twoCallPhase !== 'idle' || twoCallCall1Url || twoCallCall2Url) && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <p style={{ fontSize: '11px', color: '#FF8C00', marginBottom: '6px', fontWeight: 700 }}>Call 1 — 1:1 생성</p>

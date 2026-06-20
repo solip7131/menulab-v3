@@ -148,43 +148,66 @@ export async function POST(req: NextRequest) {
       call1Lines.join('\n'),
     ]
 
-    console.log(`[two-call-test] Call 1 시작 (1:1, 음식퀄리티, ${call1BgColor} 배경)`)
-    const call1 = await callGemini(call1Parts, '1:1')
-    const call1Url = await uploadBase64(call1.data, 'ai_results/2call-test/call1')
-    console.log('[two-call-test] Call 1 완료')
+    const enc = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (obj: object) =>
+          controller.enqueue(enc.encode(JSON.stringify(obj) + '\n'))
 
-    // ── Call 2: 실제 배경 합성 + 비율 확장 ──────────────────────────────────────
-    const directionHint = (targetRatio === '9:16' || targetRatio === '3:4')
-      ? 'top and bottom'
-      : 'left and right'
+        try {
+          console.log(`[two-call-test] Call 1 시작 (1:1, ${call1BgColor} 배경)`)
+          const call1 = await callGemini(call1Parts, '1:1')
+          const call1Url = await uploadBase64(call1.data, 'ai_results/2call-test/call1')
+          console.log('[two-call-test] Call 1 완료')
+          send({ type: 'call1', url: call1Url })
 
-    const call2Parts: unknown[] = [
-      { inlineData: { data: call1.data, mimeType: call1.mimeType } },
-    ]
-    if (hasBgImage) {
-      call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
-    }
+          // ── Call 2: 배경 합성 + 비율 확장 ────────────────────────────────────
+          const directionHint = (targetRatio === '9:16' || targetRatio === '3:4')
+            ? 'top and bottom'
+            : 'left and right'
 
-    const bgInstruction = hasBgImage
-      ? 'Last image is the background texture reference. Replace the solid background with that texture naturally.'
-      : `Replace the solid background with: ${surfaceColor} surface${bgName ? ` (${bgName})` : ''}.`
+          const call2Parts: unknown[] = [
+            { inlineData: { data: call1.data, mimeType: call1.mimeType } },
+          ]
+          if (hasBgImage) {
+            call2Parts.push({ inlineData: { data: bgImageBase64!, mimeType: bgImageMime! } })
+          }
 
-    call2Parts.push([
-      `This food photo has a solid ${call1BgColor} background. Do the following:`,
-      `1. ${bgInstruction}`,
-      `2. Extend the image to ${targetRatio} aspect ratio by expanding the background on the ${directionHint}. Background must continue seamlessly.`,
-      'CRITICAL: Keep the food, dish, and composition EXACTLY as-is. Do NOT alter the food in any way.',
-      'Never crop the dish.',
-      'Lighting on food must remain unchanged.',
-      'OUTPUT: Final food photo with background and correct aspect ratio.',
-    ].join('\n'))
+          const bgInstruction = hasBgImage
+            ? 'Last image is the background texture reference. Replace the solid background with that texture naturally.'
+            : `Replace the solid background with: ${surfaceColor} surface${bgName ? ` (${bgName})` : ''}.`
 
-    console.log(`[two-call-test] Call 2 시작 (${targetRatio}, 배경합성+확장)`)
-    const call2 = await callGemini(call2Parts, targetRatio)
-    const call2Url = await uploadBase64(call2.data, 'ai_results/2call-test/call2')
-    console.log('[two-call-test] Call 2 완료')
+          call2Parts.push([
+            `This food photo has a solid ${call1BgColor} background. Do the following:`,
+            `1. ${bgInstruction}`,
+            `2. Extend the image to ${targetRatio} aspect ratio by expanding the background on the ${directionHint}. Background must continue seamlessly.`,
+            'CRITICAL: Keep the food, dish, and composition EXACTLY as-is. Do NOT alter the food in any way.',
+            'Never crop the dish.',
+            'Lighting on food must remain unchanged.',
+            'OUTPUT: Final food photo with background and correct aspect ratio.',
+          ].join('\n'))
 
-    return NextResponse.json({ call1Url, call2Url })
+          console.log(`[two-call-test] Call 2 시작 (${targetRatio})`)
+          const call2 = await callGemini(call2Parts, targetRatio)
+          const call2Url = await uploadBase64(call2.data, 'ai_results/2call-test/call2')
+          console.log('[two-call-test] Call 2 완료')
+          send({ type: 'call2', url: call2Url })
+        } catch (e) {
+          console.error('[two-call-test] stream error:', e)
+          send({ type: 'error', message: String(e) })
+        } finally {
+          controller.close()
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'application/x-ndjson',
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+      },
+    })
   } catch (e) {
     console.error('[two-call-test] error:', e)
     return NextResponse.json({ error: String(e) }, { status: 500 })
