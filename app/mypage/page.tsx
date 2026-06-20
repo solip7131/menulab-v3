@@ -470,7 +470,7 @@ function MyPageContent() {
   const [showGuideModal,      setShowGuideModal]       = useState(false)
   const [showCollageModal,    setShowCollageModal]     = useState(false)
   const upsellShownRef = useRef(false)
-  const [selectedService,     setSelectedService]      = useState<'remake' | null>(null)
+  const [selectedService,     setSelectedService]      = useState<'remake' | 'collection' | null>(null)
   const [modalServiceType,    setModalServiceType]     = useState<'remake'>('remake')
 
   // BasicPlanModal initial options (for "다시 만들기" / regenerate)
@@ -1129,7 +1129,7 @@ function MyPageContent() {
                   key={svc.id}
                   onClick={() => {
                     if (svc.id === 'remake') setSelectedService('remake')
-                    else if (svc.id === 'collection') setShowCollageModal(true)
+                    else if (svc.id === 'collection') setSelectedService('collection')
                   }}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
@@ -1222,7 +1222,50 @@ function MyPageContent() {
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <style>{`@keyframes marquee-rtl { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
 
-          {selectedService === 'remake' ? (
+          {selectedService === 'collection' ? (
+            /* ── 미니 랜딩: 모음컷 ── */
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f0eeeb', padding: '16px 16px 100px' }}>
+              <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '16px', overflow: 'hidden' }}>
+
+                {/* After 이미지 */}
+                <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', background: '#111' }}>
+                  <img src="/collage-after.jpg" alt="모음컷 예시" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
+
+                {/* 텍스트 콘텐츠 */}
+                <div style={{ padding: '20px 20px 16px' }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(196,81,13,0.08)', color: 'var(--orange)', fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', marginBottom: '12px' }}>💎 40젬 / 장</span>
+                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '6px', lineHeight: 1.25 }}>메뉴 사진을<br/>모음컷으로</h2>
+                  <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px', lineHeight: 1.6 }}>여러 메뉴를 한 장에 자연스럽게 담아<br/>AI가 스튜디오급 모음컷을 만들어드려요.</p>
+
+                  {/* 옵션 카드 3개 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                    {[
+                      { icon: '📷', label: '사진 업로드', desc: '2~5장 업로드' },
+                      { icon: '🎨', label: '배경 선택',   desc: '20+ 프리셋 배경 중 선택' },
+                      { icon: '👁️', label: '구도 선택',  desc: '항공뷰 · 측면뷰' },
+                    ].map(item => (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '16px', padding: '14px 16px' }}>
+                        <span style={{ fontSize: '22px', flexShrink: 0 }}>{item.icon}</span>
+                        <div>
+                          <p style={{ fontWeight: 800, fontSize: '13px', color: 'var(--black)', marginBottom: '2px' }}>{item.label}</p>
+                          <p style={{ color: '#aaa', fontSize: '12px', lineHeight: 1.5 }}>{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div style={{ padding: '8px 20px 20px' }}>
+                  <button
+                    onClick={() => { setSelectedService(null); window.location.href = '/create/collage' }}
+                    style={{ width: '100%', padding: '16px', borderRadius: '100px', background: '#FF5722', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer' }}
+                  >모음컷 만들러 가기 →</button>
+                </div>
+              </div>
+            </div>
+          ) : selectedService === 'remake' ? (
             /* ── 미니 랜딩: 메뉴샷 ── */
             <div style={{ flex: 1, overflowY: 'auto', background: '#f0eeeb', padding: '16px 16px 100px' }}>
               <div style={{ maxWidth: '390px', margin: '0 auto', background: '#fff', borderRadius: '16px', overflow: 'hidden' }}>
