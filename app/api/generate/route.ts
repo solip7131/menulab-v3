@@ -53,9 +53,10 @@ function getSurfaceColor(backgroundName?: string, bgPrompt?: string): string {
 // ── Prompt constants ──────────────────────────────────────────────────────────
 
 const ANGLE_INSTRUCTIONS: Record<string, string> = {
-  original: 'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
-  side45:   'Camera: 45-degree side angle, dish rim visible as ellipse, side of dish clearly visible.',
-  topdown:  'Camera: directly overhead (90-degree top-down view), food fills frame naturally.',
+  original:  'Keep the ORIGINAL camera angle and composition as close as possible to the input photo. Do NOT force 45-degree angle.',
+  side45:    'Camera: 45-degree side angle, dish rim visible as ellipse, side of dish clearly visible.',
+  heroshot:  'Camera: 2/3 hero shot angle, slightly elevated front-facing view that emphasizes depth and volume of the food.',
+  topdown:   'Camera: directly overhead (90-degree top-down view), food fills frame naturally.',
 }
 
 const VESSEL_LABELS: Record<string, string> = {
@@ -90,7 +91,7 @@ function buildPrompt(params: {
 
   // 2. 그릇 교체 (remake + 그릇 선택 시)
   if (serviceType === 'remake' && vessel && vessel !== 'original' && VESSEL_LABELS[vessel]) {
-    lines.push(`Change the bowl/dish to ${VESSEL_LABELS[vessel]}. Keep ALL food ingredients exactly the same.`)
+    lines.push(`Replace the existing bowl/dish with a ${VESSEL_LABELS[vessel]}. The bowl shape and style MUST completely change — do not keep the original bowl. Keep ALL food ingredients exactly the same.`)
   }
 
   // 3. 음식 보정
